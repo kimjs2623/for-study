@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 문학 튜터 - 가온길 스터디</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'] } } }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin-custom { animation: spin 1s linear infinite; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-900 dark:text-slate-200 min-h-screen pb-20">
+
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
+
+  <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <a href="#" class="flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-bold text-sm transition-colors">
+          <i data-lucide="book-open" class="w-5 h-5 mr-1"></i> 문학 스터디
+        </a>
+      </div>
+      <div class="flex items-center space-x-3">
+        <div class="hidden sm:flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full text-sm font-medium border border-indigo-100 dark:border-indigo-800/50">
+          <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+          <span class="text-indigo-600 dark:text-indigo-400 font-bold">AI 전용 라운지</span>
+        </div>
+        <button onclick="app.toggleDarkMode()" class="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+          <i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center">
+      <h2 class="text-lg font-bold flex items-center mb-2 text-slate-900 dark:text-white"><i data-lucide="database" class="w-5 h-5 mr-2 text-blue-500"></i> 스터디 교재(PDF) 등록</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">등록된 교재(최대 700KB)를 바탕으로 AI가 작품을 분석하고 임용 기출 변형 퀴즈를 출제합니다.</p>
+      
+      <div id="db-status-area" class="w-full flex justify-center">
+        <!-- DB Status will be rendered here -->
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-800/30 flex flex-col h-full">
+        <h2 class="text-lg font-bold flex items-center text-indigo-900 dark:text-indigo-200 mb-4">
+          <i data-lucide="message-square" class="w-5 h-5 mr-2 text-indigo-500"></i> 서술형 답안 채점 & 해설
+        </h2>
+        <input type="text" id="ai-tutor-target" placeholder="학습 대상 (예: 상춘곡, 1930년대 시)" class="w-full px-4 py-3 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm outline-none mb-3 dark:text-white">
+        <textarea id="ai-tutor-prompt" placeholder="작성한 서술형 답안을 채점해달라고 하거나, 모르는 개념을 질문해보세요." class="flex-1 min-h-[120px] w-full p-4 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm resize-none outline-none mb-4 dark:text-white"></textarea>
+        <button id="ai-tutor-btn" onclick="app.askAITutor()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-xl flex items-center justify-center transition-colors">
+          <i data-lucide="sparkles" id="ai-tutor-icon" class="w-4 h-4 mr-2"></i> <span id="ai-tutor-text">AI 분석 시작</span>
+        </button>
+        <div id="ai-tutor-response" class="hidden mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 shadow-inner text-sm leading-relaxed dark:border-indigo-800/50"></div>
+      </div>
+
+      <div class="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 rounded-2xl p-6 shadow-sm border border-teal-100 dark:border-teal-800/30 flex flex-col h-full">
+        <h2 class="text-lg font-bold flex items-center text-teal-900 dark:text-teal-200 mb-4">
+          <i data-lucide="lightbulb" class="w-5 h-5 mr-2 text-teal-500"></i> 기출 변형 퀴즈 출제
+        </h2>
+        <input type="text" id="ai-quiz-topic" placeholder="출제 범위 (예: 정철 속미인곡, 박경리 광장)" class="w-full px-4 py-3 rounded-xl border border-teal-200 dark:border-teal-700 bg-white dark:bg-slate-800 text-sm outline-none mb-4 dark:text-white">
+        <p class="text-xs text-teal-600 dark:text-teal-400 mb-4 px-1">입력한 범위를 바탕으로 핵심 개념 단답형/서술형 퀴즈 3문제를 자동 생성합니다.</p>
+        <div class="mt-auto">
+          <button id="ai-quiz-btn" onclick="app.generateAIQuiz()" class="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white font-bold rounded-xl flex items-center justify-center transition-colors">
+            <i data-lucide="pen-tool" id="ai-quiz-icon" class="w-4 h-4 mr-2"></i> <span id="ai-quiz-text">퀴즈 출제하기</span>
+          </button>
+        </div>
+        <div id="ai-quiz-response" class="hidden mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-teal-100 shadow-inner text-sm leading-relaxed dark:border-teal-800/50"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Firebase 환경 설정 (동적 주입 또는 폴백)
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+      apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA",
+      authDomain: "study-99725.firebaseapp.com",
+      projectId: "study-99725",
+      storageBucket: "study-99725.firebasestorage.app",
+      messagingSenderId: "850626154259",
+      appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
+    };
+
+    const appAuth = initializeApp(firebaseConfig);
+    const auth = getAuth(appAuth);
+    const db = getFirestore(appAuth);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app';
+    const apiKey = ""; // Gemini API 키는 환경에서 자동 제공됨
+
+    const state = {
+      isDarkMode: false,
+      centralMaterial: null,
+      userName: '익명 선생님',
+      user: null
+    };
+
+    // 토스트 알림 함수
+    function showToast(msg, type='info') {
+      const toast = document.createElement('div');
+      toast.className = `p-3 rounded-xl shadow-lg border text-sm font-bold transition-all duration-300 transform translate-y-0 opacity-100 ${type==='error'?'bg-red-50 text-red-600 border-red-200':type==='success'?'bg-emerald-50 text-emerald-600 border-emerald-200':'bg-indigo-50 text-indigo-600 border-indigo-200'}`;
+      toast.textContent = msg;
+      document.getElementById('toast-container').appendChild(toast);
+      setTimeout(() => { 
+        toast.style.opacity = '0'; 
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(()=>toast.remove(), 300); 
+      }, 3000);
+    }
+
+    // Gemini API 호출 헬퍼 (지수 백오프 포함)
+    async function generateGeminiContent(parts, systemText) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{ parts }],
+        systemInstruction: { parts: [{ text: systemText }] }
+      };
+      
+      const delays = [1000, 2000, 4000, 8000, 16000];
+      for (let i = 0; i < 5; i++) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          return data.candidates?.[0]?.content?.parts?.[0]?.text || "결과를 생성하지 못했습니다.";
+        } catch (error) {
+          if (i === 4) throw error;
+          await new Promise(resolve => setTimeout(resolve, delays[i]));
+        }
+      }
+    }
+
+    // 인증 초기화
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch(e) {
+        console.error("Auth init failed", e);
+        showToast("인증 초기화 실패", "error");
+      }
+    };
+
+    initAuth().then(() => {
+      onAuthStateChanged(auth, (user) => {
+        state.user = user;
+        if (!user) return;
+        
+        // 사용자 이름 가져오기
+        onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
+          if(snap.exists() && snap.data().name) state.userName = snap.data().name + ' 선생님';
+        }, (err) => console.error("Profile Error:", err));
+
+        // 교재 DB 리스너 (Public 데이터)
+        onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), (snap) => {
+          state.centralMaterial = (snap.exists() && snap.data().fileName) ? snap.data() : null;
+          renderDBArea();
+        }, (err) => console.error("Material Error:", err));
+        
+        lucide.createIcons();
+      });
+    });
+
+    function renderDBArea() {
+      const area = document.getElementById('db-status-area');
+      if (state.centralMaterial?.fileName) {
+        area.innerHTML = `
+          <div class="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl w-full max-w-md justify-between transition-all">
+            <div class="flex items-center overflow-hidden pr-3">
+              <i data-lucide="file-check-2" class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0"></i>
+              <div class="text-left overflow-hidden">
+                <p class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">${state.centralMaterial.fileName}</p>
+                <p class="text-xs text-slate-500">${state.centralMaterial.uploadedBy} 업로드</p>
+              </div>
+            </div>
+            <button onclick="app.deleteDBMaterial()" class="p-2 text-red-400 hover:text-red-600 transition-colors flex-shrink-0" title="삭제하기">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+          </div>`;
+      } else {
+        area.innerHTML = `
+          <input type="file" id="db-upload" accept="application/pdf" class="hidden" onchange="app.handleDBUpload(this)" />
+          <label id="db-upload-label" for="db-upload" class="cursor-pointer bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-bold px-6 py-3 rounded-xl transition-colors flex items-center shadow-md">
+            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2"></i> PDF 파일 선택하기
+          </label>`;
+      }
+      lucide.createIcons();
+    }
+
+    // 전역 함수 등록
+    window.app = {
+      toggleDarkMode: () => {
+        state.isDarkMode = !state.isDarkMode;
+        document.documentElement.classList.toggle('dark', state.isDarkMode);
+        document.getElementById('dark-mode-icon').setAttribute('data-lucide', state.isDarkMode ? 'sun' : 'moon');
+        lucide.createIcons();
+      },
+      
+      handleDBUpload: (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        if(file.type !== 'application/pdf') return showToast('PDF 파일만 가능합니다.', 'error');
+        
+        // Firestore 단일 문서 제한(1MB)을 고려하여 Base64 인코딩 후 안전한 사이즈인 700KB로 제한합니다.
+        if(file.size > 700 * 1024) return showToast('데이터베이스 구조상 현재 700KB 이하만 지원합니다.', 'error');
+        if (!state.user) return showToast('인증 정보가 없습니다. 새로고침 해주세요.', 'error');
+
+        const label = document.getElementById('db-upload-label');
+        label.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin-custom"></i> 업로드 중...';
+        lucide.createIcons();
+
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), {
+              fileName: file.name, 
+              base64: reader.result.split(',')[1], 
+              uploadedBy: state.userName, 
+              uploadedAt: new Date().toLocaleString('ko-KR')
+            });
+            showToast('교재가 업로드되었습니다.', 'success');
+          } catch(e) { 
+            console.error(e);
+            showToast('업로드 실패', 'error'); 
+            renderDBArea(); // 실패 시 원래 UI로 복구
+          }
+        };
+        reader.readAsDataURL(file);
+      },
+      
+      deleteDBMaterial: async () => {
+        if (!state.user) return showToast('권한이 없습니다.', 'error');
+        
+        // Firestore 문서를 비워 삭제 처리 (리스너가 자동 감지)
+        try {
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), { 
+            fileName: null, base64: null, uploadedBy: null, uploadedAt: null 
+          });
+          showToast('삭제되었습니다.', 'success');
+        } catch(e) {
+          console.error(e);
+          showToast('삭제 중 오류가 발생했습니다.', 'error');
+        }
+      },
+      
+      askAITutor: async () => {
+        const target = document.getElementById('ai-tutor-target').value;
+        const prompt = document.getElementById('ai-tutor-prompt').value;
+        if(!prompt.trim()) return showToast('질문을 입력해주세요.', 'error');
+        
+        const btn = document.getElementById('ai-tutor-btn');
+        const icon = document.getElementById('ai-tutor-icon');
+        const respDiv = document.getElementById('ai-tutor-response');
+        
+        btn.disabled = true; 
+        icon.setAttribute('data-lucide', 'loader-2'); 
+        icon.classList.add('animate-spin-custom');
+        document.getElementById('ai-tutor-text').textContent = '답안 분석 중...';
+        respDiv.classList.add('hidden'); 
+        lucide.createIcons();
+
+        const parts = [{ text: `[학습 타겟: ${target || '교재 전체'}]\n질문/답안: ${prompt}` }];
+        if (state.centralMaterial?.base64) {
+            parts.push({ inlineData: { mimeType: "application/pdf", data: state.centralMaterial.base64 } });
+        }
+        
+        try {
+          const resultText = await generateGeminiContent(
+            parts, 
+            "당신은 임용고시 전공국어 문학 강사입니다. 핵심 키워드가 포함되었는지 채점하고, 부족한 개념을 명쾌하게 해설해주세요."
+          );
+          respDiv.innerHTML = resultText.replace(/\n/g, "<br>");
+          respDiv.classList.remove('hidden');
+        } catch(e) { 
+          showToast("API 통신 오류", "error"); 
+          console.error(e);
+        } finally {
+          btn.disabled = false; 
+          icon.setAttribute('data-lucide', 'sparkles'); 
+          icon.classList.remove('animate-spin-custom');
+          document.getElementById('ai-tutor-text').textContent = 'AI 분석 시작'; 
+          lucide.createIcons();
+        }
+      },
+      
+      generateAIQuiz: async () => {
+        const topic = document.getElementById('ai-quiz-topic').value;
+        if(!topic.trim()) return showToast('출제 범위를 입력해주세요.', 'error');
+        
+        const btn = document.getElementById('ai-quiz-btn');
+        const icon = document.getElementById('ai-quiz-icon');
+        const respDiv = document.getElementById('ai-quiz-response');
+        
+        btn.disabled = true; 
+        icon.setAttribute('data-lucide', 'loader-2'); 
+        icon.classList.add('animate-spin-custom');
+        document.getElementById('ai-quiz-text').textContent = '문제 출제 중...';
+        respDiv.classList.add('hidden'); 
+        lucide.createIcons();
+
+        const parts = [{ text: `[출제 범위: ${topic}]\n위 범위에서 중등 임용 국어 기출 스타일로 서술형/단답형 섞어서 3문제 출제해주세요.` }];
+        if (state.centralMaterial?.base64) {
+            parts.push({ inlineData: { mimeType: "application/pdf", data: state.centralMaterial.base64 } });
+        }
+        
+        try {
+          const resultText = await generateGeminiContent(
+            parts, 
+            "당신은 임용고시 출제 위원입니다. 제시된 범위 안에서 변별력 있는 퀴즈 3문제를 내고 하단에 모범 답안을 제시하세요."
+          );
+          respDiv.innerHTML = resultText.replace(/\n/g, "<br>");
+          respDiv.classList.remove('hidden');
+        } catch(e) { 
+          showToast("API 통신 오류", "error"); 
+          console.error(e);
+        } finally {
+          btn.disabled = false; 
+          icon.setAttribute('data-lucide', 'pen-tool'); 
+          icon.classList.remove('animate-spin-custom');
+          document.getElementById('ai-quiz-text').textContent = '퀴즈 출제하기'; 
+          lucide.createIcons();
+        }
+      }
+    };
+
+    // 초기 로딩 시 아이콘 적용
+    lucide.createIcons();
+  </script>
+</body>
+</html>
