@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>가온길 문학 스터디 허브</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -20,7 +19,6 @@
     }
   </script>
   
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
@@ -50,16 +48,13 @@
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans">
 
-  <!-- 커스텀 토스트 알림 컨테이너 (alert 대체) -->
   <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
 
-  <!-- 1. 로딩 화면 -->
   <div id="loading-screen" class="min-h-screen flex flex-col items-center justify-center transition-colors dark:bg-slate-900 dark:text-white">
     <i data-lucide="loader-2" class="w-10 h-10 animate-spin-custom text-indigo-500 mb-4"></i>
     <p class="font-bold">데이터를 동기화하는 중입니다...</p>
   </div>
 
-  <!-- 2. 인증 화면 -->
   <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4 transition-colors duration-300 dark:bg-slate-900">
     <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-200 dark:border-slate-700">
       <div class="text-center mb-8">
@@ -95,10 +90,8 @@
     </div>
   </div>
 
-  <!-- 3. 메인 대시보드 화면 -->
   <div id="dashboard-screen" class="hidden min-h-screen pb-20 dark:bg-slate-900 dark:text-slate-200">
     
-    <!-- 네비게이션 -->
     <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 transition-colors duration-300">
       <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
         <div class="flex items-center space-x-2">
@@ -120,7 +113,6 @@
       </div>
     </nav>
 
-    <!-- 헤더 -->
     <header class="bg-indigo-600 dark:bg-indigo-900 text-white py-10 px-4 relative overflow-hidden transition-colors duration-300">
       <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:opacity-5"></div>
       <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between">
@@ -140,40 +132,30 @@
 
     <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
       
-      <!-- 문학 기출 답안 보드 -->
       <div class="grid grid-cols-1 gap-6">
         <div id="literature-board-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300 flex flex-col">
-          <!-- JS로 동적 렌더링 -->
-        </div>
+          </div>
       </div>
 
-      <!-- 상단: 일정 & 개인별 투두 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
           <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full transition-colors duration-300 flex flex-col">
-            <!-- JS로 동적 렌더링 -->
-          </div>
+            </div>
         </div>
         <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300">
           <div id="todos-container">
-            <!-- JS로 동적 렌더링 -->
-          </div>
+            </div>
         </div>
       </div>
       
-      <!-- 중앙 데이터베이스 업로드 & 벌금 관리 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div id="central-db-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300 h-full flex flex-col">
-          <!-- JS로 동적 렌더링 -->
-        </div>
+          </div>
         <div id="fines-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-          <!-- JS로 동적 렌더링 -->
-        </div>
+          </div>
       </div>
 
-      <!-- AI 학습 도우미 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- AI 튜터 -->
         <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-800/30 h-full flex flex-col">
           <h2 class="text-lg font-bold flex items-center text-indigo-900 dark:text-indigo-200 mb-4">
             <i data-lucide="sparkles" class="w-5 h-5 mr-2 text-indigo-500"></i> ✨ AI 문학 튜터
@@ -191,7 +173,6 @@
           <div id="ai-tutor-response" class="hidden mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 dark:border-indigo-700/50 shadow-sm text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed"></div>
         </div>
 
-        <!-- AI 퀴즈 -->
         <div class="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 rounded-2xl p-6 shadow-sm border border-teal-100 dark:border-teal-800/30 h-full flex flex-col">
           <h2 class="text-lg font-bold flex items-center text-teal-900 dark:text-teal-200 mb-4">
             <i data-lucide="lightbulb" class="w-5 h-5 mr-2 text-teal-500"></i> ✨ AI 퀴즈 메이커
@@ -210,7 +191,6 @@
         </div>
       </div>
 
-      <!-- 하단: 룰 & 자료실 (정적) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
         <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <h2 class="text-lg font-bold flex items-center mb-4 text-rose-600 dark:text-rose-400"><i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i> 스터디 벌금 규칙</h2>
@@ -303,7 +283,6 @@
     }
 
     // --- Firebase Initialization ---
-    // 깃허브 Pages 등 외부 호스팅 시 아래 본인의 Firebase 설정값으로 변경해야 작동합니다.
     const fallbackConfig = {
       apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA",
       authDomain: "study-99725.firebaseapp.com",
@@ -318,7 +297,6 @@
 
     let firebaseApp, auth, db;
     try {
-      // 깃허브 등 외부 환경에서 API Key를 수정하지 않고 실행했을 때 에러 처리
       if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('본인')) {
         throw new Error('Firebase 설정 누락됨');
       }
@@ -341,16 +319,12 @@
       document.documentElement.classList.toggle('dark', state.isDarkMode);
       updateDarkModeIcon();
 
-      // Firebase 설정이 안 되어있을 경우 안내 화면 노출 (무한 로딩 방지)
       if (!auth || !db) {
         els.loading.innerHTML = `
           <div class="bg-red-50 border border-red-200 text-red-700 p-6 sm:p-8 rounded-2xl max-w-lg mx-4 text-center shadow-lg dark:bg-slate-800 dark:border-red-900/50">
             <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-4 text-red-500"></i>
-            <h2 class="text-xl font-bold mb-3 dark:text-white">데이터베이스(Firebase) 설정이 필요합니다!</h2>
-            <p class="text-sm leading-relaxed mb-4 text-slate-800 dark:text-slate-300">
-              GitHub Pages 등 외부 환경에 배포하신 경우, HTML 코드 하단 <strong>(약 510번째 줄)</strong>의 <code>fallbackConfig</code> 부분에 선생님의 Firebase 프로젝트 설정값을 직접 입력해 주셔야 스터디 허브가 작동합니다.<br/><br/>
-              <span class="text-xs text-slate-500 dark:text-slate-400">※ AI 튜터/퀴즈 기능을 작동시키려면 <code>askAITutor</code>, <code>generateAIQuiz</code> 함수 안의 <code>apiKey = ""</code> 부분에도 발급받은 Gemini API 키를 넣어주세요.</span>
-            </p>
+            <h2 class="text-xl font-bold mb-3 dark:text-white">데이터베이스 설정이 필요합니다!</h2>
+            <p class="text-sm leading-relaxed text-slate-800 dark:text-slate-300">코드 하단의 fallbackConfig에 Firebase 설정값을 올바르게 넣어주세요.</p>
           </div>
         `;
         lucide.createIcons();
@@ -366,7 +340,7 @@
         }
       } catch (error) {
         console.error("Auth Init Error:", error);
-        showToast("인증 초기화 중 오류가 발생했습니다.", "error");
+        showToast("인증 초기화 오류. Firebase 콘솔에서 '익명 로그인'을 켜주세요.", "error");
       }
 
       onAuthStateChanged(auth, (user) => {
@@ -458,22 +432,27 @@
 
     // View Controller
     function updateView() {
-      els.loading.classList.add('hidden');
-      if (state.user && !state.appAccount) {
-        els.auth.classList.remove('hidden');
-        els.dashboard.classList.add('hidden');
-      } else if (state.user && state.appAccount) {
-        els.auth.classList.add('hidden');
-        els.dashboard.classList.remove('hidden');
-        els.navUsername.textContent = state.appAccount.name;
-        
-        // Initial Render
-        renderAnswerBoard();
-        renderSchedule();
-        renderTodos();
-        renderCentralDB();
-        renderFines();
-        lucide.createIcons();
+      try {
+        els.loading.classList.add('hidden');
+        if (state.user && !state.appAccount) {
+          els.auth.classList.remove('hidden');
+          els.dashboard.classList.add('hidden');
+        } else if (state.user && state.appAccount) {
+          els.auth.classList.add('hidden');
+          els.dashboard.classList.remove('hidden');
+          els.navUsername.textContent = state.appAccount.name;
+          
+          // Initial Render
+          renderAnswerBoard();
+          renderSchedule();
+          renderTodos();
+          renderCentralDB();
+          renderFines();
+          lucide.createIcons();
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("화면 전환 중 오류가 발생했습니다: " + err.message, "error");
       }
     }
 
@@ -774,9 +753,20 @@
       errDiv.classList.add('hidden');
       
       const btn = document.getElementById('auth-submit-btn');
+      const btnIcon = document.getElementById('auth-submit-icon');
+      const btnText = document.getElementById('auth-submit-text');
+      
       btn.disabled = true;
+      btnIcon.setAttribute('data-lucide', 'loader-2');
+      btnIcon.classList.add('animate-spin-custom');
+      btnText.textContent = state.authMode === 'login' ? '로그인 확인 중...' : '가입 처리 중...';
+      lucide.createIcons();
 
       try {
+        if (!state.user) {
+           throw new Error('데이터베이스 연결이 지연되고 있습니다. 페이지를 새로고침 해주세요.');
+        }
+
         const membersCol = collection(db, 'artifacts', appId, 'public', 'data', 'members');
         const snapshot = await getDocs(membersCol);
         const members = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -788,11 +778,22 @@
           await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', id), { password: pw, name: name });
           const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
           await setDoc(profileRef, { appAccountId: id, name: name });
+          
+          // 강제 화면 전환 (리스너 딜레이 무시)
+          state.appAccount = { appAccountId: id, name: name };
+          updateView();
+          showToast('가입이 완료되었습니다!', 'success');
+
         } else {
           const member = members.find(m => m.id === id && m.password === pw);
           if (member) {
             const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
             await setDoc(profileRef, { appAccountId: member.id, name: member.name });
+            
+            // 강제 화면 전환 (리스너 딜레이 무시)
+            state.appAccount = { appAccountId: member.id, name: member.name };
+            updateView();
+            showToast('로그인 되었습니다.', 'success');
           } else {
             throw new Error('아이디 또는 비밀번호가 일치하지 않습니다.');
           }
@@ -802,11 +803,19 @@
         errDiv.classList.remove('hidden');
       } finally {
         btn.disabled = false;
+        btnIcon.classList.remove('animate-spin-custom');
+        if (state.authMode === 'login') {
+          btnIcon.setAttribute('data-lucide', 'log-in');
+          btnText.textContent = '로그인';
+        } else {
+          btnIcon.setAttribute('data-lucide', 'user-plus');
+          btnText.textContent = '가입하고 시작하기';
+        }
+        lucide.createIcons();
       }
     });
 
     // --- Render Functions ---
-
     function renderAnswerBoard() {
       if(!state.appAccount) return;
       const board = state.boardData;
@@ -841,7 +850,6 @@
       }
 
       html += `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-        <!-- 내 답안 -->
         <div class="flex flex-col bg-white dark:bg-slate-800">
           <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
             <i data-lucide="user" class="w-4 h-4 mr-1.5 text-slate-400"></i> 내 답안 작성
@@ -851,7 +859,6 @@
             ${hasSubmitted ? '내 답안 수정하기' : '답안 제출하고 다른 사람 것 보기'}
           </button>
         </div>
-        <!-- 공유 -->
         <div class="flex flex-col bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-700 p-5 overflow-hidden h-full min-h-[220px]">
           <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center">
             <i data-lucide="eye" class="w-4 h-4 mr-1.5 text-slate-400"></i> 스터디원 답안 공유
