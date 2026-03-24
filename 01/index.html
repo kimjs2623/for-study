@@ -16,6 +16,8 @@
   <style>
     @keyframes spin { to { transform: rotate(360deg); } }
     .animate-spin-custom { animation: spin 1s linear infinite; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-900 dark:text-slate-200 min-h-screen pb-20">
@@ -25,7 +27,6 @@
   <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-6">
-        <!-- Home 버튼 추가 -->
         <a href="../index.html" class="flex items-center text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-bold text-sm transition-colors">
           <i data-lucide="home" class="w-5 h-5 mr-1.5"></i> Home
         </a>
@@ -48,75 +49,75 @@
 
   <main class="max-w-4xl mx-auto px-4 py-8 space-y-8">
     
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center">
-      <h2 class="text-lg font-bold flex items-center mb-2 text-slate-900 dark:text-white"><i data-lucide="file-text" class="w-5 h-5 mr-2 text-blue-500"></i> 스터디 교재(PDF) 로드</h2>
-      <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">등록된 교재(최대 20MB)의 내용을 AI가 직접 읽고 분석합니다. (현재 세션 임시 저장)</p>
+    <!-- GitHub 자료 연동 섹션 -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+      <div class="flex flex-col items-center text-center mb-6">
+        <h2 class="text-lg font-bold flex items-center mb-2 text-slate-900 dark:text-white">
+          <i data-lucide="github" class="w-5 h-5 mr-2 text-slate-700 dark:text-slate-300"></i> GitHub 교재 연동 (최대 20MB)
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400">GitHub에 올린 PDF의 'Raw' 주소를 입력하면 AI가 내용을 학습합니다.</p>
+      </div>
       
-      <div id="db-status-area" class="w-full flex justify-center">
-        <!-- DB Status will be rendered here -->
+      <div class="flex flex-col md:flex-row gap-3 max-w-2xl mx-auto">
+        <input type="text" id="github-url-input" placeholder="https://raw.githubusercontent.com/.../book.pdf" 
+          class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-white">
+        <button id="load-url-btn" onclick="app.loadFromUrl()" class="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors flex items-center justify-center">
+          <i data-lucide="download" class="w-4 h-4 mr-2"></i> 파일 불러오기
+        </button>
+      </div>
+
+      <div id="file-status-area" class="mt-6 flex justify-center fade-in hidden">
+        <!-- 파일 로드 상태 표시 영역 -->
       </div>
     </div>
 
-    <div class="w-full">
-      <!-- 퀴즈 기능이 삭제되고 튜터 화면이 넓어졌습니다 -->
-      <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 md:p-8 shadow-sm border border-indigo-100 dark:border-indigo-800/30 flex flex-col h-full">
-        <h2 class="text-xl font-bold flex items-center text-indigo-900 dark:text-indigo-200 mb-6">
-          <i data-lucide="message-square" class="w-6 h-6 mr-2 text-indigo-500"></i> 서술형 답안 채점 & 개념 질문
-        </h2>
-        
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-bold text-indigo-800 dark:text-indigo-300 mb-1.5 ml-1">학습 타겟 및 교재 범위</label>
-            <input type="text" id="ai-tutor-target" placeholder="예: 상춘곡, 1930년대 시 (교재를 업로드한 경우 해당 범위 집중 탐색)" class="w-full px-4 py-3.5 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm outline-none transition-shadow focus:ring-2 focus:ring-indigo-500/20 dark:text-white">
-          </div>
-          
-          <div>
-            <label class="block text-sm font-bold text-indigo-800 dark:text-indigo-300 mb-1.5 ml-1">답안 내용 또는 질문</label>
-            <textarea id="ai-tutor-prompt" placeholder="작성한 서술형 답안을 채점해달라고 하거나, 모르는 개념을 상세히 질문해보세요." class="w-full min-h-[160px] p-4 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm resize-none outline-none transition-shadow focus:ring-2 focus:ring-indigo-500/20 dark:text-white"></textarea>
-          </div>
+    <!-- AI 튜터링 섹션 -->
+    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 md:p-8 shadow-sm border border-indigo-100 dark:border-indigo-800/30">
+      <h2 class="text-xl font-bold flex items-center text-indigo-900 dark:text-indigo-200 mb-6">
+        <i data-lucide="message-square" class="w-6 h-6 mr-2 text-indigo-500"></i> 서술형 답안 채점 & 개념 질문
+      </h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-indigo-800 dark:text-indigo-300 mb-1.5 ml-1">분석 타겟 (작품명 등)</label>
+          <input type="text" id="ai-tutor-target" placeholder="예: 상춘곡, 1930년대 시" class="w-full px-4 py-3.5 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm outline-none transition-shadow focus:ring-2 focus:ring-indigo-500/20 dark:text-white">
         </div>
-
-        <button id="ai-tutor-btn" onclick="app.askAITutor()" class="w-full mt-6 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold text-lg rounded-xl flex items-center justify-center transition-colors shadow-md">
-          <i data-lucide="sparkles" id="ai-tutor-icon" class="w-5 h-5 mr-2"></i> <span id="ai-tutor-text">AI 분석 시작</span>
-        </button>
         
-        <div id="ai-tutor-response" class="hidden mt-6 p-6 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 shadow-inner text-sm leading-relaxed dark:border-indigo-800/50"></div>
+        <div>
+          <label class="block text-sm font-bold text-indigo-800 dark:text-indigo-300 mb-1.5 ml-1">질문 또는 작성한 답안</label>
+          <textarea id="ai-tutor-prompt" placeholder="작성하신 서술형 답안을 입력하고 '채점해줘'라고 하거나, 모르는 개념을 물어보세요." class="w-full min-h-[180px] p-4 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm resize-none outline-none transition-shadow focus:ring-2 focus:ring-indigo-500/20 dark:text-white"></textarea>
+        </div>
       </div>
+
+      <button id="ai-tutor-btn" onclick="app.askAITutor()" class="w-full mt-6 py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold text-lg rounded-xl flex items-center justify-center transition-colors shadow-md">
+        <i data-lucide="sparkles" id="ai-tutor-icon" class="w-5 h-5 mr-2"></i> <span id="ai-tutor-text">AI 분석 시작</span>
+      </button>
+      
+      <div id="ai-tutor-response" class="hidden mt-6 p-6 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 shadow-inner text-sm leading-relaxed dark:border-indigo-800/50"></div>
     </div>
   </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    // Firebase 환경 설정
+    // Firebase (인증용으로만 유지)
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-      apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA",
-      authDomain: "study-99725.firebaseapp.com",
-      projectId: "study-99725",
-      storageBucket: "study-99725.firebasestorage.app",
-      messagingSenderId: "850626154259",
-      appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
+        apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA",
+        projectId: "study-99725",
+        appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
     };
 
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
-    const db = getFirestore(appAuth);
-    const storage = getStorage(appAuth);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app';
     const apiKey = ""; // Gemini API 키는 환경에서 자동 제공됨
 
     const state = {
       isDarkMode: false,
-      centralMaterial: null, // AI 전송용 Base64 데이터
-      dbData: null, // DB 공유 데이터
-      userName: '익명 선생님',
-      user: null
+      centralMaterial: null, // AI에게 보낼 Base64 데이터
+      fileName: ""
     };
 
-    // 토스트 알림 함수
     function showToast(msg, type='info') {
       const toast = document.createElement('div');
       toast.className = `p-3 rounded-xl shadow-lg border text-sm font-bold transition-all duration-300 transform translate-y-0 opacity-100 ${type==='error'?'bg-red-50 text-red-600 border-red-200':type==='success'?'bg-emerald-50 text-emerald-600 border-emerald-200':'bg-indigo-50 text-indigo-600 border-indigo-200'}`;
@@ -129,129 +130,31 @@
       }, 3000);
     }
 
-    // Gemini API 호출 헬퍼
-    async function generateGeminiContent(parts, systemText) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [{ parts }],
-        systemInstruction: { parts: [{ text: systemText }] }
-      };
+    async function fetchWithRetry(url, parts, systemText) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+      const payload = { contents: [{ parts }], systemInstruction: { parts: [{ text: systemText }] } };
       
-      const delays = [1000, 2000, 4000, 8000, 16000];
-      for (let i = 0; i < 5; i++) {
+      const delays = [1000, 2000, 4000, 8000];
+      for (let i = 0; i < delays.length + 1; i++) {
         try {
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
+          const res = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
-          return data.candidates?.[0]?.content?.parts?.[0]?.text || "결과를 생성하지 못했습니다.";
+          return data.candidates?.[0]?.content?.parts?.[0]?.text || "답변을 생성할 수 없습니다.";
         } catch (error) {
-          if (i === 4) throw error;
-          await new Promise(resolve => setTimeout(resolve, delays[i]));
+          if (i === delays.length) throw error;
+          await new Promise(r => setTimeout(r, delays[i]));
         }
       }
     }
 
-    // 인증 초기화
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch(e) {
-        console.error("Auth init failed", e);
-        showToast("인증 초기화 실패", "error");
-      }
-    };
-
-    initAuth().then(() => {
+    signInAnonymously(auth).then(() => {
       onAuthStateChanged(auth, (user) => {
-        state.user = user;
-        if (!user) return;
-        
-        onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
-          if(snap.exists() && snap.data().name) state.userName = snap.data().name + ' 선생님';
-        }, (err) => console.error("Profile Error:", err));
-        
-        // 공용 교재 감지 (Firestore에서 URL 가져와서 다운로드)
-        onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), async (snap) => {
-          if(snap.exists() && snap.data().url) {
-            const data = snap.data();
-            state.dbData = data;
-            renderDBArea('downloading');
-            
-            try {
-              const res = await fetch(data.url);
-              if(!res.ok) throw new Error("네트워크 에러 또는 CORS 설정 문제");
-              const blob = await res.blob();
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                state.centralMaterial = {
-                  fileName: data.fileName,
-                  base64: reader.result.split(',')[1]
-                };
-                renderDBArea('ready');
-              };
-              reader.readAsDataURL(blob);
-            } catch(e) {
-              console.error("교재 다운로드 실패:", e);
-              renderDBArea('error');
-            }
-          } else {
-            state.dbData = null;
-            state.centralMaterial = null;
-            renderDBArea('empty');
-          }
-        }, (err) => console.error("Material Error:", err));
-        
+        if (user) console.log("AI Tutor Ready");
         lucide.createIcons();
       });
     });
 
-    function renderDBArea(status = 'empty') {
-      const area = document.getElementById('db-status-area');
-      if (status === 'ready' && state.dbData) {
-        area.innerHTML = `
-          <div class="flex items-center p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl w-full max-w-md justify-between transition-all">
-            <div class="flex items-center overflow-hidden pr-3">
-              <i data-lucide="file-check-2" class="w-6 h-6 text-emerald-600 mr-3 flex-shrink-0"></i>
-              <div class="text-left overflow-hidden">
-                <p class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">${state.dbData.fileName}</p>
-                <p class="text-xs text-slate-500">${state.dbData.uploadedBy} 공유됨 (AI 준비완료)</p>
-              </div>
-            </div>
-            <button onclick="app.deleteDBMaterial()" class="p-2 text-red-400 hover:text-red-600 transition-colors flex-shrink-0" title="서버에서 삭제">
-              <i data-lucide="trash-2" class="w-5 h-5"></i>
-            </button>
-          </div>`;
-      } else if (status === 'downloading' && state.dbData) {
-        area.innerHTML = `
-          <div class="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl w-full max-w-md justify-center transition-all">
-            <i data-lucide="loader-2" class="w-5 h-5 text-blue-600 mr-2 animate-spin-custom"></i>
-            <span class="text-sm font-bold text-blue-800 dark:text-blue-200">스터디룸에서 교재 로드 중...</span>
-          </div>`;
-      } else if (status === 'error') {
-        area.innerHTML = `
-          <div class="flex items-center p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl w-full max-w-md justify-between transition-all">
-            <span class="text-sm font-bold text-red-800 dark:text-red-200">로드 실패 (CORS 설정 필요, 안내 참조)</span>
-            <button onclick="app.deleteDBMaterial()" class="p-2 text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-          </div>`;
-      } else {
-        area.innerHTML = `
-          <input type="file" id="db-upload" accept="application/pdf" class="hidden" onchange="app.handleDBUpload(this)" />
-          <label id="db-upload-label" for="db-upload" class="cursor-pointer bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-bold px-6 py-3 rounded-xl transition-colors flex items-center shadow-md">
-            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2"></i> 공용 PDF 등록 (최대 20MB)
-          </label>`;
-      }
-      lucide.createIcons();
-    }
-
-    // 전역 함수 등록
     window.app = {
       toggleDarkMode: () => {
         state.isDarkMode = !state.isDarkMode;
@@ -259,109 +162,87 @@
         document.getElementById('dark-mode-icon').setAttribute('data-lucide', state.isDarkMode ? 'sun' : 'moon');
         lucide.createIcons();
       },
-      
-      handleDBUpload: (input) => {
-        const file = input.files[0];
-        if(!file) return;
-        if(file.type !== 'application/pdf') return showToast('PDF 파일만 가능합니다.', 'error');
-        
-        // 용량 제한을 20MB로 증가
-        if(file.size > 20 * 1024 * 1024) return showToast('파일 용량이 20MB를 초과합니다.', 'error');
 
-        const label = document.getElementById('db-upload-label');
-        label.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin-custom"></i> 서버 업로드 대기 중...';
+      loadFromUrl: async () => {
+        const urlInput = document.getElementById('github-url-input');
+        const url = urlInput.value.trim();
+        if (!url) return showToast("URL을 입력해주세요.", "error");
+
+        const btn = document.getElementById('load-url-btn');
+        const statusArea = document.getElementById('file-status-area');
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin-custom"></i> 파일 받는 중...';
         lucide.createIcons();
 
-        // Firebase Storage에 업로드 (진짜 파일 창고)
-        const storageRef = ref(storage, `artifacts/${appId}/materials/mainPdf.pdf`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        uploadTask.on('state_changed',
-          (snapshot) => {
-            const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-            label.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin-custom"></i> 서버에 업로드 중... ${progress}%`;
-          },
-          (error) => {
-            console.error(error);
-            showToast('스토리지 업로드 실패', 'error');
-            renderDBArea('empty');
-          },
-          async () => {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            // 업로드 완료 후 URL만 Firestore에 기록
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), {
-              fileName: file.name,
-              url: downloadURL,
-              uploadedBy: state.userName,
-              uploadedAt: new Date().toLocaleString('ko-KR')
-            });
-            showToast('교재가 성공적으로 공유되었습니다!', 'success');
-          }
-        );
-      },
-      
-      deleteDBMaterial: async () => {
-        if (!state.user) return showToast('권한이 없습니다.', 'error');
         try {
-          // 스토리지의 진짜 파일 삭제
-          const storageRef = ref(storage, `artifacts/${appId}/materials/mainPdf.pdf`);
-          await deleteObject(storageRef).catch(() => {}); // 없어도 에러 무시
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("파일을 불러올 수 없습니다. URL을 확인해주세요.");
           
-          // Firestore 기록 지우기
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), { 
-            fileName: null, url: null, uploadedBy: null, uploadedAt: null 
-          });
-          showToast('서버에서 파일이 제거되었습니다.', 'success');
-        } catch(e) {
-          console.error(e);
-          showToast('삭제 중 오류가 발생했습니다.', 'error');
+          const blob = await response.blob();
+          if (blob.size > 20 * 1024 * 1024) throw new Error("파일 용량이 20MB를 초과합니다.");
+
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            state.centralMaterial = reader.result.split(',')[1];
+            state.fileName = url.split('/').pop().split('?')[0];
+            
+            statusArea.classList.remove('hidden');
+            statusArea.innerHTML = `
+              <div class="flex items-center p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-300 font-bold text-sm">
+                <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i> ${state.fileName} 연결됨 (AI 분석 준비 완료)
+              </div>
+            `;
+            showToast("파일이 성공적으로 로드되었습니다.", "success");
+            lucide.createIcons();
+          };
+          reader.readAsDataURL(blob);
+        } catch (err) {
+          showToast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="download" class="w-4 h-4 mr-2"></i> 파일 불러오기';
+          lucide.createIcons();
         }
       },
-      
+
       askAITutor: async () => {
         const target = document.getElementById('ai-tutor-target').value;
         const prompt = document.getElementById('ai-tutor-prompt').value;
-        if(!prompt.trim()) return showToast('질문을 입력해주세요.', 'error');
-        
+        if (!prompt.trim()) return showToast("질문을 입력해주세요.", "error");
+
         const btn = document.getElementById('ai-tutor-btn');
         const icon = document.getElementById('ai-tutor-icon');
         const respDiv = document.getElementById('ai-tutor-response');
-        
-        btn.disabled = true; 
-        icon.setAttribute('data-lucide', 'loader-2'); 
+
+        btn.disabled = true;
+        icon.setAttribute('data-lucide', 'loader-2');
         icon.classList.add('animate-spin-custom');
         document.getElementById('ai-tutor-text').textContent = '답안 분석 중...';
-        respDiv.classList.add('hidden'); 
+        respDiv.classList.add('hidden');
         lucide.createIcons();
 
-        const parts = [{ text: `[학습 타겟: ${target || '교재 전체 탐색'}]\n질문/답안: ${prompt}` }];
-        
-        // 로컬에 로드된 20MB 이하의 대형 PDF 데이터를 AI에게 전달
-        if (state.centralMaterial?.base64) {
-            parts.push({ inlineData: { mimeType: "application/pdf", data: state.centralMaterial.base64 } });
+        const parts = [{ text: `[분석 대상: ${target || '자료 전체'}]\n질문: ${prompt}` }];
+        if (state.centralMaterial) {
+          parts.push({ inlineData: { mimeType: "application/pdf", data: state.centralMaterial } });
         }
-        
+
         try {
-          const resultText = await generateGeminiContent(
-            parts, 
-            "당신은 임용고시 전공국어 문학 강사입니다. 첨부된 파일의 내용을 우선적으로 참고하여 핵심 키워드가 포함되었는지 채점하고, 부족한 개념을 명쾌하게 해설해주세요. 긴 파일의 경우 제공된 학습 타겟의 내용 위주로 정보를 발췌하여 답변하세요."
-          );
+          const systemMsg = "당신은 임용고시 전공국어 문학 강사입니다. 핵심 키워드가 포함되었는지 채점하고, 부족한 개념을 명쾌하게 해설해주세요. 첨부된 파일이 있다면 그 내용을 바탕으로 답변하세요.";
+          const resultText = await fetchWithRetry(parts, systemMsg);
           respDiv.innerHTML = resultText.replace(/\n/g, "<br>");
           respDiv.classList.remove('hidden');
-        } catch(e) { 
-          showToast("AI 통신 오류 (파일 용량이 너무 커서 처리가 지연될 수 있습니다)", "error"); 
-          console.error(e);
+        } catch (e) {
+          showToast("AI 통신 오류", "error");
         } finally {
-          btn.disabled = false; 
-          icon.setAttribute('data-lucide', 'sparkles'); 
+          btn.disabled = false;
+          icon.setAttribute('data-lucide', 'sparkles');
           icon.classList.remove('animate-spin-custom');
-          document.getElementById('ai-tutor-text').textContent = 'AI 분석 시작'; 
+          document.getElementById('ai-tutor-text').textContent = 'AI 분석 시작';
           lucide.createIcons();
         }
       }
     };
-
-    lucide.createIcons();
   </script>
 </body>
 </html>
