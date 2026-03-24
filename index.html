@@ -3,262 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>가온길 문학 스터디 허브</title>
+  <title>AI 문학 튜터 - 가온길 스터디</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'],
-          }
-        }
-      }
+      theme: { extend: { fontFamily: { sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'] } } }
     }
   </script>
-  
   <script src="https://unpkg.com/lucide@latest"></script>
-
   <style>
-    /* 스크롤바 숨기기 (웹킷 기반) */
-    .hide-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .hide-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-    /* 커스텀 애니메이션 */
-    @keyframes fadeInDown {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in-down {
-      animation: fadeInDown 0.4s ease-out forwards;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .animate-spin-custom {
-      animation: spin 1s linear infinite;
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin-custom { animation: spin 1s linear infinite; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans">
+<body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-900 dark:text-slate-200 min-h-screen pb-20">
 
   <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
 
-  <div id="loading-screen" class="min-h-screen flex flex-col items-center justify-center transition-colors dark:bg-slate-900 dark:text-white">
-    <i data-lucide="loader-2" class="w-10 h-10 animate-spin-custom text-indigo-500 mb-4"></i>
-    <p class="font-bold">데이터를 동기화하는 중입니다...</p>
-  </div>
-
-  <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4 transition-colors duration-300 dark:bg-slate-900">
-    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-200 dark:border-slate-700">
-      <div class="text-center mb-8">
-        <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <i data-lucide="book-open" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"></i>
-        </div>
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">가온길 스터디 허브</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400">스터디원 전용 공간에 오신 것을 환영합니다.</p>
+  <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <a href="index.html" class="flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 font-bold text-sm transition-colors">
+          <i data-lucide="arrow-left" class="w-5 h-5 mr-1"></i> 메인으로 돌아가기
+        </a>
       </div>
-      <div class="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl mb-6">
-        <button id="tab-login" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" onclick="app.setAuthMode('login')">로그인</button>
-        <button id="tab-signup" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" onclick="app.setAuthMode('signup')">스터디원 가입</button>
-      </div>
-      <form id="auth-form" class="space-y-4">
-        <div id="auth-error" class="hidden p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-medium rounded-xl text-center border border-red-100 dark:border-red-800/30"></div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">아이디</label>
-          <input required type="text" id="auth-id" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="아이디를 입력하세요">
+      <div class="flex items-center space-x-3">
+        <div class="hidden sm:flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full text-sm font-medium border border-indigo-100 dark:border-indigo-800/50">
+          <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+          <span class="text-indigo-600 dark:text-indigo-400 font-bold">AI 전용 라운지</span>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">비밀번호</label>
-          <input required type="password" id="auth-pw" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="비밀번호를 입력하세요">
-        </div>
-        <div id="auth-name-container" class="hidden">
-          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">사용할 이름 (스터디용)</label>
-          <input type="text" id="auth-name" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="예: 김국어, 이교육">
-        </div>
-        <button type="submit" id="auth-submit-btn" class="w-full py-3.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center disabled:opacity-70">
-          <i data-lucide="log-in" class="w-5 h-5 mr-2" id="auth-submit-icon"></i>
-          <span id="auth-submit-text">로그인</span>
+        <button onclick="app.toggleDarkMode()" class="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
+          <i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i>
         </button>
-      </form>
+      </div>
     </div>
-  </div>
+  </nav>
 
-  <div id="dashboard-screen" class="hidden min-h-screen pb-20 dark:bg-slate-900 dark:text-slate-200">
+  <main class="max-w-4xl mx-auto px-4 py-8 space-y-8">
     
-    <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 transition-colors duration-300">
-      <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <i data-lucide="book-open" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
-          <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">가온길 문학 스터디</span>
-        </div>
-        <div class="flex items-center space-x-3 sm:space-x-6">
-          <div class="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full text-sm font-medium border border-indigo-100 dark:border-indigo-800/50">
-            <span id="nav-username" class="text-indigo-600 dark:text-indigo-400 font-bold"></span>
-            <span class="text-slate-600 dark:text-slate-300 hidden sm:inline">선생님 접속중</span>
-          </div>
-          <button onclick="app.logout()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors" title="로그아웃">
-            <i data-lucide="log-out" class="w-5 h-5"></i>
-          </button>
-          <button onclick="app.toggleDarkMode()" class="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all">
-            <i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-    </nav>
-
-    <header class="bg-indigo-600 dark:bg-indigo-900 text-white py-10 px-4 relative overflow-hidden transition-colors duration-300">
-      <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:opacity-5"></div>
-      <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between">
-        <div>
-          <div class="inline-flex items-center space-x-2 bg-indigo-500/50 dark:bg-indigo-800/50 px-3 py-1 rounded-full text-sm font-medium mb-4">
-            <i data-lucide="target" class="w-4 h-4"></i>
-            <span>문학 작품 분석 & 서술형 마스터</span>
-          </div>
-          <h1 class="text-3xl md:text-4xl font-bold mb-2">정확한 키워드, 치밀한 작품 분석.</h1>
-        </div>
-        <div class="mt-6 md:mt-0 bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl text-center min-w-[180px] shadow-lg">
-          <p class="text-indigo-100 dark:text-indigo-200 text-sm font-medium mb-1">내년 중등임용 1차 D-Day</p>
-          <div class="text-4xl font-extrabold tracking-tight" id="d-day-display">D-0</div>
-        </div>
-      </div>
-    </header>
-
-    <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col items-center text-center">
+      <h2 class="text-lg font-bold flex items-center mb-2 text-slate-900 dark:text-white"><i data-lucide="database" class="w-5 h-5 mr-2 text-blue-500"></i> 스터디 교재(PDF) 등록</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">등록된 교재(최대 2MB)를 바탕으로 AI가 작품을 분석하고 임용 기출 변형 퀴즈를 출제합니다.</p>
       
-      <div class="grid grid-cols-1 gap-6">
-        <div id="literature-board-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300 flex flex-col">
-          <!-- JS로 동적 렌더링 -->
+      <div id="db-status-area" class="w-full flex justify-center">
         </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-800/30 flex flex-col h-full">
+        <h2 class="text-lg font-bold flex items-center text-indigo-900 dark:text-indigo-200 mb-4">
+          <i data-lucide="message-square" class="w-5 h-5 mr-2 text-indigo-500"></i> 서술형 답안 채점 & 해설
+        </h2>
+        <input type="text" id="ai-tutor-target" placeholder="학습 대상 (예: 상춘곡, 1930년대 시)" class="w-full px-4 py-3 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm outline-none mb-3 dark:text-white">
+        <textarea id="ai-tutor-prompt" placeholder="작성한 서술형 답안을 채점해달라고 하거나, 모르는 개념을 질문해보세요." class="flex-1 min-h-[120px] w-full p-4 rounded-xl border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-800 text-sm resize-none outline-none mb-4 dark:text-white"></textarea>
+        <button id="ai-tutor-btn" onclick="app.askAITutor()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-xl flex items-center justify-center transition-colors">
+          <i data-lucide="sparkles" id="ai-tutor-icon" class="w-4 h-4 mr-2"></i> <span id="ai-tutor-text">AI 분석 시작</span>
+        </button>
+        <div id="ai-tutor-response" class="hidden mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 shadow-inner text-sm leading-relaxed dark:border-indigo-800/50"></div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1">
-          <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full transition-colors duration-300 flex flex-col">
-            <!-- JS로 동적 렌더링 -->
-          </div>
+      <div class="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-900/20 dark:to-emerald-900/20 rounded-2xl p-6 shadow-sm border border-teal-100 dark:border-teal-800/30 flex flex-col h-full">
+        <h2 class="text-lg font-bold flex items-center text-teal-900 dark:text-teal-200 mb-4">
+          <i data-lucide="lightbulb" class="w-5 h-5 mr-2 text-teal-500"></i> 기출 변형 퀴즈 출제
+        </h2>
+        <input type="text" id="ai-quiz-topic" placeholder="출제 범위 (예: 정철 속미인곡, 박경리 광장)" class="w-full px-4 py-3 rounded-xl border border-teal-200 dark:border-teal-700 bg-white dark:bg-slate-800 text-sm outline-none mb-4 dark:text-white">
+        <p class="text-xs text-teal-600 dark:text-teal-400 mb-4 px-1">입력한 범위를 바탕으로 핵심 개념 단답형/서술형 퀴즈 3문제를 자동 생성합니다.</p>
+        <div class="mt-auto">
+          <button id="ai-quiz-btn" onclick="app.generateAIQuiz()" class="w-full py-3.5 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-400 text-white font-bold rounded-xl flex items-center justify-center transition-colors">
+            <i data-lucide="pen-tool" id="ai-quiz-icon" class="w-4 h-4 mr-2"></i> <span id="ai-quiz-text">퀴즈 출제하기</span>
+          </button>
         </div>
-        <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-          <div id="todos-container">
-            <!-- JS로 동적 렌더링 -->
-          </div>
-        </div>
+        <div id="ai-quiz-response" class="hidden mt-4 p-5 bg-white dark:bg-slate-800 rounded-xl border border-teal-100 shadow-inner text-sm leading-relaxed dark:border-teal-800/50"></div>
       </div>
-      
-      <!-- AI 라운지 링크 & 벌금 관리 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full">
-          <h2 class="text-2xl font-bold text-white mb-3 flex items-center justify-center">
-            <i data-lucide="sparkles" class="w-6 h-6 mr-2 text-indigo-200"></i> AI 튜터 & 기출 퀴즈
-          </h2>
-          <p class="text-indigo-100 mb-6 text-sm leading-relaxed">교재(PDF)를 업로드하고 서술형 답안 채점과<br/>기출 변형 퀴즈를 전용 라운지에서 받아보세요.</p>
-          <a href="ai-tutor.html" class="inline-flex items-center justify-center px-6 py-3 bg-white text-indigo-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto">
-            AI 라운지 입장하기 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
-          </a>
-        </div>
-
-        <div id="fines-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors duration-300">
-          <!-- JS로 동적 렌더링 -->
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-          <h2 class="text-lg font-bold flex items-center mb-4 text-rose-600 dark:text-rose-400"><i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i> 스터디 벌금 규칙</h2>
-          <ul class="space-y-3">
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">발제문 지각 (전날 24시)</span><span class="text-sm font-bold text-rose-500">2,000원</span></li>
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">스터디 지각 (10분 당)</span><span class="text-sm font-bold text-rose-500">1,000원</span></li>
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">과제 미수행</span><span class="text-sm font-bold text-rose-500">5,000원</span></li>
-          </ul>
-        </div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-fit">
-          <h2 class="text-lg font-bold flex items-center mb-4 text-blue-600 dark:text-blue-400"><i data-lucide="file-text" class="w-5 h-5 mr-2"></i> 링크 & 자료실</h2>
-          <div class="grid grid-cols-2 gap-4">
-            <a href="#" class="flex flex-col items-center p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-100 dark:border-blue-800/50 text-blue-800 dark:text-blue-300"><span class="font-semibold text-sm mt-1">공유 드라이브</span></a>
-            <a href="#" class="flex flex-col items-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-300"><span class="font-semibold text-sm mt-1">기출문제 다운로드</span></a>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
+    </div>
+  </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Global State
-    const state = {
-      isDarkMode: false,
-      user: null,
-      appAccount: null,
-      allMembers: [],
-      boardData: { questionInfo: '이번 주 기출: 2020학년도 A형 4번 (현대시 - 김수영 <눈>)', answers: {} },
-      myLiteratureAnswer: '',
-      isEditingBoardQuestion: false,
-      tempBoardQuestion: '',
-      scheduleData: { events: [
-        { id: 1, day: '수요일', time: '20:00', title: '고전시가 & 현대시 발제 (Zoom)', desc1: '정철 가사, 일제강점기 시', desc2: '' },
-        { id: 2, day: '토요일', time: '10:00', title: '문학 기출 분석 (대면)', desc1: '14~16학년도 현대소설', desc2: '스터디룸 3번방' }
-      ]},
-      isEditingSchedule: false,
-      editScheduleForm: [],
-      todos: {},
-      activeTodoTab: '',
-      isAddingTodo: false,
-      newTodo: { category: '현대시', desc: '' },
-      finesData: { records: [] },
-      isAddingFine: false,
-      newFine: { memberName: '', reason: '지각', amount: 1000 },
-      authMode: 'login' // 'login' | 'signup'
-    };
-
-    // DOM Elements Cache
-    const els = {
-      loading: document.getElementById('loading-screen'),
-      auth: document.getElementById('auth-screen'),
-      dashboard: document.getElementById('dashboard-screen'),
-      authNameContainer: document.getElementById('auth-name-container'),
-      authName: document.getElementById('auth-name'),
-      authId: document.getElementById('auth-id'),
-      authPw: document.getElementById('auth-pw'),
-      authSubmitText: document.getElementById('auth-submit-text'),
-      authSubmitIcon: document.getElementById('auth-submit-icon'),
-      tabLogin: document.getElementById('tab-login'),
-      tabSignup: document.getElementById('tab-signup'),
-      dDayDisplay: document.getElementById('d-day-display'),
-      navUsername: document.getElementById('nav-username'),
-      boardContainer: document.getElementById('literature-board-container'),
-      scheduleContainer: document.getElementById('schedule-container'),
-      todosContainer: document.getElementById('todos-container'),
-      finesContainer: document.getElementById('fines-container'),
-      toast: document.getElementById('toast-container')
-    };
-
-    // Toast Notification
-    function showToast(message, type = 'info') {
-      const toast = document.createElement('div');
-      toast.className = `p-3 rounded-xl shadow-lg border text-sm font-bold animate-fade-in-down flex items-center ${
-        type === 'error' ? 'bg-red-50 border-red-200 text-red-600 dark:bg-red-900/30 dark:border-red-800' :
-        type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-900/30 dark:border-emerald-800' :
-        'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-indigo-900/30 dark:border-indigo-800'
-      }`;
-      toast.innerHTML = `<span>${message}</span>`;
-      els.toast.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    // --- Firebase Initialization ---
-    const fallbackConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA",
       authDomain: "study-99725.firebaseapp.com",
       projectId: "study-99725",
@@ -267,646 +94,159 @@
       appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
     };
 
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : fallbackConfig;
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app';
+    const appAuth = initializeApp(firebaseConfig);
+    const auth = getAuth(appAuth);
+    const db = getFirestore(appAuth);
+    const appId = 'my-study-app';
+    const geminiApiKey = "AIzaSyA-frmY9mZMwNtHjR5W4UOGcNT0cBe4Tng";
 
-    let firebaseApp, auth, db;
-    try {
-      if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('본인')) {
-        throw new Error('Firebase 설정 누락됨');
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-      auth = getAuth(firebaseApp);
-      db = getFirestore(firebaseApp);
-    } catch(e) {
-      console.warn("Firebase 초기화 대기 (외부 호스팅 시 설정 필요):", e.message);
+    const state = {
+      isDarkMode: false,
+      centralMaterial: null,
+      userName: '익명'
+    };
+
+    // 토스트 알림
+    function showToast(msg, type='info') {
+      const toast = document.createElement('div');
+      toast.className = `p-3 rounded-xl shadow-lg border text-sm font-bold animate-fade-in-down ${type==='error'?'bg-red-50 text-red-600 border-red-200':type==='success'?'bg-emerald-50 text-emerald-600 border-emerald-200':'bg-indigo-50 text-indigo-600 border-indigo-200'}`;
+      toast.textContent = msg;
+      document.getElementById('toast-container').appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(()=>toast.remove(),300); }, 3000);
     }
 
-    // App Initialization
-    async function init() {
-      // D-Day
-      const examDate = new Date('2027-11-20T00:00:00');
-      const diffDays = Math.ceil(Math.abs(examDate - new Date()) / (1000 * 60 * 60 * 24));
-      els.dDayDisplay.textContent = `D-${diffDays}`;
-
-      // Dark Mode Init
-      state.isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', state.isDarkMode);
-      updateDarkModeIcon();
-
-      if (!auth || !db) {
-        els.loading.innerHTML = `
-          <div class="bg-red-50 border border-red-200 text-red-700 p-6 sm:p-8 rounded-2xl max-w-lg mx-4 text-center shadow-lg dark:bg-slate-800 dark:border-red-900/50">
-            <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-4 text-red-500"></i>
-            <h2 class="text-xl font-bold mb-3 dark:text-white">데이터베이스 설정이 필요합니다!</h2>
-            <p class="text-sm leading-relaxed text-slate-800 dark:text-slate-300">코드 하단의 fallbackConfig에 Firebase 설정값을 올바르게 넣어주세요.</p>
-          </div>
-        `;
-        lucide.createIcons();
+    // 초기화 및 권한 체크
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("로그인이 필요합니다. 메인 화면으로 이동합니다.");
+        window.location.href = "index.html"; // 메인화면으로 튕겨냄
         return;
       }
-
-      // Auth 로그인 시도
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (error) {
-        console.error("Auth Init Error:", error);
-        showToast("인증 초기화 오류. Firebase 콘솔에서 '익명 로그인'을 켜주세요.", "error");
-      }
-
-      onAuthStateChanged(auth, (user) => {
-        state.user = user;
-        if (user) {
-          setupListeners(user.uid);
-        } else {
-          updateView();
-        }
+      
+      // 사용자 이름 가져오기
+      onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
+        if(snap.exists() && snap.data().name) state.userName = snap.data().name;
       });
-    }
 
-    // Firestore Listeners
-    let unsubscribes = [];
-    function setupListeners(uid) {
-      unsubscribes.forEach(unsub => unsub());
-      unsubscribes = [];
+      // 교재 DB 리스너
+      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), (snap) => {
+        state.centralMaterial = snap.exists() ? snap.data() : null;
+        renderDBArea();
+      });
+      lucide.createIcons();
+    });
 
-      // 1. Profile
-      const profileRef = doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data');
-      unsubscribes.push(onSnapshot(profileRef, (snap) => {
-        if (snap.exists() && snap.data().appAccountId) {
-          state.appAccount = snap.data();
-          if(!state.activeTodoTab) state.activeTodoTab = state.appAccount.name;
-        } else {
-          state.appAccount = null;
-        }
-        updateView();
-      }, err => console.error("Profile Error:", err)));
-
-      // 2. Members
-      const membersRef = collection(db, 'artifacts', appId, 'public', 'data', 'members');
-      unsubscribes.push(onSnapshot(membersRef, (snap) => {
-        state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if(state.appAccount && !state.activeTodoTab) state.activeTodoTab = state.appAccount.name;
-        renderTodos();
-        renderFines();
-        renderAnswerBoard();
-      }));
-
-      // 3. Literature Board
-      const boardRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'literatureBoard');
-      unsubscribes.push(onSnapshot(boardRef, (snap) => {
-        if (snap.exists()) {
-          state.boardData = snap.data();
-        }
-        if(state.appAccount && state.boardData.answers?.[state.appAccount.name]) {
-          state.myLiteratureAnswer = state.boardData.answers[state.appAccount.name];
-        } else {
-          state.myLiteratureAnswer = '';
-        }
-        renderAnswerBoard();
-      }));
-
-      // 4. Schedule
-      const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
-      unsubscribes.push(onSnapshot(scheduleRef, (snap) => {
-        if (snap.exists() && snap.data().events) {
-          state.scheduleData = snap.data();
-        } else {
-          setDoc(scheduleRef, { events: state.scheduleData.events });
-        }
-        renderSchedule();
-      }));
-
-      // 5. Todos
-      const todosRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos');
-      unsubscribes.push(onSnapshot(todosRef, (snap) => {
-        if (snap.exists()) state.todos = snap.data();
-        renderTodos();
-      }));
-
-      // 6. Fines
-      const finesRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines');
-      unsubscribes.push(onSnapshot(finesRef, (snap) => {
-        if (snap.exists()) state.finesData = snap.data();
-        renderFines();
-      }));
-    }
-
-    // View Controller
-    function updateView() {
-      try {
-        els.loading.classList.add('hidden');
-        if (state.user && !state.appAccount) {
-          els.auth.classList.remove('hidden');
-          els.dashboard.classList.add('hidden');
-        } else if (state.user && state.appAccount) {
-          els.auth.classList.add('hidden');
-          els.dashboard.classList.remove('hidden');
-          els.navUsername.textContent = state.appAccount.name;
-          
-          // Initial Render
-          renderAnswerBoard();
-          renderSchedule();
-          renderTodos();
-          renderFines();
-          lucide.createIcons();
-        }
-      } catch (err) {
-        console.error(err);
-        showToast("화면 전환 중 오류가 발생했습니다: " + err.message, "error");
+    function renderDBArea() {
+      const area = document.getElementById('db-status-area');
+      if (state.centralMaterial?.fileName) {
+        area.innerHTML = `
+          <div class="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl w-full max-w-md justify-between">
+            <div class="flex items-center overflow-hidden pr-3">
+              <i data-lucide="file-check-2" class="w-6 h-6 text-blue-600 mr-3 flex-shrink-0"></i>
+              <div class="text-left overflow-hidden">
+                <p class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">${state.centralMaterial.fileName}</p>
+                <p class="text-xs text-slate-500">${state.centralMaterial.uploadedBy} 선생님 업로드</p>
+              </div>
+            </div>
+            <button onclick="app.deleteDBMaterial()" class="p-2 text-red-400 hover:text-red-600 transition-colors flex-shrink-0"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+          </div>`;
+      } else {
+        area.innerHTML = `
+          <input type="file" id="db-upload" accept="application/pdf" class="hidden" onchange="app.handleDBUpload(this)" />
+          <label id="db-upload-label" for="db-upload" class="cursor-pointer bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-bold px-6 py-3 rounded-xl transition-colors flex items-center shadow-md">
+            <i data-lucide="upload-cloud" class="w-5 h-5 mr-2"></i> PDF 파일 선택하기
+          </label>`;
       }
+      lucide.createIcons();
     }
 
-    // --- Global Methods for UI ---
     window.app = {
-      // Dark Mode
       toggleDarkMode: () => {
         state.isDarkMode = !state.isDarkMode;
         document.documentElement.classList.toggle('dark', state.isDarkMode);
-        updateDarkModeIcon();
-      },
-
-      // Auth Mode
-      setAuthMode: (mode) => {
-        state.authMode = mode;
-        if(mode === 'login') {
-          els.tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm";
-          els.tabSignup.className = "flex-1 py-2 text-sm font-bold rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200";
-          els.authNameContainer.classList.add('hidden');
-          els.authName.required = false;
-          els.authSubmitText.textContent = '로그인';
-          els.authSubmitIcon.setAttribute('data-lucide', 'log-in');
-        } else {
-          els.tabSignup.className = "flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm";
-          els.tabLogin.className = "flex-1 py-2 text-sm font-bold rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200";
-          els.authNameContainer.classList.remove('hidden');
-          els.authName.required = true;
-          els.authSubmitText.textContent = '가입하고 시작하기';
-          els.authSubmitIcon.setAttribute('data-lucide', 'user-plus');
-        }
+        document.getElementById('dark-mode-icon').setAttribute('data-lucide', state.isDarkMode ? 'sun' : 'moon');
         lucide.createIcons();
       },
+      handleDBUpload: (input) => {
+        const file = input.files[0];
+        if(!file) return;
+        if(file.type !== 'application/pdf') return showToast('PDF 파일만 가능합니다.', 'error');
+        if(file.size > 1024 * 1024 * 2) return showToast('현재 버전은 2MB 이하만 지원합니다.', 'error');
 
-      // Logout
-      logout: async () => {
-        if(!state.user) return;
-        const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
-        await setDoc(profileRef, { appAccountId: null, name: null });
-        state.appAccount = null;
-        updateView();
-      },
+        const label = document.getElementById('db-upload-label');
+        label.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin-custom"></i> 업로드 중...';
+        lucide.createIcons();
 
-      // --- Answer Board Methods ---
-      toggleEditBoardQuestion: () => {
-        state.isEditingBoardQuestion = !state.isEditingBoardQuestion;
-        if(state.isEditingBoardQuestion) state.tempBoardQuestion = state.boardData.questionInfo || '';
-        renderAnswerBoard();
-      },
-      updateTempBoardQuestion: (val) => { state.tempBoardQuestion = val; },
-      saveBoardQuestion: async () => {
-        if(!state.tempBoardQuestion.trim()) return;
-        const boardRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'literatureBoard');
-        await setDoc(boardRef, { questionInfo: state.tempBoardQuestion, answers: {} });
-        state.isEditingBoardQuestion = false;
-        showToast('문제가 변경되고 답안이 초기화되었습니다.', 'success');
-      },
-      updateMyAnswer: (val) => { state.myLiteratureAnswer = val; },
-      saveMyAnswer: async () => {
-        if(!state.myLiteratureAnswer.trim()) return showToast('답안을 입력해주세요.', 'error');
-        const boardRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'literatureBoard');
-        const updatedAnswers = { ...(state.boardData.answers || {}) };
-        updatedAnswers[state.appAccount.name] = state.myLiteratureAnswer;
-        await setDoc(boardRef, { ...state.boardData, answers: updatedAnswers });
-        showToast('답안이 제출되었습니다.', 'success');
-      },
-
-      // --- Schedule Methods ---
-      toggleEditSchedule: () => {
-        state.isEditingSchedule = !state.isEditingSchedule;
-        if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData.events || []));
-        renderSchedule();
-      },
-      addScheduleEvent: () => {
-        state.editScheduleForm.push({ id: Date.now(), day: '', time: '', title: '', desc1: '', desc2: '' });
-        renderSchedule();
-      },
-      removeScheduleEvent: (idx) => {
-        state.editScheduleForm.splice(idx, 1);
-        renderSchedule();
-      },
-      updateScheduleField: (idx, field, val) => {
-        state.editScheduleForm[idx][field] = val;
-      },
-      saveSchedule: async () => {
-        const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
-        await setDoc(scheduleRef, { events: state.editScheduleForm });
-        state.isEditingSchedule = false;
-        showToast('일정이 저장되었습니다.', 'success');
-      },
-
-      // --- Todos Methods ---
-      setActiveTodoTab: (name) => {
-        state.activeTodoTab = name;
-        state.isAddingTodo = false;
-        renderTodos();
-      },
-      toggleTodoTask: async (taskId) => {
-        if(state.activeTodoTab !== state.appAccount.name) return;
-        let currentTasks = Array.isArray(state.todos[state.activeTodoTab]) ? state.todos[state.activeTodoTab] : [];
-        currentTasks = currentTasks.map(t => t.id === taskId ? { ...t, done: !t.done } : t);
-        const todosRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos');
-        await setDoc(todosRef, { ...state.todos, [state.activeTodoTab]: currentTasks });
-      },
-      deleteTodoTask: async (taskId, event) => {
-        event.stopPropagation();
-        if(state.activeTodoTab !== state.appAccount.name) return;
-        let currentTasks = Array.isArray(state.todos[state.activeTodoTab]) ? state.todos[state.activeTodoTab] : [];
-        currentTasks = currentTasks.filter(t => t.id !== taskId);
-        const todosRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos');
-        await setDoc(todosRef, { ...state.todos, [state.activeTodoTab]: currentTasks });
-      },
-      setAddingTodo: (val) => {
-        state.isAddingTodo = val;
-        if(val) state.newTodo = { category: '현대시', desc: '' };
-        renderTodos();
-      },
-      updateNewTodoCat: (val) => { state.newTodo.category = val; },
-      updateNewTodoDesc: (val) => { state.newTodo.desc = val; },
-      submitNewTodo: async (e) => {
-        e.preventDefault();
-        if(state.activeTodoTab !== state.appAccount.name || !state.newTodo.desc.trim()) return;
-        const task = { id: Date.now(), ...state.newTodo, done: false };
-        let currentTasks = Array.isArray(state.todos[state.activeTodoTab]) ? state.todos[state.activeTodoTab] : [];
-        const todosRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos');
-        await setDoc(todosRef, { ...state.todos, [state.activeTodoTab]: [...currentTasks, task] });
-        state.isAddingTodo = false;
-      },
-
-      // --- Fines Methods ---
-      toggleAddingFine: () => {
-        state.isAddingFine = !state.isAddingFine;
-        if(state.isAddingFine) state.newFine = { memberName: '', reason: '지각', amount: 1000 };
-        renderFines();
-      },
-      updateFineField: (field, val) => { state.newFine[field] = val; },
-      submitFine: async (e) => {
-        e.preventDefault();
-        if(!state.newFine.memberName) return showToast('대상자를 선택해주세요.', 'error');
-        const record = {
-          id: Date.now(), memberName: state.newFine.memberName, reason: state.newFine.reason,
-          amount: Number(state.newFine.amount), date: new Date().toLocaleDateString('ko-KR'), isPaid: false
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), {
+              fileName: file.name, base64: reader.result.split(',')[1], uploadedBy: state.userName, uploadedAt: new Date().toLocaleString('ko-KR')
+            });
+            showToast('교재가 업로드되었습니다.', 'success');
+          } catch(e) { showToast('업로드 실패', 'error'); }
         };
-        const finesRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines');
-        const records = state.finesData.records || [];
-        await setDoc(finesRef, { records: [record, ...records] });
-        state.isAddingFine = false;
-        showToast('벌금이 추가되었습니다.', 'success');
+        reader.readAsDataURL(file);
       },
-      toggleFinePaid: async (id) => {
-        const records = (state.finesData.records || []).map(r => r.id === id ? { ...r, isPaid: !r.isPaid } : r);
-        const finesRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines');
-        await setDoc(finesRef, { records });
+      deleteDBMaterial: async () => {
+        if(!confirm('교재를 삭제하시겠습니까?')) return;
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'materials', 'mainPdf'), { fileName: null, base64: null, uploadedBy: null, uploadedAt: null });
+        showToast('삭제되었습니다.');
       },
-      deleteFine: async (id) => {
-        const records = (state.finesData.records || []).filter(r => r.id !== id);
-        const finesRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines');
-        await setDoc(finesRef, { records });
+      askAITutor: async () => {
+        const target = document.getElementById('ai-tutor-target').value;
+        const prompt = document.getElementById('ai-tutor-prompt').value;
+        if(!prompt.trim()) return showToast('질문을 입력해주세요.', 'error');
+        
+        const btn = document.getElementById('ai-tutor-btn');
+        const icon = document.getElementById('ai-tutor-icon');
+        const respDiv = document.getElementById('ai-tutor-response');
+        
+        btn.disabled = true; icon.setAttribute('data-lucide', 'loader-2'); icon.classList.add('animate-spin-custom');
+        document.getElementById('ai-tutor-text').textContent = '답안 분석 중...';
+        respDiv.classList.add('hidden'); lucide.createIcons();
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+        const parts = [{ text: `[학습 타겟: ${target || '교재 전체'}]\n질문/답안: ${prompt}` }];
+        if (state.centralMaterial?.base64) parts.push({ inlineData: { mimeType: "application/pdf", data: state.centralMaterial.base64 } });
+        
+        try {
+          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }], systemInstruction: { parts: [{ text: "당신은 임용고시 전공국어 문학 강사입니다. 핵심 키워드가 포함되었는지 채점하고, 부족한 개념을 명쾌하게 해설해주세요." }] } }) });
+          const data = await res.json();
+          respDiv.innerHTML = (data.candidates?.[0]?.content?.parts?.[0]?.text || "분석 실패").replace(/\n/g, "<br>");
+          respDiv.classList.remove('hidden');
+        } catch(e) { showToast("API 통신 오류", "error"); } finally {
+          btn.disabled = false; icon.setAttribute('data-lucide', 'sparkles'); icon.classList.remove('animate-spin-custom');
+          document.getElementById('ai-tutor-text').textContent = 'AI 분석 시작'; lucide.createIcons();
+        }
+      },
+      generateAIQuiz: async () => {
+        const topic = document.getElementById('ai-quiz-topic').value;
+        if(!topic.trim()) return showToast('출제 범위를 입력해주세요.', 'error');
+        
+        const btn = document.getElementById('ai-quiz-btn');
+        const icon = document.getElementById('ai-quiz-icon');
+        const respDiv = document.getElementById('ai-quiz-response');
+        
+        btn.disabled = true; icon.setAttribute('data-lucide', 'loader-2'); icon.classList.add('animate-spin-custom');
+        document.getElementById('ai-quiz-text').textContent = '문제 출제 중...';
+        respDiv.classList.add('hidden'); lucide.createIcons();
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+        const parts = [{ text: `[출제 범위: ${topic}]\n위 범위에서 중등 임용 국어 기출 스타일로 서술형/단답형 섞어서 3문제 출제해주세요.` }];
+        if (state.centralMaterial?.base64) parts.push({ inlineData: { mimeType: "application/pdf", data: state.centralMaterial.base64 } });
+        
+        try {
+          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }], systemInstruction: { parts: [{ text: "당신은 임용고시 출제 위원입니다. 제시된 범위 안에서 변별력 있는 퀴즈 3문제를 내고 하단에 모범 답안을 제시하세요." }] } }) });
+          const data = await res.json();
+          respDiv.innerHTML = (data.candidates?.[0]?.content?.parts?.[0]?.text || "출제 실패").replace(/\n/g, "<br>");
+          respDiv.classList.remove('hidden');
+        } catch(e) { showToast("API 통신 오류", "error"); } finally {
+          btn.disabled = false; icon.setAttribute('data-lucide', 'pen-tool'); icon.classList.remove('animate-spin-custom');
+          document.getElementById('ai-quiz-text').textContent = '퀴즈 출제하기'; lucide.createIcons();
+        }
       }
     };
-
-    function updateDarkModeIcon() {
-      const icon = document.getElementById('dark-mode-icon');
-      if(icon) {
-        icon.setAttribute('data-lucide', state.isDarkMode ? 'sun' : 'moon');
-        lucide.createIcons();
-      }
-    }
-
-    // --- Auth Form Submit Logic ---
-    document.getElementById('auth-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = els.authId.value.trim();
-      const pw = els.authPw.value.trim();
-      const name = els.authName.value.trim();
-      const errDiv = document.getElementById('auth-error');
-      errDiv.classList.add('hidden');
-      
-      const btn = document.getElementById('auth-submit-btn');
-      const btnIcon = document.getElementById('auth-submit-icon');
-      const btnText = document.getElementById('auth-submit-text');
-      
-      btn.disabled = true;
-      btnIcon.setAttribute('data-lucide', 'loader-2');
-      btnIcon.classList.add('animate-spin-custom');
-      btnText.textContent = state.authMode === 'login' ? '로그인 확인 중...' : '가입 처리 중...';
-      lucide.createIcons();
-
-      try {
-        if (!state.user) {
-           throw new Error('데이터베이스 연결이 지연되고 있습니다. 페이지를 새로고침 해주세요.');
-        }
-
-        const membersCol = collection(db, 'artifacts', appId, 'public', 'data', 'members');
-        const snapshot = await getDocs(membersCol);
-        const members = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        if (state.authMode === 'signup') {
-          if (members.some(m => m.id === id)) throw new Error('이미 사용 중인 아이디입니다.');
-          if (members.some(m => m.name === name)) throw new Error('이미 등록된 이름(닉네임)입니다.');
-          
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', id), { password: pw, name: name });
-          const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
-          await setDoc(profileRef, { appAccountId: id, name: name });
-          
-          // 강제 화면 전환 (리스너 딜레이 무시)
-          state.appAccount = { appAccountId: id, name: name };
-          updateView();
-          showToast('가입이 완료되었습니다!', 'success');
-
-        } else {
-          const member = members.find(m => m.id === id && m.password === pw);
-          if (member) {
-            const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
-            await setDoc(profileRef, { appAccountId: member.id, name: member.name });
-            
-            // 강제 화면 전환 (리스너 딜레이 무시)
-            state.appAccount = { appAccountId: member.id, name: member.name };
-            updateView();
-            showToast('로그인 되었습니다.', 'success');
-          } else {
-            throw new Error('아이디 또는 비밀번호가 일치하지 않습니다.');
-          }
-        }
-      } catch(err) {
-        errDiv.textContent = err.message || '오류가 발생했습니다.';
-        errDiv.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btnIcon.classList.remove('animate-spin-custom');
-        if (state.authMode === 'login') {
-          btnIcon.setAttribute('data-lucide', 'log-in');
-          btnText.textContent = '로그인';
-        } else {
-          btnIcon.setAttribute('data-lucide', 'user-plus');
-          btnText.textContent = '가입하고 시작하기';
-        }
-        lucide.createIcons();
-      }
-    });
-
-    // --- Render Functions ---
-    function renderAnswerBoard() {
-      if(!state.appAccount) return;
-      const board = state.boardData;
-      const currentUser = state.appAccount.name;
-      const hasSubmitted = !!board.answers?.[currentUser];
-      const otherMembers = state.allMembers.filter(m => m.name !== currentUser);
-
-      let html = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-700 pb-3 gap-3">
-          <h2 class="text-lg font-bold flex items-center text-slate-900 dark:text-white">
-            <i data-lucide="edit-3" class="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400"></i> 서술형 답안 블라인드 보드
-          </h2>
-      `;
-
-      if (state.isEditingBoardQuestion) {
-        html += `
-          <div class="flex space-x-2">
-             <button onclick="app.toggleEditBoardQuestion()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg text-sm font-medium">취소</button>
-             <button onclick="app.saveBoardQuestion()" class="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-sm">새 문제 저장 (초기화)</button>
-          </div>
-        </div>
-        <textarea onchange="app.updateTempBoardQuestion(this.value)" placeholder="다룰 기출 문제나 조건을 입력하세요." class="w-full mb-6 p-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px]">${state.tempBoardQuestion}</textarea>
-        `;
-      } else {
-        html += `
-          <button onclick="app.toggleEditBoardQuestion()" class="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm flex items-center bg-slate-50 dark:bg-slate-700/50 px-3 py-1.5 rounded-lg transition-colors">
-            <i data-lucide="edit-2" class="w-4 h-4 mr-1.5"></i> 출제 문제 변경
-          </button>
-        </div>
-        <div class="bg-indigo-50/70 dark:bg-indigo-900/20 p-4 rounded-xl mb-6 text-indigo-900 dark:text-indigo-200 font-bold border border-indigo-100 dark:border-indigo-800/30 whitespace-pre-wrap text-sm md:text-base leading-relaxed"><span class="text-indigo-500 dark:text-indigo-400 mr-2">Q.</span>${board.questionInfo || ''}</div>
-        `;
-      }
-
-      html += `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-        <div class="flex flex-col bg-white dark:bg-slate-800">
-          <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
-            <i data-lucide="user" class="w-4 h-4 mr-1.5 text-slate-400"></i> 내 답안 작성
-          </label>
-          <textarea onchange="app.updateMyAnswer(this.value)" placeholder="채점 기준을 상상하며 작성해보세요. 제출 전까지 다른 사람의 답안은 블라인드 됩니다." class="flex-1 w-full p-4 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-sm text-slate-800 dark:text-slate-200 resize-none outline-none focus:ring-2 focus:ring-indigo-500 min-h-[160px] leading-relaxed">${state.myLiteratureAnswer}</textarea>
-          <button onclick="app.saveMyAnswer()" class="mt-3 w-full py-3 text-white text-sm font-bold rounded-xl transition-colors shadow-sm ${hasSubmitted ? 'bg-slate-800 hover:bg-slate-900 dark:bg-slate-600 dark:hover:bg-slate-500' : 'bg-indigo-600 hover:bg-indigo-700'}">
-            ${hasSubmitted ? '내 답안 수정하기' : '답안 제출하고 다른 사람 것 보기'}
-          </button>
-        </div>
-        <div class="flex flex-col bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-700 p-5 overflow-hidden h-full min-h-[220px]">
-          <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center">
-            <i data-lucide="eye" class="w-4 h-4 mr-1.5 text-slate-400"></i> 스터디원 답안 공유
-          </label>
-      `;
-
-      if(!hasSubmitted) {
-        html += `<div class="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-center p-6 h-full">
-            <div class="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3"><i data-lucide="eye-off" class="w-6 h-6"></i></div>
-            <p class="text-sm font-medium leading-relaxed">내 답안을 먼저 제출해야<br/>다른 스터디원들의 답안을 볼 수 있습니다.</p>
-          </div>`;
-      } else {
-        html += `<div class="space-y-3 overflow-y-auto pr-1 flex-1">`;
-        if(otherMembers.length === 0) {
-          html += `<div class="flex h-full items-center justify-center"><p class="text-sm text-slate-400">나 외에 스터디원이 없습니다.</p></div>`;
-        } else {
-          otherMembers.forEach(m => {
-            const ans = board.answers?.[m.name];
-            html += `
-              <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm relative overflow-hidden">
-                <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-400 dark:bg-indigo-500"></div>
-                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-2 block flex items-center">
-                  <i data-lucide="user" class="w-3 h-3 mr-1"></i> ${m.name} 선생님
-                </span>
-                ${ans ? `<p class="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">${ans}</p>` : `<p class="text-sm text-slate-400 dark:text-slate-500 italic">아직 답안을 제출하지 않았습니다.</p>`}
-              </div>`;
-          });
-        }
-        html += `</div>`;
-      }
-      html += `</div></div>`;
-
-      els.boardContainer.innerHTML = html;
-      lucide.createIcons();
-    }
-
-    function renderSchedule() {
-      let html = `<div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold flex items-center text-slate-900 dark:text-white">
-            <i data-lucide="calendar" class="w-5 h-5 mr-2 text-indigo-500 dark:text-indigo-400"></i> 주간 스터디 일정
-          </h2>`;
-      if(state.isEditingSchedule) {
-        html += `<div class="flex space-x-2">
-            <button onclick="app.toggleEditSchedule()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-            <button onclick="app.saveSchedule()" class="text-emerald-600 font-bold flex items-center text-sm"><i data-lucide="save" class="w-4 h-4 mr-1"></i> 저장</button>
-          </div></div><div class="flex-1 overflow-y-auto pr-1 space-y-4">`;
-        
-        state.editScheduleForm.forEach((ev, idx) => {
-          html += `<div class="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 relative">
-              <button onclick="app.removeScheduleEvent(${idx})" class="absolute top-2 right-2 text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-              <div class="grid grid-cols-2 gap-2 mb-2 pr-6">
-                <input value="${ev.day||''}" onchange="app.updateScheduleField(${idx},'day',this.value)" placeholder="요일" class="w-full text-sm p-1.5 rounded border dark:bg-slate-600 dark:text-white outline-none" />
-                <input value="${ev.time||''}" onchange="app.updateScheduleField(${idx},'time',this.value)" placeholder="시간" class="w-full text-sm p-1.5 rounded border dark:bg-slate-600 dark:text-white outline-none" />
-              </div>
-              <input value="${ev.title||''}" onchange="app.updateScheduleField(${idx},'title',this.value)" placeholder="일정 제목" class="w-full text-sm font-bold p-1.5 rounded border mb-2 dark:bg-slate-600 dark:text-white outline-none" />
-              <input value="${ev.desc1||''}" onchange="app.updateScheduleField(${idx},'desc1',this.value)" placeholder="상세내용 1" class="w-full text-xs p-1.5 rounded border mb-1 dark:bg-slate-600 dark:text-white outline-none" />
-              <input value="${ev.desc2||''}" onchange="app.updateScheduleField(${idx},'desc2',this.value)" placeholder="상세내용 2" class="w-full text-xs p-1.5 rounded border dark:bg-slate-600 dark:text-white outline-none" />
-            </div>`;
-        });
-        html += `<button onclick="app.addScheduleEvent()" class="w-full py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 rounded-xl text-sm font-bold flex items-center justify-center hover:bg-slate-200 transition-colors"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> 새 일정 추가</button></div>`;
-      } else {
-        html += `<button onclick="app.toggleEditSchedule()" class="text-slate-400 hover:text-indigo-600 flex items-center text-sm font-medium"><i data-lucide="edit-2" class="w-4 h-4 mr-1"></i> 수정</button></div><div class="flex-1 overflow-y-auto pr-1 space-y-4">`;
-        const events = state.scheduleData.events || [];
-        if(events.length === 0) html += `<p class="text-slate-500 text-sm text-center py-4">등록된 일정이 없습니다.</p>`;
-        events.forEach(ev => {
-          html += `<div class="flex items-start p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
-              <div class="bg-white dark:bg-slate-700 p-2 rounded-lg text-indigo-600 font-bold text-center mr-4 shadow-sm min-w-[3.5rem]"><p class="text-xs">${ev.day||'-'}</p><p class="text-lg">${ev.time||'-'}</p></div>
-              <div><h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">${ev.title}</h3>
-              ${ev.desc1 ? `<p class="text-xs text-slate-600 dark:text-slate-400 mt-1">${ev.desc1}</p>` : ''}
-              ${ev.desc2 ? `<p class="text-xs text-slate-600 dark:text-slate-400">${ev.desc2}</p>` : ''}</div>
-            </div>`;
-        });
-        html += `</div>`;
-      }
-      els.scheduleContainer.innerHTML = html;
-      lucide.createIcons();
-    }
-
-    function renderTodos() {
-      if(!state.appAccount) return;
-      const members = state.allMembers.length > 0 ? state.allMembers.map(m=>m.name) : [state.appAccount.name];
-      if(!state.activeTodoTab || !members.includes(state.activeTodoTab)) state.activeTodoTab = members[0];
-      const isMyTab = state.activeTodoTab === state.appAccount.name;
-      const currentTasks = Array.isArray(state.todos[state.activeTodoTab]) ? state.todos[state.activeTodoTab] : [];
-      const completed = currentTasks.filter(t=>t.done).length;
-      const progress = currentTasks.length === 0 ? 0 : Math.round((completed/currentTasks.length)*100);
-
-      let html = `<div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-700 pb-4">
-          <h2 class="text-lg font-bold flex items-center text-slate-900 dark:text-white mb-4 sm:mb-0">
-            <i data-lucide="check-circle" class="w-5 h-5 mr-2 text-emerald-500 dark:text-emerald-400"></i> 주간 목표 트래커
-          </h2>
-          <div class="flex space-x-2 overflow-x-auto hide-scrollbar pb-1">`;
-      members.forEach(name => {
-        html += `<button onclick="app.setActiveTodoTab('${name}')" class="flex items-center px-4 py-1.5 rounded-full text-sm font-bold transition-all whitespace-nowrap ${state.activeTodoTab === name ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-400'}">
-          ${name} ${name === state.appAccount.name ? '<span class="ml-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>' : ''}
-        </button>`;
-      });
-      html += `</div></div>`;
-
-      if(!isMyTab) {
-        html += `<div class="mb-4 flex items-center p-3 bg-amber-50 text-amber-700 rounded-xl text-sm font-medium border border-amber-100 dark:bg-amber-900/20 dark:border-amber-800/30"><i data-lucide="lock" class="w-4 h-4 mr-2"></i>${state.activeTodoTab} 선생님의 목표입니다. (열람만 가능)</div>`;
-      }
-
-      html += `<div class="flex justify-between items-center mb-2">
-          <span class="text-sm font-bold text-slate-700 dark:text-slate-300">진도율</span>
-          <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded dark:bg-emerald-900/30 dark:text-emerald-400">${progress}% 완료</span>
-        </div>
-        <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 mb-6 overflow-hidden">
-          <div class="bg-emerald-500 h-full rounded-full transition-all duration-700 ease-out dark:bg-emerald-400" style="width: ${progress}%"></div>
-        </div>
-        <div class="space-y-3">`;
-
-      if(currentTasks.length === 0) html += `<p class="text-center text-slate-400 text-sm py-4">등록된 할 일이 없습니다.</p>`;
-      
-      currentTasks.forEach(t => {
-        const catColor = t.category==='현대시'?'bg-blue-100 text-blue-700':t.category==='현대소설'?'bg-emerald-100 text-emerald-700':t.category==='고전시가'?'bg-purple-100 text-purple-700':'bg-amber-100 text-amber-700';
-        html += `<div ${isMyTab ? `onclick="app.toggleTodoTask(${t.id})"` : ''} class="flex items-center justify-between p-3.5 rounded-xl border transition-all ${!isMyTab ? 'cursor-default' : 'cursor-pointer hover:shadow-sm'} ${t.done ? 'bg-slate-50 border-slate-200 opacity-70 dark:bg-slate-800/50 dark:border-slate-700' : 'bg-white border-slate-200 dark:bg-slate-700 dark:border-slate-600'}">
-          <div class="flex items-center overflow-hidden pr-2">
-            <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 transition-colors ${t.done ? 'bg-emerald-500 border-emerald-500 dark:bg-emerald-400 dark:border-emerald-400' : 'border-slate-300 dark:border-slate-500'}">
-              ${t.done ? '<i data-lucide="check" class="w-3.5 h-3.5 text-white dark:text-slate-900"></i>' : ''}
-            </div>
-            <span class="text-xs font-bold px-2 py-0.5 rounded mr-3 shrink-0 ${catColor} dark:bg-opacity-30 dark:text-opacity-80">${t.category}</span>
-            <span class="text-sm sm:text-base truncate transition-all ${t.done ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200 font-medium'}">${t.desc}</span>
-          </div>
-          ${isMyTab ? `<button onclick="app.deleteTodoTask(${t.id}, event)" class="text-slate-300 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
-        </div>`;
-      });
-
-      if(isMyTab && !state.isAddingTodo) {
-        html += `<button onclick="app.setAddingTodo(true)" class="w-full mt-2 py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-500 text-sm font-bold flex justify-center items-center hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-400"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> 새 할 일 추가</button>`;
-      }
-      if(isMyTab && state.isAddingTodo) {
-        html += `<form onsubmit="app.submitNewTodo(event)" class="flex flex-col sm:flex-row gap-2 mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 dark:bg-slate-700/50 dark:border-slate-600">
-            <select onchange="app.updateNewTodoCat(this.value)" class="px-3 py-2 rounded-lg border text-sm outline-none dark:bg-slate-600 dark:text-white">
-              <option value="현대시" ${state.newTodo.category==='현대시'?'selected':''}>현대시</option>
-              <option value="현대소설" ${state.newTodo.category==='현대소설'?'selected':''}>현대소설</option>
-              <option value="고전시가" ${state.newTodo.category==='고전시가'?'selected':''}>고전시가</option>
-              <option value="고전산문" ${state.newTodo.category==='고전산문'?'selected':''}>고전산문</option>
-              <option value="기타" ${state.newTodo.category==='기타'?'selected':''}>기타</option>
-            </select>
-            <input type="text" placeholder="할 일을 입력하세요..." value="${state.newTodo.desc}" onchange="app.updateNewTodoDesc(this.value)" class="flex-1 px-3 py-2 rounded-lg border text-sm outline-none dark:bg-slate-600 dark:text-white" autofocus />
-            <div class="flex gap-2">
-              <button type="button" onclick="app.setAddingTodo(false)" class="px-3 py-2 bg-slate-200 rounded-lg text-slate-600 text-sm font-medium dark:bg-slate-600 dark:text-slate-300">취소</button>
-              <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold">추가</button>
-            </div>
-          </form>`;
-      }
-      html += `</div>`;
-      els.todosContainer.innerHTML = html;
-      lucide.createIcons();
-    }
-
-    function renderFines() {
-      const records = state.finesData.records || [];
-      const unpaidTotals = {};
-      state.allMembers.forEach(m => unpaidTotals[m.name] = 0);
-      records.forEach(r => { if(!r.isPaid) unpaidTotals[r.memberName] = (unpaidTotals[r.memberName]||0) + Number(r.amount); });
-
-      let html = `<div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-bold flex items-center text-slate-900 dark:text-white"><i data-lucide="wallet" class="w-5 h-5 mr-2 text-rose-500"></i> 벌금 관리</h2>
-          <button onclick="app.toggleAddingFine()" class="text-sm bg-rose-50 text-rose-600 font-bold px-3 py-1.5 rounded-lg flex items-center dark:bg-rose-900/30 dark:text-rose-400"><i data-lucide="${state.isAddingFine?'x':'plus'}" class="w-4 h-4 mr-1"></i> 벌금 추가</button>
-        </div>
-        <div class="flex flex-wrap gap-2 mb-6">`;
-      if(state.allMembers.length===0) html += `<span class="text-sm text-slate-400">등록된 스터디원이 없습니다.</span>`;
-      state.allMembers.forEach(m => {
-        html += `<div class="flex items-center bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 dark:bg-slate-700 dark:border-slate-600">
-            <span class="text-sm font-bold text-slate-700 dark:text-slate-200 mr-2">${m.name}</span>
-            <span class="text-sm font-black ${unpaidTotals[m.name]>0?'text-rose-500':'text-slate-400'}">${(unpaidTotals[m.name]||0).toLocaleString()}원</span>
-          </div>`;
-      });
-      html += `</div>`;
-
-      if(state.isAddingFine) {
-        let opts = `<option value="" disabled selected>대상자 선택</option>`;
-        state.allMembers.forEach(m => opts+=`<option value="${m.name}">${m.name}</option>`);
-        html += `<form onsubmit="app.submitFine(event)" class="mb-6 p-4 bg-rose-50/50 rounded-xl border border-rose-100 flex flex-col md:flex-row gap-3 dark:bg-rose-900/10 dark:border-rose-800/30">
-          <select required onchange="app.updateFineField('memberName', this.value)" class="px-3 py-2 rounded-lg border text-sm outline-none dark:bg-slate-700 dark:text-white dark:border-slate-600">${opts}</select>
-          <input required type="text" placeholder="사유" onchange="app.updateFineField('reason', this.value)" class="flex-1 px-3 py-2 rounded-lg border text-sm outline-none dark:bg-slate-700 dark:text-white dark:border-slate-600" />
-          <input required type="number" placeholder="금액" value="1000" onchange="app.updateFineField('amount', this.value)" class="w-32 px-3 py-2 rounded-lg border text-sm outline-none dark:bg-slate-700 dark:text-white dark:border-slate-600" />
-          <button type="submit" class="px-4 py-2 bg-rose-500 text-white rounded-lg text-sm font-bold">추가하기</button>
-        </form>`;
-      }
-
-      html += `<div class="space-y-2 max-h-[300px] overflow-y-auto pr-2">`;
-      if(records.length===0) html += `<p class="text-center text-slate-400 text-sm py-6 border border-dashed rounded-xl dark:border-slate-700">벌금 내역이 없습니다.</p>`;
-      records.forEach(r => {
-        html += `<div class="flex items-center justify-between p-3 rounded-xl border transition-all ${r.isPaid ? 'bg-slate-50 opacity-60 dark:bg-slate-800/50' : 'bg-white border-rose-100 dark:bg-slate-700 dark:border-rose-900/30'}">
-          <div class="flex items-center space-x-3">
-            <button onclick="app.toggleFinePaid(${r.id})" class="w-6 h-6 rounded border flex items-center justify-center transition-colors ${r.isPaid ? 'bg-slate-300 border-slate-300 text-white' : 'border-slate-300'}">${r.isPaid ? '<i data-lucide="check" class="w-4 h-4"></i>' : ''}</button>
-            <div>
-              <p class="text-sm font-bold ${r.isPaid?'text-slate-500 line-through':'text-slate-800 dark:text-slate-100'}">${r.memberName} <span class="font-normal mx-1 text-slate-400">|</span> <span class="text-rose-500">${Number(r.amount).toLocaleString()}원</span></p>
-              <p class="text-xs text-slate-500">${r.reason} (${r.date})</p>
-            </div>
-          </div>
-          <button onclick="app.deleteFine(${r.id})" class="p-2 text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>`;
-      });
-      html += `</div>`;
-      els.finesContainer.innerHTML = html;
-      lucide.createIcons();
-    }
-
-    // Run Initialization
-    init();
-
   </script>
 </body>
 </html>
