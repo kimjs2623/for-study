@@ -187,9 +187,8 @@
     // Global State
     const state = {
       isDarkMode: false, user: null, appAccount: null, allMembers: [],
-      scheduleData: { events: [
-        { id: 1, day: '수요일', time: '20:00', title: '고전시가 & 현대시 발제 (Zoom)' },
-        { id: 2, day: '토요일', time: '10:00', title: '문학 기출 분석 (대면)' }
+      scheduleData: { weeks: [
+        { id: 1, weekNum: 1, meetDate: '10/24 (수)', area: '고전시가 (상춘곡)', range: 'p.12~35' }
       ]},
       isEditingSchedule: false, editScheduleForm: [],
       todos: {}, activeTodoTab: '', isAddingTodo: false, newTodo: { category: '공통', desc: '' },
@@ -260,7 +259,7 @@
         state.driveFiles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp); renderDriveFiles();
       });
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
-        if (snap.exists() && snap.data().events) state.scheduleData = snap.data(); renderSchedule();
+        if (snap.exists() && snap.data().weeks) state.scheduleData = snap.data(); else state.scheduleData = { weeks: [] }; renderSchedule();
       });
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), (snap) => { if (snap.exists()) state.todos = snap.data(); renderTodos(); });
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), (snap) => { if (snap.exists()) state.finesData = snap.data(); renderFines(); });
@@ -329,11 +328,11 @@
       deleteDriveFile: async (id) => { if(confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sharedDrive', id)); },
 
       // Schedule Methods
-      toggleEditSchedule: () => { state.isEditingSchedule = !state.isEditingSchedule; if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData.events || [])); renderSchedule(); },
-      addScheduleEvent: () => { state.editScheduleForm.push({ id: Date.now(), day: '', time: '', title: '' }); renderSchedule(); },
-      removeScheduleEvent: (idx) => { state.editScheduleForm.splice(idx, 1); renderSchedule(); },
+      toggleEditSchedule: () => { state.isEditingSchedule = !state.isEditingSchedule; if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData.weeks || [])); renderSchedule(); },
+      addScheduleWeek: () => { state.editScheduleForm.push({ id: Date.now(), weekNum: state.editScheduleForm.length + 1, meetDate: '', area: '', range: '' }); renderSchedule(); },
+      removeScheduleWeek: (idx) => { state.editScheduleForm.splice(idx, 1); state.editScheduleForm.forEach((w, i) => w.weekNum = i + 1); renderSchedule(); },
       updateScheduleField: (idx, field, val) => { state.editScheduleForm[idx][field] = val; },
-      saveSchedule: async () => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), { events: state.editScheduleForm }); state.isEditingSchedule = false; showToast('저장되었습니다.', 'success'); },
+      saveSchedule: async () => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), { weeks: state.editScheduleForm }); state.isEditingSchedule = false; showToast('저장되었습니다.', 'success'); },
 
       // Todo Methods
       setActiveTodoTab: (name) => { state.activeTodoTab = name; state.isAddingTodo = false; renderTodos(); },
@@ -390,8 +389,12 @@
             state.appAccount = { appAccountId: member.id, name: member.name }; updateView();
           } else { throw new Error('아이디/비번 불일치'); }
         }
-      } catch(err) { document.getElementById('auth-error').textContent = err.message; document.getElementById('auth-error').classList.remove('hidden'); }
-      finally { btn.disabled = false; }
+      } catch(err) { 
+        document.getElementById('auth-error').textContent = err.message; 
+        document.getElementById('auth-error').classList.remove('hidden'); 
+      } finally { 
+        btn.disabled = false; 
+      }
     });
 
     // Render functions
@@ -412,19 +415,36 @@
     }
 
     function renderSchedule() {
-      let html = `<div class="flex items-center justify-between mb-6"><h2 class="text-lg font-bold flex items-center"><i data-lucide="calendar" class="w-5 h-5 mr-2 text-indigo-500"></i> 일정</h2>
-        <button onclick="app.toggleEditSchedule()" class="text-slate-400 text-sm"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-4 h-4" onclick="${state.isEditingSchedule?'app.saveSchedule()':''}"></i></button></div><div class="space-y-3">`;
+      let html = `<div class="flex items-center justify-between mb-6"><h2 class="text-lg font-bold flex items-center"><i data-lucide="calendar" class="w-5 h-5 mr-2 text-indigo-500"></i> 주차별 일정</h2>
+        <button onclick="app.toggleEditSchedule()" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-5 h-5" onclick="${state.isEditingSchedule?'app.saveSchedule()':''}"></i></button></div><div class="space-y-3">`;
       if(state.isEditingSchedule) {
-        state.editScheduleForm.forEach((ev, idx) => {
-          html += `<div class="flex items-center space-x-2 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-lg">
-            <input value="${ev.day}" placeholder="요일" onchange="app.updateScheduleField(${idx},'day',this.value)" class="w-16 text-xs p-1.5 rounded border dark:bg-slate-600 dark:text-white dark:border-slate-500" />
-            <input value="${ev.title}" placeholder="내용" onchange="app.updateScheduleField(${idx},'title',this.value)" class="flex-1 text-xs p-1.5 rounded border dark:bg-slate-600 dark:text-white dark:border-slate-500" />
-            <button onclick="app.removeScheduleEvent(${idx})" class="text-red-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+        state.editScheduleForm.forEach((wk, idx) => {
+          html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600 relative mb-3">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-bold text-sm text-indigo-600 dark:text-indigo-400">${wk.weekNum}주차</span>
+              <button onclick="app.removeScheduleWeek(${idx})" class="text-red-400 hover:text-red-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${idx},'meetDate',this.value)" class="w-full text-sm p-2 rounded-lg border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500" />
+            <div class="flex gap-2">
+              <input value="${wk.area}" placeholder="영역 (예: 고전시가)" onchange="app.updateScheduleField(${idx},'area',this.value)" class="flex-1 text-sm p-2 rounded-lg border dark:bg-slate-600 dark:text-white dark:border-slate-500 outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input value="${wk.range}" placeholder="페이지 (예: p.12~30)" onchange="app.updateScheduleField(${idx},'range',this.value)" class="flex-1 text-sm p-2 rounded-lg border dark:bg-slate-600 dark:text-white dark:border-slate-500 outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
           </div>`;
         });
-        html += `<button onclick="app.addScheduleEvent()" class="w-full py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold">+ 추가</button>`;
+        html += `<button onclick="app.addScheduleWeek()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors rounded-xl text-sm font-bold flex items-center justify-center text-slate-600 dark:text-slate-300"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> ${state.editScheduleForm.length + 1}주차 추가</button>`;
       } else {
-        (state.scheduleData.events || []).forEach(ev => { html += `<div class="flex items-center p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl"><div class="mr-4 font-bold text-indigo-600 text-sm w-10 text-center">${ev.day}</div><div><div class="text-sm font-bold text-slate-800 dark:text-slate-200">${ev.title}</div><div class="text-xs text-slate-500">${ev.time}</div></div></div>`; });
+        const weeks = state.scheduleData.weeks || [];
+        if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다.</div>`;
+        weeks.forEach(wk => {
+          html += `<div class="flex flex-col p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl mb-3 border border-indigo-100 dark:border-indigo-800/30">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-black text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-0.5 rounded-md text-xs">${wk.weekNum}주차</span>
+              <span class="text-xs font-bold text-slate-500 dark:text-slate-400"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${wk.meetDate || '미정'}</span>
+            </div>
+            <div class="font-bold text-slate-800 dark:text-slate-200 text-sm mb-1">${wk.area || '영역 미지정'}</div>
+            <div class="text-xs text-slate-600 dark:text-slate-400 font-medium">풀이 범위: ${wk.range || '범위 미지정'}</div>
+          </div>`;
+        });
       }
       els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
     }
