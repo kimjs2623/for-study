@@ -29,19 +29,32 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     
-    /* 전체 화면 뷰어 모드 */
+    /* 전체 화면 뷰어 모드 (100dvh를 사용하여 모바일 주소창 이슈 회피) */
     .viewer-fullscreen {
         position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-        width: 100vw !important; height: 100vh !important;
-        z-index: 99999 !important; border-radius: 0 !important; margin: 0 !important;
+        width: 100vw !important; height: 100dvh !important;
+        z-index: 99990 !important; border-radius: 0 !important; margin: 0 !important;
         display: flex !important; flex-direction: column !important;
+    }
+    
+    /* 모바일 환경 대응 최상단 Floating Button (PDF가 가리는 현상 방지) */
+    .fab-button {
+        position: fixed;
+        bottom: max(2rem, env(safe-area-inset-bottom));
+        right: max(2rem, env(safe-area-inset-right));
+        z-index: 999999 !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
-<!-- 🌟 모바일 스크롤 가능하도록 lg:overflow-hidden 적용 -->
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen">
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3"></div>
+
+  <!-- 🌟 화면 줄이기 전용 Floating Button (전체화면 시에만 노출) -->
+  <button id="exit-fullscreen-fab" onclick="app.toggleFullScreen()" class="hidden fab-button bg-brand-600 hover:bg-brand-700 text-white px-5 py-3.5 rounded-full font-black text-xs items-center transition-transform active:scale-95">
+      <i data-lucide="minimize-2" class="w-4 h-4 mr-2 inline"></i> 화면 줄이기
+  </button>
 
   <!-- 상단 네비게이션 -->
   <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 h-16 shrink-0 z-50 sticky top-0 lg:relative">
@@ -104,18 +117,20 @@
     <!-- 2. 중앙: PDF Viewer -->
     <section class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
+            <!-- 일반 모드에서의 뷰어 헤더 -->
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="file-text" class="w-4 h-4 text-brand-500"></i>
                     <span id="viewer-filename" class="text-[10px] font-black text-slate-500 uppercase italic truncate max-w-[150px] sm:max-w-[250px]">No File Selected</span>
                 </div>
-                <button onclick="app.toggleFullScreen()" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 hover:text-brand-600 dark:hover:text-brand-400 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg uppercase tracking-tighter transition-all flex items-center shadow-sm active:scale-95">
-                    <i data-lucide="maximize" id="fullscreen-icon" class="w-3.5 h-3.5 mr-1.5"></i> <span id="fullscreen-text">크게 보기</span>
+                <button onclick="app.toggleFullScreen()" id="header-fullscreen-btn" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 hover:text-brand-600 dark:hover:text-brand-400 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg uppercase tracking-tighter transition-all flex items-center shadow-sm active:scale-95">
+                    <i data-lucide="maximize" class="w-3.5 h-3.5 mr-1.5"></i> 크게 보기
                 </button>
             </div>
             
             <div class="flex-1 flex items-center justify-center relative overflow-hidden">
                 <div id="pdf-container" class="w-full h-full hidden">
+                    <!-- PDF 출력 영역 -->
                     <embed id="pdf-embed" src="" type="application/pdf" class="w-full h-full">
                 </div>
                 <div id="viewer-placeholder" class="text-center p-6">
@@ -129,19 +144,22 @@
     </section>
 
     <!-- 3. 오른쪽: AI 작업 영역 및 커뮤니티 -->
-    <!-- 🌟 h-auto를 주어 내부 컨텐츠가 길어지면 자연스럽게 스크롤되도록 수정 -->
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
-            <!-- 공통 주차 설정 바 -->
+            <!-- 공통 주차 설정 바 (Tutor 탭 제외 적용) -->
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-2.5 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-600 dark:text-brand-400"></i>
-                    <select id="week-select" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase">
+                    <select id="week-select" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[120px] truncate">
                         <!-- JS 렌더링 -->
                     </select>
+                    <!-- 🌟 주차 수정 버튼 추가 -->
+                    <button onclick="app.editWeek()" title="선택한 주차 이름 수정" class="p-1 hover:bg-brand-200 dark:hover:bg-brand-800 rounded transition-colors">
+                        <i data-lucide="edit-2" class="w-3 h-3 text-brand-600/70 dark:text-brand-400/70"></i>
+                    </button>
                 </div>
-                <button onclick="app.addWeek()" class="text-[9px] font-black bg-white dark:bg-slate-800 border border-brand-200 dark:border-brand-700 text-brand-600 dark:text-brand-400 px-2.5 py-1 rounded-md shadow-sm hover:bg-brand-50 transition-colors uppercase tracking-widest">
+                <button onclick="app.addWeek()" class="text-[9px] font-black bg-white dark:bg-slate-800 border border-brand-200 dark:border-brand-700 text-brand-600 dark:text-brand-400 px-2.5 py-1.5 rounded-md shadow-sm hover:bg-brand-50 transition-colors uppercase tracking-widest whitespace-nowrap shrink-0 ml-2">
                     + 주차 추가
                 </button>
             </div>
@@ -169,7 +187,6 @@
                         <input type="text" id="omr-work-name" placeholder="현재 풀고 있는 작품의 이름을 정확히 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-950/30 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white shadow-sm">
                     </div>
                     <div class="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                        <!-- 🌟 동적으로 생성될 안전한 OMR 그리드 공간 -->
                         <div id="omr-grid-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
                     </div>
                     <button id="ai-omr-btn" onclick="app.submitOMR()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95">
@@ -183,10 +200,7 @@
                         <label class="block text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
                         <input type="text" id="essay-work-name" placeholder="작품명 기입 (예: 관동별곡)" class="w-full px-3 py-2.5 rounded-lg border border-purple-200 dark:border-purple-800/50 bg-purple-50/30 dark:bg-purple-950/30 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white shadow-sm">
                     </div>
-                    
-                    <!-- 🌟 동적으로 생성될 안전한 서술형 공간 -->
                     <div id="essay-grid-container" class="space-y-4"></div>
-                    
                     <button id="ai-essay-btn" onclick="app.submitEssay()" class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-200 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95">
                         <i data-lucide="send" id="ai-essay-icon" class="w-3.5 h-3.5 mr-1.5 inline"></i> 서술형 제출 및 공유하기
                     </button>
@@ -205,10 +219,10 @@
                     </div>
 
                     <div class="flex space-x-2 shrink-0">
-                        <select id="comm-week-filter" onchange="app.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none rounded-lg p-2.5 shadow-sm uppercase">
+                        <select id="comm-week-filter" onchange="app.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none rounded-lg p-2.5 shadow-sm uppercase truncate">
                             <!-- JS 렌더링 -->
                         </select>
-                        <select id="comm-work-filter" onchange="app.renderCommunityRecords()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none rounded-lg p-2.5 shadow-sm uppercase">
+                        <select id="comm-work-filter" onchange="app.renderCommunityRecords()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none rounded-lg p-2.5 shadow-sm uppercase truncate">
                             <option value="">작품 선택</option>
                         </select>
                     </div>
@@ -243,7 +257,7 @@
     import { getFirestore, collection, addDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     /**
-     * ⚙️ GITHUB_CONFIG
+     * ⚙️ GITHUB_CONFIG: 질문자님의 깃허브 정보
      */
     const GITHUB_CONFIG = {
       username: "kimjs2623", 
@@ -280,13 +294,13 @@
 
     function showToast(msg, type='info') {
       const toast = document.createElement('div');
-      toast.className = `p-4 rounded-xl shadow-2xl border text-[10px] font-black transition-all duration-300 z-[100001] ${type==='error'?'bg-red-50 text-red-600 border-red-200':'bg-brand-50 text-brand-600 border-brand-200'}`;
+      toast.className = `p-4 rounded-xl shadow-2xl border text-[10px] font-black transition-all duration-300 z-[1000000] ${type==='error'?'bg-red-50 text-red-600 border-red-200':'bg-brand-50 text-brand-600 border-brand-200'}`;
       toast.textContent = msg;
       document.getElementById('toast-container').appendChild(toast);
       setTimeout(() => toast.remove(), 4000);
     }
 
-    // 🌟 안전한 DOM 생성 (칸 증발 버그 해결)
+    // 초기 UI(OMR, Essay) DOM 렌더링
     function initUI() {
         const omrGrid = document.getElementById('omr-grid-container');
         if(omrGrid) {
@@ -377,6 +391,7 @@
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs;
             
+            // 기존 주차 목록 업데이트
             subs.forEach(s => { if(!state.weeks.includes(s.week)) state.weeks.push(s.week); });
             app.updateWeekDropdowns();
             app.updateCommunityWorks();
@@ -455,21 +470,22 @@
         renderFileList();
       },
 
+      // 🌟 완벽한 전체화면 제어 및 모바일 플로팅 버튼 토글
       toggleFullScreen: () => {
         const viewer = document.getElementById('viewer-container');
-        const icon = document.getElementById('fullscreen-icon');
-        const text = document.getElementById('fullscreen-text');
+        const fabBtn = document.getElementById('exit-fullscreen-fab');
         
         viewer.classList.toggle('viewer-fullscreen');
         if(viewer.classList.contains('viewer-fullscreen')) {
-            icon.setAttribute('data-lucide', 'minimize');
-            text.textContent = "줄이기";
-            // 모바일에서 뒤에 내용 안 보이게
+            // 전체화면 진입: 헤더 버튼 숨기고 플로팅 버튼 노출
             document.body.style.overflow = 'hidden'; 
+            fabBtn.classList.remove('hidden');
+            fabBtn.classList.add('flex');
         } else {
-            icon.setAttribute('data-lucide', 'maximize');
-            text.textContent = "크게 보기";
+            // 전체화면 해제: 원래대로 복구
             document.body.style.overflow = '';
+            fabBtn.classList.add('hidden');
+            fabBtn.classList.remove('flex');
         }
         lucide.createIcons();
       },
@@ -513,17 +529,45 @@
               showToast(`'${newWeek.trim()}' 추가됨`, "success");
           }
       },
+
+      // 🌟 기존 주차 이름 수정 기능
+      editWeek: () => {
+          const select = document.getElementById('week-select');
+          const oldWeek = select.value;
+          if(!oldWeek) return showToast("수정할 주차가 선택되지 않았습니다.", "error");
+
+          const newWeek = prompt("수정할 주차 이름을 입력하세요:", oldWeek);
+          if(newWeek && newWeek.trim() !== "" && newWeek.trim() !== oldWeek) {
+              const trimmedNewWeek = newWeek.trim();
+              if(state.weeks.includes(trimmedNewWeek)) {
+                  return showToast("이미 존재하는 주차 이름입니다.", "error");
+              }
+              
+              // 배열에서 기존 이름 찾아 수정
+              const idx = state.weeks.indexOf(oldWeek);
+              if(idx > -1) {
+                  state.weeks[idx] = trimmedNewWeek;
+                  app.updateWeekDropdowns();
+                  // 변경한 이름으로 드롭다운 포커스
+                  document.getElementById('week-select').value = trimmedNewWeek;
+                  showToast(`'${trimmedNewWeek}'(으)로 이름이 변경되었습니다.`, "success");
+              }
+          }
+      },
       
       updateWeekDropdowns: () => {
           const select = document.getElementById('week-select');
           const filter = document.getElementById('comm-week-filter');
           if(!select || !filter) return;
           
+          const currentSelectWeek = select.value;
           select.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+          if(state.weeks.includes(currentSelectWeek)) select.value = currentSelectWeek;
           
           const currentFilterWeek = filter.value;
           filter.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
           if(state.weeks.includes(currentFilterWeek)) filter.value = currentFilterWeek;
+          
           app.updateCommunityWorks();
       },
 
