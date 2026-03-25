@@ -33,6 +33,7 @@
     .tab-active { border-bottom: 3px solid #4f46e5; color: #4f46e5; }
     .fade-in { animation: fadeIn 0.4s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 min-h-screen pb-20">
@@ -43,6 +44,7 @@
   <nav class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-6 h-18 flex items-center justify-between">
       <div class="flex items-center space-x-6">
+        <!-- Home 버튼 -->
         <a href="../index.html" class="flex items-center text-brand-600 hover:text-brand-700 dark:text-brand-400 font-black text-lg tracking-tight transition-colors">
           <i data-lucide="home" class="w-5 h-5 mr-2"></i> Home
         </a>
@@ -63,37 +65,37 @@
 
   <main class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
     
-    <!-- 왼쪽: 교재 라이브러리 (GitHub ./pdf 탐색) -->
+    <!-- 왼쪽: 교재 라이브러리 (GitHub ./01/pdf 탐색) -->
     <div class="lg:col-span-4 space-y-6">
       <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-200 dark:border-slate-800 flex flex-col h-[750px]">
         <div class="mb-6">
           <div class="flex items-center justify-between mb-2">
-            <h2 class="text-xl font-black flex items-center text-slate-900 dark:text-white italic tracking-tighter">
-              <i data-lucide="library" class="w-6 h-6 mr-2 text-brand-500"></i> LIBRARY
+            <h2 class="text-xl font-black flex items-center text-slate-900 dark:text-white italic tracking-tighter uppercase">
+              <i data-lucide="library" class="w-6 h-6 mr-2 text-brand-500"></i> Library
             </h2>
             <button onclick="app.refreshFiles()" class="p-2 text-slate-400 hover:text-brand-500 transition-colors">
               <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">PDF Resource Center</p>
+          <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Source: kimjs2623 / 01/pdf</p>
         </div>
 
         <div class="relative mb-6">
           <input type="text" id="file-search" oninput="app.filterFiles()" placeholder="작품명 검색..." 
-            class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white transition-all">
+            class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white transition-all shadow-inner">
           <i data-lucide="search" class="w-5 h-5 absolute left-4 top-3 text-slate-400"></i>
         </div>
 
         <div id="material-list" class="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
             <div class="flex flex-col items-center justify-center py-20 text-slate-300">
                 <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-4"></i>
-                <p class="text-xs font-bold">자료 검색 중...</p>
+                <p class="text-xs font-bold">PDF 파일 검색 중...</p>
             </div>
         </div>
       </div>
     </div>
 
-    <!-- 오른쪽: 메인 작업 영역 -->
+    <!-- 오른쪽: 작업 영역 -->
     <div class="lg:col-span-8 space-y-6">
       <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full">
         <!-- 상단 상태 바 -->
@@ -110,11 +112,11 @@
           <div class="space-y-6">
               <div>
                   <label class="flex items-center text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">학습 타겟</label>
-                  <input type="text" id="ai-tutor-target" placeholder="예: 상춘곡 핵심 어휘 및 시어 채점" class="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white transition-all">
+                  <input type="text" id="ai-tutor-target" placeholder="예: 상춘곡 핵심 시어 분석 및 키워드 채점" class="w-full px-5 py-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white transition-all shadow-inner">
               </div>
               <div>
                   <label class="flex items-center text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">질문 또는 답안</label>
-                  <textarea id="ai-tutor-prompt" placeholder="서술형 답안을 입력해 채점을 받거나 궁금한 점을 질문하세요." class="w-full min-h-[300px] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm leading-relaxed resize-none outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white custom-scrollbar transition-all"></textarea>
+                  <textarea id="ai-tutor-prompt" placeholder="서술형 답안을 입력해 채점을 받거나 궁금한 점을 질문하세요." class="w-full min-h-[300px] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-sm leading-relaxed resize-none outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white custom-scrollbar transition-all shadow-inner"></textarea>
               </div>
           </div>
           <button id="ai-tutor-btn" onclick="app.askAITutor()" class="w-full py-5 bg-brand-600 hover:bg-brand-700 disabled:bg-slate-200 text-white font-black text-lg rounded-2xl flex items-center justify-center transition-all shadow-xl active:scale-[0.98]">
@@ -125,8 +127,8 @@
         <!-- 2. OMR 채점 뷰 (객관식/단답식) -->
         <div id="view-omr" class="hidden p-8 md:p-10 space-y-8 fade-in">
             <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-                <h3 class="text-sm font-black text-indigo-700 dark:text-indigo-400 flex items-center mb-1">
-                    <i data-lucide="info" class="w-4 h-4 mr-2"></i> 객관식/단답형 OMR
+                <h3 class="text-sm font-black text-indigo-700 dark:text-indigo-400 flex items-center mb-1 uppercase tracking-tighter italic">
+                    <i data-lucide="info" class="w-4 h-4 mr-2"></i> Objective / Short Answer OMR
                 </h3>
                 <p class="text-[11px] text-indigo-600/70 dark:text-indigo-400/70">PDF 문항 번호에 맞는 답안(번호 또는 짧은 단어)을 입력하세요.</p>
             </div>
@@ -136,7 +138,7 @@
                         document.write(`
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-slate-400 ml-1 uppercase">No. ${i}</label>
-                                <input type="text" id="omr-${i}" placeholder="-" class="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-center outline-none focus:ring-2 focus:ring-brand-500/20 transition-all dark:text-white">
+                                <input type="text" id="omr-${i}" placeholder="-" class="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-center outline-none focus:ring-2 focus:ring-brand-500/20 transition-all dark:text-white shadow-sm">
                             </div>
                         `);
                     }
@@ -147,40 +149,37 @@
             </button>
         </div>
 
-        <!-- 3. 서술형 채점 뷰 (New!) -->
+        <!-- 3. 서술형 채점 뷰 -->
         <div id="view-essay" class="hidden p-8 md:p-10 space-y-8 fade-in">
             <div class="bg-purple-50/50 dark:bg-purple-900/10 p-6 rounded-2xl border border-purple-100 dark:border-purple-800/50">
-                <h3 class="text-sm font-black text-purple-700 dark:text-purple-400 flex items-center mb-1">
-                    <i data-lucide="file-edit" class="w-4 h-4 mr-2"></i> 임용고시형 서술형 채점
+                <h3 class="text-sm font-black text-purple-700 dark:text-purple-400 flex items-center mb-1 uppercase tracking-tighter italic">
+                    <i data-lucide="file-edit" class="w-4 h-4 mr-2"></i> Descriptive Grading
                 </h3>
-                <p class="text-[11px] text-purple-600/70 dark:text-purple-400/70">문제 번호를 적고 긴 서술형 답안을 입력하세요. AI가 키워드 중심으로 채점합니다.</p>
+                <p class="text-[11px] text-purple-600/70 dark:text-purple-400/70">문제 번호를 적고 서술형 답안을 입력하세요. AI가 핵심 키워드 중심으로 채점합니다.</p>
             </div>
-
             <div class="space-y-6">
-                <!-- 3개의 서술형 입력 칸 -->
                 <script>
                     for(let i=1; i<=3; i++) {
                         document.write(`
                             <div class="space-y-2">
                                 <div class="flex items-center justify-between mb-1 ml-1">
                                     <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question ${i}</label>
-                                    <input type="text" id="essay-num-${i}" placeholder="문제 번호" class="w-20 px-2 py-1 bg-transparent border-b border-slate-200 dark:border-slate-800 text-[10px] text-center outline-none focus:border-purple-500 dark:text-white">
+                                    <input type="text" id="essay-num-${i}" placeholder="번호" class="w-16 px-2 py-1 bg-transparent border-b border-slate-200 dark:border-slate-800 text-[10px] text-center outline-none focus:border-purple-500 dark:text-white">
                                 </div>
-                                <textarea id="essay-ans-${i}" placeholder="이곳에 서술형 답안을 입력하세요..." class="w-full min-h-[120px] p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-medium leading-relaxed resize-none outline-none focus:ring-2 focus:ring-purple-500/20 transition-all dark:text-white custom-scrollbar"></textarea>
+                                <textarea id="essay-ans-${i}" placeholder="답안을 입력하세요..." class="w-full min-h-[140px] p-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-medium leading-relaxed resize-none outline-none focus:ring-2 focus:ring-purple-500/20 transition-all dark:text-white custom-scrollbar shadow-inner"></textarea>
                             </div>
                         `);
                     }
                 </script>
             </div>
-
             <button id="ai-essay-btn" onclick="app.gradeEssay()" class="w-full py-5 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-200 text-white font-black text-lg rounded-2xl flex items-center justify-center transition-all shadow-xl active:scale-[0.98]">
-                <i data-lucide="clipboard-check" id="ai-essay-icon" class="w-6 h-6 mr-3"></i> <span id="ai-essay-text">서술형 답안 분석</span>
+                <i data-lucide="clipboard-check" id="ai-essay-icon" class="w-6 h-6 mr-3"></i> <span id="ai-essay-text">서술형 답안 채점</span>
             </button>
         </div>
 
         <!-- 응답 공통 영역 -->
         <div id="ai-response-area" class="hidden px-8 pb-10">
-            <div id="ai-tutor-response" class="p-8 bg-brand-50/30 dark:bg-brand-900/10 rounded-3xl border border-brand-100 dark:border-brand-800/50 text-sm leading-relaxed dark:text-slate-300 fade-in prose prose-slate dark:prose-invert max-w-none"></div>
+            <div id="ai-tutor-response" class="p-8 bg-brand-50/30 dark:bg-brand-900/10 rounded-3xl border border-brand-100 dark:border-brand-800/50 text-sm leading-relaxed dark:text-slate-300 fade-in prose prose-slate dark:prose-invert max-w-none shadow-sm"></div>
         </div>
       </div>
     </div>
@@ -191,13 +190,13 @@
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
     /**
-     * 💡 깃허브 설정
+     * 💡 깃허브 연동 정보 - 요청하신 계정 정보로 설정되었습니다.
      */
     const GITHUB_CONFIG = {
-      username: "gaongil-study",
-      repo: "materials",
-      branch: "main",
-      folder: "pdf"
+      username: "kimjs2623", 
+      repo: "for-study",             
+      branch: "main",                
+      folder: "01/pdf"               
     };
 
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
@@ -208,7 +207,7 @@
 
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
-    const apiKey = ""; // Gemini API 키
+    const apiKey = ""; // Gemini API 키 (자동 주입)
 
     const state = {
       allFiles: [],
@@ -239,7 +238,7 @@
             state.filteredFiles = [...state.allFiles];
             renderFileList();
         } catch (e) {
-            document.getElementById('material-list').innerHTML = `<p class="text-xs text-red-500 p-10 text-center font-bold">GitHub 연결 실패</p>`;
+            document.getElementById('material-list').innerHTML = `<p class="text-xs text-red-500 p-10 text-center font-bold">GitHub 연동 실패<br><span class="text-[9px] font-normal opacity-70 italic tracking-tighter">Check username or repo path</span></p>`;
         } finally { refreshIcon?.classList.remove('animate-spin'); }
     }
 
@@ -248,8 +247,8 @@
         container.innerHTML = state.filteredFiles.map(file => `
             <button onclick="app.loadMaterial('${file.name}', '${file.download_url}')" id="btn-${file.name}" 
                 class="file-btn w-full flex items-center p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand-500 transition-all text-left group">
-                <i data-lucide="file-text" class="w-5 h-5 mr-4 text-slate-300 group-hover:text-brand-500"></i>
-                <div class="flex-1 truncate font-black text-[11px] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white uppercase">${file.name}</div>
+                <i data-lucide="file-text" class="w-5 h-5 mr-4 text-slate-300 group-hover:text-brand-500 transition-colors"></i>
+                <div class="flex-1 truncate font-black text-[11px] text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white uppercase tracking-tighter">${file.name}</div>
             </button>
         `).join('');
         lucide.createIcons();
@@ -286,7 +285,8 @@
         if (state.isFetching) return;
         state.isFetching = true;
         document.querySelectorAll('.file-btn').forEach(b => b.classList.remove('border-brand-500', 'bg-brand-50/30'));
-        document.getElementById(`btn-${name}`).classList.add('border-brand-500', 'bg-brand-50/30');
+        const btn = document.getElementById(`btn-${name}`);
+        if(btn) btn.classList.add('border-brand-500', 'bg-brand-50/30');
         document.getElementById('status-text').textContent = "LINKING...";
 
         try {
@@ -299,14 +299,13 @@
             document.getElementById('status-dot').className = "w-2.5 h-2.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(79,70,229,0.8)]";
             document.getElementById('status-text').textContent = `'${name}' READY`;
             document.getElementById('selected-badge').classList.remove('hidden');
-            showToast(`${name} 로드 완료`);
+            showToast(`${name} 연동 성공`);
             state.isFetching = false;
           };
           reader.readAsDataURL(blob);
         } catch (e) { showToast("로드 실패", "error"); state.isFetching = false; }
       },
 
-      // 1. 자유 튜터링
       askAITutor: async () => {
         const target = document.getElementById('ai-tutor-target').value;
         const prompt = document.getElementById('ai-tutor-prompt').value;
@@ -315,11 +314,10 @@
         const btn = document.getElementById('ai-tutor-btn');
         const icon = document.getElementById('ai-tutor-icon');
         app.processAIRequest(btn, icon, [
-            { text: `[학습 타겟: ${target}]\n[학생 질문/답안]: ${prompt}` }
-        ], "전공 국어 문학 전문가로서 서술형 답안 채점 및 보충 해설을 제공하세요.");
+            { text: `[타겟: ${target}]\n[질문/답안]: ${prompt}` }
+        ], "전공 국어 임용고시 문학 전문가입니다. 서술형 답안 채점 및 심층 해설을 수행하세요.");
       },
 
-      // 2. OMR 채점
       gradeOMR: async () => {
         const answers = [];
         for(let i=1; i<=10; i++) {
@@ -331,25 +329,24 @@
         const btn = document.getElementById('ai-omr-btn');
         const icon = document.getElementById('ai-omr-icon');
         app.processAIRequest(btn, icon, [
-            { text: `다음 OMR 답안을 PDF 자료의 문항과 대조하여 채점하세요:\n${answers.join('\n')}` }
-        ], "문학 강사로서 PDF 자료의 정답과 대조하여 정오표와 해설을 제공하세요.");
+            { text: `다음 객관식/단답형 답안을 PDF와 대조하여 채점하세요:\n${answers.join('\n')}` }
+        ], "PDF 교재 내 문항의 정답과 대조하여 정오표와 해설을 제공하는 강사입니다.");
       },
 
-      // 3. 서술형 전용 채점 (New!)
       gradeEssay: async () => {
         const essays = [];
         for(let i=1; i<=3; i++) {
             const num = document.getElementById(`essay-num-${i}`).value.trim();
             const ans = document.getElementById(`essay-ans-${i}`).value.trim();
-            if(ans) essays.push(`[문제 ${num || i}번]\n답안: ${ans}`);
+            if(ans) essays.push(`[${num || i}번 문항]\n답안: ${ans}`);
         }
         if(essays.length === 0) return showToast("서술형 답안을 입력하세요.", "error");
 
         const btn = document.getElementById('ai-essay-btn');
         const icon = document.getElementById('ai-essay-icon');
         app.processAIRequest(btn, icon, [
-            { text: `다음 서술형 답안들을 PDF 내용 및 임용고시 채점 기준에 맞춰 채점하세요:\n\n${essays.join('\n\n')}` }
-        ], "임용 국어 문학 전문가입니다. 학생의 서술형 답안에서 반드시 포함되어야 할 '키워드'가 누락되었는지 확인하고, 문학적 용어 사용의 적절성을 평가하여 상세 피드백과 예상 점수를 부여하세요.");
+            { text: `다음 서술형 답안들을 임용고시 기준에 맞춰 키워드 중심으로 채점하세요:\n\n${essays.join('\n\n')}` }
+        ], "임용 국어 전문가입니다. 서술형 답안의 키워드 누락 여부와 논리적 구성을 평가하여 예상 점수와 상세 피드백을 제공하세요.");
       },
 
       processAIRequest: async (btn, icon, parts, systemMsg) => {
