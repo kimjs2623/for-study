@@ -7,12 +7,9 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 🌟 PDF 렌더링을 위한 PDF.js 라이브러리 추가 -->
+  <!-- PDF 렌더링 엔진 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    // PDF.js 워커 설정
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  </script>
+  <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
   <script>
     tailwind.config = {
@@ -37,7 +34,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     
-    /* 전체 화면 뷰어 모드 (100dvh를 사용하여 모바일 주소창 이슈 회피) */
     .viewer-fullscreen {
         position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
         width: 100vw !important; height: 100dvh !important;
@@ -45,13 +41,12 @@
         display: flex !important; flex-direction: column !important;
     }
     
-    /* 모바일 환경 대응 최상단 Floating Button */
     .fab-button {
-        position: fixed;
-        bottom: max(2rem, env(safe-area-inset-bottom));
+        position: fixed; 
+        bottom: 2.5rem; 
         left: 50%;
         transform: translateX(-50%);
-        z-index: 999999 !important;
+        z-index: 999999 !important; 
         box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.6);
         border: 2px solid rgba(255, 255, 255, 0.3);
         transition: all 0.2s ease-in-out;
@@ -66,7 +61,7 @@
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3"></div>
 
-  <!-- 화면 줄이기 전용 Floating Button -->
+  <!-- 화면 줄이기 중앙 배치 플로팅 버튼 -->
   <button id="exit-fullscreen-fab" onclick="app.toggleFullScreen()" class="hidden fab-button bg-brand-600 hover:bg-brand-700 text-white px-8 py-4 rounded-full font-black text-sm items-center flex">
       <i data-lucide="minimize-2" class="w-5 h-5 mr-2"></i> 원래 화면으로 돌아가기
   </button>
@@ -79,7 +74,6 @@
           <i data-lucide="home" class="w-5 h-5 mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Home</span>
         </a>
         <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 shrink-0"></div>
-        <!-- 탭 메뉴 -->
         <div class="flex space-x-1 sm:space-x-2 h-full items-center overflow-x-auto no-scrollbar flex-nowrap">
             <button onclick="app.setMode('tutor')" id="tab-tutor" class="tab-active text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap shrink-0">AI Tutor</button>
             <button onclick="app.setMode('omr')" id="tab-omr" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap shrink-0">OMR Score</button>
@@ -132,8 +126,6 @@
     <!-- 2. 중앙: PDF Viewer -->
     <section class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
-            
-            <!-- 뷰어 상단 헤더 -->
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="file-text" class="w-4 h-4 text-brand-500"></i>
@@ -182,7 +174,7 @@
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-2.5 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-600 dark:text-brand-400"></i>
-                    <select id="week-select" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[200px] truncate">
+                    <select id="week-select" onchange="app.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[200px] truncate">
                         <!-- JS 렌더링 -->
                     </select>
                 </div>
@@ -278,11 +270,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc, updateDoc, getDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /**
-     * ⚙️ GITHUB_CONFIG
-     */
     const GITHUB_CONFIG = {
       username: "kimjs2623", 
       repo: "for-study",             
@@ -301,8 +290,6 @@
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-study-app';
-    
-    // 🌟 제공해주신 개인 API Key 적용 완료
     const apiKey = "AIzaSyA-frmY9mZMwNtHjR5W4UOGcNT0cBe4Tng"; 
 
     const state = {
@@ -324,6 +311,9 @@
       pdfScale: 1.0,
       userZoomed: false
     };
+
+    let scheduleUnsub = null;
+    let submissionsUnsub = null;
 
     function showToast(msg, type='info') {
       const toast = document.createElement('div');
@@ -412,8 +402,10 @@
 
     function fetchStudySchedule() {
         if(!state.user) return;
+        if(scheduleUnsub) scheduleUnsub();
+        
         const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
-        onSnapshot(scheduleRef, (docSnap) => {
+        scheduleUnsub = onSnapshot(scheduleRef, (docSnap) => {
             let dbWeeks = [];
             if(docSnap.exists()) {
                 const data = docSnap.data();
@@ -443,10 +435,12 @@
 
     function fetchPublicSubmissions() {
         if(!state.user) return;
+        if(submissionsUnsub) submissionsUnsub();
+        
         const submissionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
         const q = query(submissionsRef);
         
-        onSnapshot(q, (snapshot) => {
+        submissionsUnsub = onSnapshot(q, (snapshot) => {
             const subs = [];
             snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
             subs.sort((a, b) => b.timestamp - a.timestamp);
@@ -474,53 +468,19 @@
         }, (error) => { console.error("Records Error:", error); });
     }
 
-    initUI();
-    
-    const initAuth = async () => {
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (error) { console.error("Auth init failed:", error); }
-    };
-
-    initAuth();
-
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            state.user = user;
-            scanGitHub();
-            loadGlobalAnswerKey();
-            fetchStudySchedule();
-            fetchPublicSubmissions();
-        }
-    });
-
-    // 🌟 메인 페이지의 프로필 데이터(명찰)와 로그인 정보를 완벽히 연동
     async function getUserName() {
         if(!state.user) return "익명스터디원";
         
         try {
-            // 메인 페이지(App)에서 저장한 규칙대로 명찰 조회 (profile/data)
-            const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
-            const profileSnap = await getDoc(profileRef);
-            
-            if(profileSnap.exists()) {
-                const data = profileSnap.data();
-                if(data.name) return data.name;
-                if(data.appAccountId) return data.appAccountId;
+            let profileSnap = await getDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'));
+            if(profileSnap.exists() && (profileSnap.data().name || profileSnap.data().appAccountId)) {
+                return profileSnap.data().name || profileSnap.data().appAccountId;
             }
-        } catch(e) {
-            console.error("Profile fetch error:", e);
-        }
+        } catch(e) { console.error("Profile fetch error:", e); }
 
-        // 혹시 Firebase Auth 객체에 남아있다면 반환
         if(state.user.displayName) return state.user.displayName;
         
-        // 정보가 전혀 없을 때만 한 번 물어봅니다.
-        const newName = prompt("답안에 표시될 본인의 이름(또는 아이디)을 입력해주세요.\n* 메인 페이지에서 로그인하지 않은 상태입니다.", "스터디원");
+        const newName = prompt("공동 기록에 표시될 이름(또는 아이디)을 입력해주세요.", "스터디원");
         if(newName && newName.trim() !== "") {
             try {
                 await updateProfile(state.user, { displayName: newName.trim() });
@@ -530,6 +490,29 @@
         }
         return `익명-${state.user.uid.substring(0,4)}`;
     }
+
+    const startApp = async () => {
+        initUI();
+        try {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        } catch (error) { console.error("Auth init failed:", error); }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                state.user = user;
+                scanGitHub();
+                loadGlobalAnswerKey();
+                fetchStudySchedule();
+                fetchPublicSubmissions();
+            }
+        });
+    };
+
+    startApp();
 
     window.app = {
       setMode: (mode) => {
@@ -774,8 +757,6 @@
 
         const btn = document.getElementById('ai-omr-btn');
         const icon = document.getElementById('ai-omr-icon');
-        
-        // 🌟 저장 전 메인 페이지에서 등록한 이름 동기화
         const uName = await getUserName();
         
         const recordData = {
@@ -805,8 +786,6 @@
 
         const btn = document.getElementById('ai-essay-btn');
         const icon = document.getElementById('ai-essay-icon');
-        
-        // 🌟 저장 전 메인 페이지에서 등록한 이름 동기화
         const uName = await getUserName();
 
         const recordData = {
@@ -873,7 +852,7 @@
       },
 
       callGemini: async (parts, system) => {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         const res = await fetch(url, { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
