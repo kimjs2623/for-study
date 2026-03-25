@@ -33,18 +33,15 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .animate-spin-custom { animation: spin 1s linear infinite; }
     
-    /* 스크롤바 디자인 */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     
-    /* 탭 활성화 & 애니메이션 */
     .tab-active { border-bottom: 3px solid #4f46e5; color: #4f46e5; font-weight: 900 !important; }
     .fade-in { animation: fadeIn 0.3s ease-out forwards; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* 전체 화면 뷰어 모드 */
     .viewer-fullscreen {
         position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
         width: 100vw !important; height: 100dvh !important;
@@ -52,39 +49,33 @@
         display: flex !important; flex-direction: column !important;
     }
     
-    /* 하단 플로팅 버튼 */
     .fab-button {
         position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
         z-index: 999999 !important; box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.6);
         border: 2px solid rgba(255, 255, 255, 0.3); transition: all 0.2s;
+        display: flex; align-items: center; justify-content: center;
     }
     .fab-button:active { transform: translateX(-50%) scale(0.95); }
     
-    /* PDF 캔버스 */
     canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen">
 
-  <!-- 토스트 알림 컨테이너 -->
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3"></div>
 
-  <!-- 화면 줄이기 버튼 (전체화면 모드에서만 표시) -->
-  <button id="exit-fullscreen-fab" onclick="window.app.toggleFullScreen()" class="hidden fab-button bg-brand-600 hover:bg-brand-700 text-white px-8 py-4 rounded-full font-black text-sm items-center flex">
+  <button id="exit-fullscreen-fab" onclick="window.app.toggleFullScreen()" class="hidden fab-button bg-brand-600 hover:bg-brand-700 text-white px-8 py-4 rounded-full font-black text-sm">
       <i data-lucide="minimize-2" class="w-5 h-5 mr-2"></i> 원래 화면으로 돌아가기
   </button>
 
-  <!-- ==================== 상단 네비게이션 바 ==================== -->
   <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 h-16 shrink-0 z-50 sticky top-0 lg:relative">
     <div class="max-w-[1800px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
       <div class="flex items-center space-x-4 sm:space-x-6 h-full">
-        <!-- 홈 로고 -->
         <a href="../index.html" class="flex items-center text-brand-600 hover:text-brand-700 dark:text-brand-400 font-black text-lg tracking-tight shrink-0">
           <i data-lucide="home" class="w-5 h-5 mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Home</span>
         </a>
         <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 shrink-0"></div>
         
-        <!-- 메인 탭 메뉴 -->
         <div class="flex space-x-1 sm:space-x-2 h-full items-center overflow-x-auto no-scrollbar flex-nowrap">
             <button onclick="window.app.setMode('tutor')" id="tab-tutor" class="tab-active text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">AI Tutor</button>
             <button onclick="window.app.setMode('omr')" id="tab-omr" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">OMR Score</button>
@@ -95,7 +86,6 @@
         </div>
       </div>
       
-      <!-- 우측 컨트롤 -->
       <div class="flex items-center space-x-3 shrink-0">
         <div id="answer-key-badge" class="hidden sm:flex items-center bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 px-2 py-1 rounded text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
             <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Key Loaded
@@ -107,10 +97,8 @@
     </div>
   </nav>
 
-  <!-- ==================== 메인 콘텐츠 영역 ==================== -->
   <main class="max-w-[1800px] mx-auto px-2 sm:px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
     
-    <!-- 1. 왼쪽 패널: PDF 라이브러리 목록 -->
     <aside class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
         <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
@@ -137,11 +125,8 @@
       </div>
     </aside>
 
-    <!-- 2. 중앙 패널: PDF 뷰어 -->
     <section class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
-            
-            <!-- 뷰어 상단 제어바 -->
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
                 <div class="flex items-center space-x-2 overflow-hidden flex-1 mr-2">
                     <i data-lucide="file-text" class="w-4 h-4 text-brand-500 shrink-0"></i>
@@ -152,7 +137,6 @@
                 </button>
             </div>
 
-            <!-- PDF 페이지/확대 축소 도구 -->
             <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center space-x-4 z-50 shrink-0 shadow-sm">
                 <div class="flex items-center space-x-2">
                     <button onclick="window.app.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -166,7 +150,6 @@
                 </div>
             </div>
             
-            <!-- 캔버스 영역 -->
             <div class="flex-1 flex justify-center relative overflow-hidden bg-slate-200 dark:bg-slate-950">
                 <div id="pdf-canvas-container" class="hidden w-full h-full overflow-auto custom-scrollbar relative p-2 sm:p-4">
                     <div class="flex justify-center min-h-full items-start">
@@ -174,22 +157,20 @@
                     </div>
                 </div>
 
-                <!-- 문서 미선택 시 나타나는 안내 화면 -->
                 <div id="viewer-placeholder" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
                         <i data-lucide="book-open" class="w-6 h-6 text-slate-300 dark:text-slate-500"></i>
                     </div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library to start reading</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 3. 오른쪽 패널: AI 작업 및 제출 영역 -->
+    <!-- 3. AI 작업 영역 -->
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
-            <!-- 주차 선택 컨트롤러 -->
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
@@ -199,10 +180,8 @@
                 </div>
             </div>
 
-            <!-- 스크롤 가능한 작업 영역 -->
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
                 
-                <!-- 뷰 A: AI Tutor -->
                 <div id="view-tutor" class="space-y-4 fade-in">
                     <h3 class="text-[11px] font-black uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">AI Tutoring</h3>
                     <input type="text" id="ai-tutor-target" placeholder="작품명 (예: 상춘곡)" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white font-bold mb-1 shadow-sm">
@@ -210,7 +189,6 @@
                     <button onclick="window.app.askAITutor()" id="ai-tutor-btn" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95">분석 시작</button>
                 </div>
 
-                <!-- 뷰 B: OMR 채점 -->
                 <div id="view-omr" class="hidden space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -222,7 +200,6 @@
                     <button onclick="window.app.submitOMR()" id="ai-omr-btn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95">정답 제출 및 공유하기</button>
                 </div>
 
-                <!-- 뷰 C: 서술형 채점 -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -232,7 +209,6 @@
                     <button onclick="window.app.submitEssay()" id="ai-essay-btn" class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95">서술형 제출 및 공유하기</button>
                 </div>
 
-                <!-- 뷰 D: 커뮤니티 (공동 기록) -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
                     <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800/50 shrink-0 shadow-sm">
                         <h3 class="text-[11px] font-black text-indigo-700 dark:text-indigo-400 mb-1 uppercase tracking-widest flex items-center">
@@ -249,12 +225,9 @@
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2"></div>
                 </div>
 
-                <!-- 공통 영역: AI 분석 결과 모달 -->
                 <div id="ai-response-area" class="hidden animate-fade-in mt-4">
                     <div class="p-5 bg-brand-50/50 dark:bg-slate-800/50 rounded-2xl border border-brand-100 dark:border-slate-700 shadow-sm relative">
-                        <button onclick="document.getElementById('ai-response-area').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
-                            <i data-lucide="x" class="w-4 h-4"></i>
-                        </button>
+                        <button onclick="document.getElementById('ai-response-area').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"><i data-lucide="x" class="w-4 h-4"></i></button>
                         <div class="flex items-center mb-3">
                             <i data-lucide="bot" class="w-4 h-4 text-brand-500 mr-2"></i>
                             <span class="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">AI Feedback</span>
@@ -268,13 +241,14 @@
     </section>
   </main>
 
-  <!-- ==================== 자바스크립트 (로직) ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* --- 1. 전역 설정 (Configurations) --- */
+    /* ==========================================
+       1. 전역 설정 (GitHub 환경 구동 필수 로직)
+       ========================================== */
     const GITHUB_CONFIG = {
       username: "kimjs2623", 
       repo: "for-study",             
@@ -283,22 +257,21 @@
       answerKeyFileName: "정답해설.pdf" 
     };
 
-    // Firebase 연동 (안전한 파싱)
+    // GitHub 호스팅 시 __firebase_config가 없을 경우를 대비한 안전망(Fallback)
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
         apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA",
         projectId: "study-99725",
         appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
     };
+    
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-study-app';
+    const apiKey = "AIzaSyA-frmY9mZMwNtHjR5W4UOGcNT0cBe4Tng"; 
+    const GEMINI_MODEL = "gemini-1.5-flash"; 
+
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
 
-    // AI 설정
-    const apiKey = "AIzaSyA-frmY9mZMwNtHjR5W4UOGcNT0cBe4Tng"; 
-    const GEMINI_MODEL = "gemini-1.5-flash"; 
-
-    /* --- 2. 전역 상태 (State) --- */
     const state = {
       user: null,
       allFiles: [],
@@ -315,7 +288,9 @@
       userZoomed: false
     };
 
-    /* --- 3. 유틸리티 & UI 컨트롤 함수 --- */
+    /* ==========================================
+       2. 유틸리티 함수 (에러 방지를 위해 최상단 선언)
+       ========================================== */
     function showToast(msg, type='info') {
       const toast = document.createElement('div');
       toast.className = `p-4 rounded-2xl shadow-2xl border text-[10px] font-black transition-all duration-300 z-[1000000] ${type==='error'?'bg-red-50 text-red-600 border-red-200':'bg-brand-50 text-brand-600 border-brand-200'}`;
@@ -327,133 +302,60 @@
       }
     }
 
+    // 🌟 PDF 파일 텍스트 추출 엔진 (AI 에러 원천 차단)
+    async function extractTextFromBlobPDF(blob) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            try {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `[${i}페이지]\n${pageText}\n\n`;
+            } catch(e) { console.warn("Page extraction failed", i); }
+        }
+        return fullText;
+    }
+
+    async function extractTextFromBase64PDF(base64Data) {
+        const binaryString = atob(base64Data.replace(/\s/g, ''));
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            try {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `[${i}페이지]\n${pageText}\n\n`;
+            } catch(e) {}
+        }
+        return fullText;
+    }
+
     function initUI() {
         const omrGrid = document.getElementById('omr-grid-container');
         if(omrGrid) {
             let html = '';
-            for(let i=1; i<=10; i++) {
-                html += `<div class="space-y-1 text-center">
-                            <label class="text-[9px] font-black text-slate-400 uppercase">${i}</label>
-                            <input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-center outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white uppercase shadow-sm">
-                        </div>`;
-            }
+            for(let i=1; i<=10; i++) html += `<div class="space-y-1 text-center"><label class="text-[9px] font-black text-slate-400 uppercase">${i}</label><input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-center outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white uppercase shadow-sm"></div>`;
             omrGrid.innerHTML = html;
         }
-
         const essayGrid = document.getElementById('essay-grid-container');
         if(essayGrid) {
             let html = '';
-            for(let i=1; i<=2; i++) {
-                html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                            <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800">
-                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Question 0${i}</span>
-                                <input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] text-center dark:text-white outline-none rounded shadow-sm py-1">
-                            </div>
-                            <textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white custom-scrollbar border-none"></textarea>
-                        </div>`;
-            }
+            for(let i=1; i<=2; i++) html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800"><div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800"><span class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Question 0${i}</span><input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] text-center dark:text-white outline-none rounded shadow-sm py-1"></div><textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white custom-scrollbar border-none"></textarea></div>`;
             essayGrid.innerHTML = html;
         }
         lucide.createIcons();
     }
 
-    /* --- 4. 데이터 Fetch (GitHub & Firebase) --- */
-    async function scanGitHub() {
-        const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.folder}?ref=${GITHUB_CONFIG.branch}`;
-        try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf') && f.name !== GITHUB_CONFIG.answerKeyFileName);
-            state.filteredFiles = [...state.allFiles];
-            renderFileList();
-        } catch (e) {
-            const list = document.getElementById('material-list');
-            if (list) list.innerHTML = `<p class="text-[10px] text-red-500 p-10 text-center font-bold">GITHUB SYNC ERROR</p>`;
-        }
-    }
-
-    function renderFileList() {
-        const container = document.getElementById('material-list');
-        if (!container) return;
-        if (state.filteredFiles.length === 0) {
-            container.innerHTML = `<p class="text-center text-[10px] text-slate-400 py-10 font-black uppercase">No Files Found</p>`;
-            return;
-        }
-        container.innerHTML = state.filteredFiles.map(file => `
-            <button onclick="window.app.loadMaterial('${file.name}', '${file.download_url}')" 
-                class="file-btn w-full flex items-center p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand-500 transition-all text-left group">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-2 text-slate-300 group-hover:text-brand-500 shrink-0"></i>
-                <div class="flex-1 truncate font-bold text-[10px] uppercase tracking-tighter">${file.name}</div>
-            </button>
-        `).join('');
-        lucide.createIcons();
-    }
-
-    async function loadGlobalAnswerKey() {
-        const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folder}/${GITHUB_CONFIG.answerKeyFileName}`;
-        try {
-            const res = await fetch(url);
-            if(res.ok) {
-                const blob = await res.blob();
-                const reader = new FileReader();
-                reader.onloadend = () => { 
-                    state.answerKeyPdfData = reader.result.split(',')[1]; 
-                    document.getElementById('answer-key-badge').classList.remove('hidden'); 
-                };
-                reader.readAsDataURL(blob);
-            }
-        } catch(e) { console.warn("Answer key not found"); }
-    }
-
-    function fetchStudySchedule() {
-        const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
-        onSnapshot(scheduleRef, (docSnap) => {
-            let dbWeeks = [];
-            if(docSnap.exists()) {
-                const data = docSnap.data();
-                dbWeeks = (data.weeks || []).map(w => {
-                    const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week) : w;
-                    const str = String(val).trim();
-                    return str.includes('주차') ? str : str + '주차';
-                });
-            }
-            const existingWeeks = state.allSubmissions.map(s => String(s.week));
-            state.weeks = [...new Set([...dbWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
-            if(state.weeks.length === 0) state.weeks = ['1주차'];
-            state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
-            window.app.updateWeekDropdowns();
-        }, (err) => console.error("Schedule Error", err));
-    }
-
-    function fetchPublicSubmissions() {
-        const submissionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
-        onSnapshot(query(submissionsRef), (snapshot) => {
-            const subs = [];
-            snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
-            subs.sort((a, b) => b.timestamp - a.timestamp);
-            state.allSubmissions = subs;
-            window.app.updateCommunityWorks();
-            if(state.mode === 'community') window.app.renderCommunityRecords();
-        });
-    }
-
-    async function getUserName() {
-        if(!state.user) return "익명";
-        try {
-            const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
-            const profileSnap = await getDoc(profileRef);
-            if(profileSnap.exists()) {
-                const data = profileSnap.data();
-                return data.name || data.appAccountId || "스터디원";
-            }
-        } catch(e) {}
-        return state.user.displayName || "스터디원";
-    }
-
-    /* --- 5. 앱 컨트롤러 (window.app) --- */
+    /* ==========================================
+       3. window.app (HTML에서 직접 호출하는 함수들)
+       ========================================== */
     window.app = {
-      // 메뉴 모드 전환
       setMode: (mode) => {
         state.mode = mode;
         ['tutor', 'omr', 'essay', 'community'].forEach(m => {
@@ -467,15 +369,12 @@
         });
         const bar = document.getElementById('week-selector-bar');
         if(bar) bar.classList.toggle('hidden', mode === 'tutor' || mode === 'community');
-        
         const resp = document.getElementById('ai-response-area');
         if(resp) resp.classList.add('hidden');
-        
         if(mode === 'community') window.app.renderCommunityRecords();
         lucide.createIcons();
       },
 
-      // 부가 기능 (다크모드, 검색, 전체화면)
       toggleDarkMode: () => {
         const isDark = document.documentElement.classList.toggle('dark');
         const icon = document.getElementById('dark-mode-icon');
@@ -484,6 +383,7 @@
       },
 
       refreshFiles: () => scanGitHub(),
+      
       filterFiles: () => {
         const q = document.getElementById('file-search').value.toLowerCase();
         state.filteredFiles = state.allFiles.filter(f => f.name.toLowerCase().includes(q));
@@ -501,16 +401,18 @@
         }
       },
 
-      // PDF 렌더링 파트
       loadMaterial: async (name, url) => {
         if (state.isFetching) return;
         state.isFetching = true;
         
         const filenameDisplay = document.getElementById('viewer-filename');
         if (filenameDisplay) filenameDisplay.textContent = name;
-        
         const placeholder = document.getElementById('viewer-placeholder');
         if (placeholder) placeholder.classList.add('hidden');
+        
+        document.querySelectorAll('.file-btn').forEach(b => b.classList.remove('border-brand-500', 'bg-brand-50/30'));
+        const activeBtn = document.getElementById(`btn-${name.replace(/\s+/g, '')}`);
+        if(activeBtn) activeBtn.classList.add('border-brand-500', 'bg-brand-50/30');
         
         try {
           const res = await fetch(url);
@@ -578,7 +480,6 @@
       zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.app.renderPage(state.pageNum); },
       zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.app.renderPage(state.pageNum); } },
 
-      // 주차 데이터 렌더링
       updateWeekDropdowns: () => {
           ['week-select', 'comm-week-filter'].forEach(id => {
               const el = document.getElementById(id);
@@ -601,12 +502,10 @@
           window.app.renderCommunityRecords();
       },
 
-      // AI 통신 및 제출 파트
       askAITutor: async () => {
         const targetEl = document.getElementById('ai-tutor-target');
         const promptEl = document.getElementById('ai-tutor-prompt');
         if (!targetEl || !promptEl) return;
-        
         const target = targetEl.value.trim();
         const prompt = promptEl.value.trim();
         if (!prompt) return showToast("내용을 입력하세요.", "error");
@@ -624,7 +523,6 @@
         const weekEl = document.getElementById('week-select');
         const workEl = document.getElementById('omr-work-name');
         if (!weekEl || !workEl) return;
-        
         const week = weekEl.value;
         const workName = workEl.value.trim();
         if(!workName) return showToast("작품명을 입력하세요.", "error");
@@ -651,7 +549,6 @@
         const weekEl = document.getElementById('week-select');
         const workEl = document.getElementById('essay-work-name');
         if (!weekEl || !workEl) return;
-        
         const week = weekEl.value;
         const workName = workEl.value.trim();
         if(!workName) return showToast("작품명을 입력하세요.", "error");
@@ -676,6 +573,7 @@
         );
       },
 
+      // 🌟 AI 요청 처리 및 텍스트 추출 로직 연동
       processAIRequest: async (btn, icon, parts, sysMsg, recordData) => {
         const area = document.getElementById('ai-response-area');
         const cont = document.getElementById('ai-response-content');
@@ -683,18 +581,17 @@
         
         btn.disabled = true; 
         area.classList.add('hidden');
+        showToast("AI 분석 중입니다... 잠시만 기다려주세요.");
         
         try {
+            // PDF 텍스트 추출 우회 로직 실행
             if (state.problemPdfBlob) {
-                const reader = new FileReader();
-                const b64 = await new Promise(r => { 
-                    reader.onloadend = () => r(reader.result.split(',')[1]); 
-                    reader.readAsDataURL(state.problemPdfBlob); 
-                });
-                parts.push({ inlineData: { mimeType: "application/pdf", data: b64 } });
+                const problemText = await extractTextFromBlobPDF(state.problemPdfBlob);
+                if (problemText) parts.push({ text: `\n\n[참조 문서: 문제지 원문]\n${problemText}` });
             }
             if (state.answerKeyPdfData) {
-                parts.push({ inlineData: { mimeType: "application/pdf", data: state.answerKeyPdfData } });
+                const keyText = await extractTextFromBase64PDF(state.answerKeyPdfData);
+                if (keyText) parts.push({ text: `\n\n[참조 문서: 정답 해설지 원문 (이 내용을 절대적 기준으로 채점할 것)]\n${keyText}` });
             }
             
             const res = await window.app.callGemini(parts, sysMsg);
@@ -727,7 +624,6 @@
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
       },
 
-      // 커뮤니티 데이터 렌더링
       renderCommunityRecords: () => {
           const container = document.getElementById('community-container');
           const wFilterEl = document.getElementById('comm-week-filter');
@@ -765,7 +661,109 @@
       }
     };
 
-    /* --- 6. 초기 인증 및 앱 시작 (Lifecycle) --- */
+    /* ==========================================
+       4. 서버 통신 함수들
+       ========================================== */
+    async function scanGitHub() {
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.folder}?ref=${GITHUB_CONFIG.branch}`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf') && f.name !== GITHUB_CONFIG.answerKeyFileName);
+            state.filteredFiles = [...state.allFiles];
+            renderFileList();
+        } catch (e) {
+            const list = document.getElementById('material-list');
+            if (list) list.innerHTML = `<p class="text-[10px] text-red-500 p-10 text-center font-bold">GITHUB SYNC ERROR</p>`;
+        }
+    }
+
+    function renderFileList() {
+        const container = document.getElementById('material-list');
+        if (!container) return;
+        if (state.filteredFiles.length === 0) {
+            container.innerHTML = `<p class="text-center text-[10px] text-slate-400 py-10 font-black uppercase">No Files Found</p>`;
+            return;
+        }
+        container.innerHTML = state.filteredFiles.map(file => `
+            <button onclick="window.app.loadMaterial('${file.name}', '${file.download_url}')" 
+                id="btn-${file.name.replace(/\s+/g, '')}"
+                class="file-btn w-full flex items-center p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand-500 transition-all text-left group">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-2 text-slate-300 group-hover:text-brand-500 shrink-0"></i>
+                <div class="flex-1 truncate font-bold text-[10px] uppercase tracking-tighter">${file.name}</div>
+            </button>
+        `).join('');
+        lucide.createIcons();
+    }
+
+    // 🌟 부활시킨 loadGlobalAnswerKey 함수
+    async function loadGlobalAnswerKey() {
+        const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folder}/${GITHUB_CONFIG.answerKeyFileName}`;
+        try {
+            const res = await fetch(url);
+            if(res.ok) {
+                const blob = await res.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => { 
+                    state.answerKeyPdfData = reader.result.split(',')[1]; 
+                    const badge = document.getElementById('answer-key-badge');
+                    if(badge) badge.classList.remove('hidden'); 
+                };
+                reader.readAsDataURL(blob);
+            }
+        } catch(e) { console.warn("Answer key load failed", e); }
+    }
+
+    function fetchStudySchedule() {
+        const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
+        onSnapshot(scheduleRef, (docSnap) => {
+            let dbWeeks = [];
+            if(docSnap.exists()) {
+                const data = docSnap.data();
+                dbWeeks = (data.weeks || []).map(w => {
+                    const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week) : w;
+                    const str = String(val).trim();
+                    return str.includes('주차') ? str : str + '주차';
+                });
+            }
+            const existingWeeks = state.allSubmissions.map(s => String(s.week));
+            state.weeks = [...new Set([...dbWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
+            if(state.weeks.length === 0) state.weeks = ['1주차'];
+            state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
+            window.app.updateWeekDropdowns();
+        }, (err) => console.error("Schedule Error", err));
+    }
+
+    // 🌟 부활시킨 getUserName 함수
+    async function getUserName() {
+        if(!state.user) return "익명";
+        try {
+            const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
+            const profileSnap = await getDoc(profileRef);
+            if(profileSnap.exists()) {
+                const data = profileSnap.data();
+                return data.name || data.appAccountId || "스터디원";
+            }
+        } catch(e) { console.warn("Name fetch error", e); }
+        return state.user.displayName || "스터디원";
+    }
+
+    function fetchPublicSubmissions() {
+        const submissionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
+        onSnapshot(query(submissionsRef), (snapshot) => {
+            const subs = [];
+            snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
+            subs.sort((a, b) => b.timestamp - a.timestamp);
+            state.allSubmissions = subs;
+            window.app.updateCommunityWorks();
+            if(state.mode === 'community') window.app.renderCommunityRecords();
+        });
+    }
+
+    /* ==========================================
+       5. 인증 및 초기화 (Life Cycle)
+       ========================================== */
     const initializeAuth = async () => {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             await signInWithCustomToken(auth, __initial_auth_token);
