@@ -405,21 +405,42 @@
         lucide.createIcons();
     }
 
-    // 🌟 Firestore 일정(schedule) 연동 로직
+    // 🌟 안전하고 유연한 Firestore 일정(schedule) 연동 로직
     function fetchStudySchedule() {
         if(!state.user) return;
         const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
         onSnapshot(scheduleRef, (docSnap) => {
+            let dbWeeks = [];
             if(docSnap.exists()) {
                 const data = docSnap.data();
-                if(data.weeks && Array.isArray(data.weeks)) {
-                    state.weeks = data.weeks.map(w => w.weekNum);
+                // 데이터 형식이 객체 배열일 수도, 문자열 배열일 수도 있으므로 유연하게 파싱
+                const weeksArray = data.weeks || data.schedule || [];
+                if(Array.isArray(weeksArray)) {
+                    dbWeeks = weeksArray.map(w => {
+                        // 객체 형태면 weekNum 추출, 아니면 문자열 그대로 사용
+                        const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week || w.title) : w;
+                        // 만약 값이 단순 숫자 '1' 이면 '1주차'로 자동 포맷팅
+                        const strVal = String(val).trim();
+                        return /^\d+$/.test(strVal) ? strVal + '주차' : strVal;
+                    }).filter(w => w !== '' && w !== 'undefined');
                 }
-            } else {
-                state.weeks = []; 
             }
+            
+            // 기존에 제출된 공동 학습 기록의 주차 정보와 병합
+            const existingWeeks = state.allSubmissions.map(s => String(s.week));
+            state.weeks = [...new Set([...dbWeeks, ...existingWeeks])];
+            
+            if(state.weeks.length === 0) state.weeks = ['1주차']; // 데이터가 아예 없을 때의 최소 방어선
+            
+            // 1주차, 2주차 순서대로 깔끔하게 숫자 기반 정렬
+            state.weeks.sort((a, b) => {
+                const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
+                const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
+                return numA - numB;
+            });
+
             app.updateWeekDropdowns();
-        }, (error) => { console.error("Schedule Error:", error); });
+        }, (error) => { console.error("Schedule Fetch Error:", error); });
     }
 
     function fetchPublicSubmissions() {
@@ -432,6 +453,24 @@
             snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs;
+            
+            // 제출 기록에 새로운 주차가 있다면 병합 및 재정렬
+            let updated = false;
+            subs.forEach(s => { 
+                if(s.week && !state.weeks.includes(String(s.week))) {
+                    state.weeks.push(String(s.week));
+                    updated = true;
+                }
+            });
+            
+            if(updated) {
+                state.weeks.sort((a, b) => {
+                    const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
+                    const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
+                    return numA - numB;
+                });
+                app.updateWeekDropdowns();
+            }
             
             app.updateCommunityWorks();
             if(state.mode === 'community') app.renderCommunityRecords();
