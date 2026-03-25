@@ -130,7 +130,7 @@
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
                 <div class="flex items-center space-x-2">
                     <i data-lucide="file-text" class="w-4 h-4 text-brand-500"></i>
-                    <span id="viewer-filename" class="text-[10px] font-black text-slate-500 uppercase italic truncate max-w-[120px] sm:max-w-[200px]">No File Selected</span>
+                    <span id="viewer-filename" class="text-[10px] font-black text-slate-500 uppercase italic truncate max-w-[150px] sm:max-w-[250px]">No File Selected</span>
                 </div>
                 <div class="flex items-center space-x-2">
                     <button onclick="app.toggleFullScreen()" id="header-fullscreen-btn" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 hover:text-brand-600 dark:hover:text-brand-400 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg uppercase tracking-tighter transition-all flex items-center shadow-sm active:scale-95">
@@ -140,24 +140,25 @@
             </div>
 
             <!-- 🌟 PDF.js 컨트롤 패널 -->
-            <div id="pdf-controls" class="hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-between shrink-0 z-50">
-                <div class="flex items-center space-x-1 sm:space-x-3">
-                    <button onclick="app.prevPage()" class="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                    <span class="text-[10px] font-black text-slate-600 dark:text-slate-400"><span id="page_num">1</span> / <span id="page_count">-</span></span>
-                    <button onclick="app.nextPage()" class="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="app.zoomOut()" class="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 transition-colors"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
-                    <button onclick="app.zoomIn()" class="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
-                </div>
+            <div id="pdf-controls" class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-800/90 backdrop-blur text-white px-4 py-2 rounded-full shadow-2xl flex items-center space-x-3 z-50">
+                <button onclick="app.prevPage()" class="p-1.5 hover:bg-slate-700 rounded-full transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                <span class="text-[11px] font-bold whitespace-nowrap"><span id="page_num">1</span> / <span id="page_count">-</span></span>
+                <button onclick="app.nextPage()" class="p-1.5 hover:bg-slate-700 rounded-full transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                <div class="w-px h-4 bg-slate-600 mx-1"></div>
+                <button onclick="app.zoomOut()" class="p-1.5 hover:bg-slate-700 rounded-full transition-colors"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+                <button onclick="app.zoomIn()" class="p-1.5 hover:bg-slate-700 rounded-full transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
             </div>
             
-            <div id="pdf-canvas-container" class="flex-1 flex justify-center relative overflow-auto custom-scrollbar bg-slate-200 dark:bg-slate-950 p-2 sm:p-4">
-                <!-- PDF 캔버스 렌더링 영역 -->
-                <canvas id="pdf-canvas" class="hidden shadow-md max-w-none"></canvas>
+            <div class="flex-1 flex justify-center relative overflow-hidden bg-slate-200 dark:bg-slate-950">
+                <!-- 🌟 PDF 캔버스 렌더링 영역 -->
+                <div id="pdf-canvas-container" class="hidden w-full h-full overflow-auto custom-scrollbar relative p-2 sm:p-4">
+                    <div class="flex justify-center min-h-full items-center">
+                        <canvas id="pdf-canvas" class="max-w-none shadow-md bg-white"></canvas>
+                    </div>
+                </div>
 
                 <!-- 초기 대기 화면 -->
-                <div id="viewer-placeholder" class="text-center my-auto p-6">
+                <div id="viewer-placeholder" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
                         <i data-lucide="book-open" class="w-6 h-6 text-slate-300 dark:text-slate-500"></i>
                     </div>
@@ -174,16 +175,11 @@
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-2.5 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-3.5 h-3.5 text-brand-600 dark:text-brand-400"></i>
-                    <select id="week-select" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[120px] truncate">
+                    <select id="week-select" onchange="app.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[200px] truncate">
                         <!-- JS 렌더링 -->
                     </select>
-                    <button onclick="app.editWeek()" title="선택한 주차 이름 수정" class="p-1 hover:bg-brand-200 dark:hover:bg-brand-800 rounded transition-colors">
-                        <i data-lucide="edit-2" class="w-3 h-3 text-brand-600/70 dark:text-brand-400/70"></i>
-                    </button>
                 </div>
-                <button onclick="app.addWeek()" class="text-[9px] font-black bg-white dark:bg-slate-800 border border-brand-200 dark:border-brand-700 text-brand-600 dark:text-brand-400 px-2.5 py-1.5 rounded-md shadow-sm hover:bg-brand-50 transition-colors uppercase tracking-widest whitespace-nowrap shrink-0 ml-2">
-                    + 주차 추가
-                </button>
+                <!-- 삭제된 주차 추가/수정 버튼 -->
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
@@ -276,7 +272,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     /**
      * ⚙️ GITHUB_CONFIG
@@ -310,14 +306,14 @@
       currentFileName: "",
       isFetching: false,
       mode: 'tutor',
-      weeks: ['1주차'],
+      weeks: [], // Firestore schedule에서 불러올 주차 데이터
       allSubmissions: [],
-      // 🌟 PDF.js 렌더링 상태 관리 변수
+      // 🌟 PDF.js 렌더링 상태 관리
       pdfDoc: null,
       pageNum: 1,
       pageRendering: false,
       pageNumPending: null,
-      pdfScale: 1.2,
+      pdfScale: 1.0,
       userZoomed: false
     };
 
@@ -409,6 +405,23 @@
         lucide.createIcons();
     }
 
+    // 🌟 Firestore 일정(schedule) 연동 로직
+    function fetchStudySchedule() {
+        if(!state.user) return;
+        const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
+        onSnapshot(scheduleRef, (docSnap) => {
+            if(docSnap.exists()) {
+                const data = docSnap.data();
+                if(data.weeks && Array.isArray(data.weeks)) {
+                    state.weeks = data.weeks.map(w => w.weekNum);
+                }
+            } else {
+                state.weeks = []; 
+            }
+            app.updateWeekDropdowns();
+        }, (error) => { console.error("Schedule Error:", error); });
+    }
+
     function fetchPublicSubmissions() {
         if(!state.user) return;
         const submissionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
@@ -420,8 +433,6 @@
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs;
             
-            subs.forEach(s => { if(!state.weeks.includes(s.week)) state.weeks.push(s.week); });
-            app.updateWeekDropdowns();
             app.updateCommunityWorks();
             if(state.mode === 'community') app.renderCommunityRecords();
         }, (error) => { console.error("Records Error:", error); });
@@ -447,8 +458,8 @@
             state.user = user;
             scanGitHub();
             loadGlobalAnswerKey();
+            fetchStudySchedule(); // 주차 정보 불러오기
             fetchPublicSubmissions();
-            app.updateWeekDropdowns();
         }
     });
 
@@ -519,7 +530,6 @@
         lucide.createIcons();
       },
 
-      // 🌟 PDF.js 렌더링 로직 연동
       loadMaterial: async (name, url) => {
         if (state.isFetching) return;
         state.isFetching = true;
@@ -527,6 +537,9 @@
         document.querySelectorAll('.file-btn').forEach(b => b.classList.remove('border-brand-500', 'bg-brand-50/30'));
         const activeBtn = document.getElementById(`btn-${name}`);
         if(activeBtn) activeBtn.classList.add('border-brand-500', 'bg-brand-50/30');
+        
+        // 🌟 로드 시 UI 제어
+        document.getElementById('viewer-filename').textContent = "LINKING...";
         
         try {
           const res = await fetch(url);
@@ -537,13 +550,14 @@
             state.problemPdfData = reader.result.split(',')[1];
             state.currentFileName = name;
             
-            document.getElementById('pdf-container').classList.remove('hidden');
-            document.getElementById('pdf-controls').classList.remove('hidden');
+            // UI 요소 활성화
             document.getElementById('viewer-placeholder').classList.add('hidden');
-            document.getElementById('pdf-canvas').classList.remove('hidden');
+            document.getElementById('pdf-canvas-container').classList.remove('hidden');
+            document.getElementById('pdf-controls').classList.remove('hidden');
+            document.getElementById('pdf-controls').classList.add('flex');
             document.getElementById('viewer-filename').textContent = name;
             
-            // Base64 -> Binary 변환 및 PDF.js 렌더링 실행
+            // 🌟 PDF.js 렌더링 실행
             app.renderPDF(state.problemPdfData);
             
             showToast(`${name} 로드 완료`);
@@ -553,15 +567,15 @@
         } catch (e) { showToast("로드 실패", "error"); state.isFetching = false; }
       },
 
-      // 🌟 PDF.js 전용 엔진
+      // 🌟 PDF.js 전용 렌더링 로직 (모바일 하얀화면 방지)
       renderPDF: async (base64Data) => {
-        const pdfData = atob(base64Data);
-        const uint8Array = new Uint8Array(pdfData.length);
-        for (let i = 0; i < pdfData.length; i++) {
-          uint8Array[i] = pdfData.charCodeAt(i);
-        }
-
         try {
+            const pdfData = atob(base64Data);
+            const uint8Array = new Uint8Array(pdfData.length);
+            for (let i = 0; i < pdfData.length; i++) {
+              uint8Array[i] = pdfData.charCodeAt(i);
+            }
+
             const loadingTask = pdfjsLib.getDocument({data: uint8Array});
             state.pdfDoc = await loadingTask.promise;
             document.getElementById('page_count').textContent = state.pdfDoc.numPages;
@@ -570,7 +584,7 @@
             app.renderPage(state.pageNum);
         } catch (error) {
             console.error('PDF Render Error:', error);
-            showToast("PDF 뷰어 오류 (일부 모바일에서 제한될 수 있음)", "error");
+            showToast("PDF 렌더링 오류", "error");
         }
       },
 
@@ -580,14 +594,13 @@
           const canvas = document.getElementById('pdf-canvas');
           const ctx = canvas.getContext('2d');
           
-          // 모바일/PC 반응형 초기 배율 설정
           let finalScale = state.pdfScale;
           if(!state.userZoomed) {
               const containerWidth = document.getElementById('pdf-canvas-container').clientWidth;
               const unscaledViewport = page.getViewport({scale: 1});
-              // 패딩 여백 32px 제외하고 맞춤
-              finalScale = (containerWidth - 32) / unscaledViewport.width;
-              state.pdfScale = finalScale; // 상태 동기화
+              // 화면 너비에 캔버스를 맞춥니다. (여백 20px)
+              finalScale = (containerWidth - 20) / unscaledViewport.width; 
+              state.pdfScale = finalScale;
           }
 
           const viewport = page.getViewport({scale: finalScale});
@@ -598,6 +611,8 @@
           
           page.render(renderContext).promise.then(() => {
             state.pageRendering = false;
+            // 캔버스 노출
+            canvas.classList.remove('hidden');
             if (state.pageNumPending !== null) {
               app.renderPage(state.pageNumPending);
               state.pageNumPending = null;
@@ -633,46 +648,20 @@
         app.queueRenderPage(state.pageNum);
       },
 
-      addWeek: () => {
-          const newWeek = prompt("추가할 주차 입력 (예: 2주차)");
-          if(newWeek && newWeek.trim() !== "" && !state.weeks.includes(newWeek.trim())) {
-              state.weeks.push(newWeek.trim());
-              app.updateWeekDropdowns();
-              showToast(`'${newWeek.trim()}' 추가됨`, "success");
-          }
-      },
-
-      editWeek: () => {
-          const select = document.getElementById('week-select');
-          const oldWeek = select.value;
-          if(!oldWeek) return showToast("수정할 주차가 없습니다.", "error");
-
-          const newWeek = prompt("주차 이름 수정:", oldWeek);
-          if(newWeek && newWeek.trim() !== "" && newWeek.trim() !== oldWeek) {
-              const trimmedNewWeek = newWeek.trim();
-              if(state.weeks.includes(trimmedNewWeek)) return showToast("이미 존재하는 주차입니다.", "error");
-              
-              const idx = state.weeks.indexOf(oldWeek);
-              if(idx > -1) {
-                  state.weeks[idx] = trimmedNewWeek;
-                  app.updateWeekDropdowns();
-                  document.getElementById('week-select').value = trimmedNewWeek;
-                  showToast(`이름 변경됨`, "success");
-              }
-          }
-      },
-      
+      // 🌟 주차 드롭다운 업데이트 (Firestore schedule 연동)
       updateWeekDropdowns: () => {
           const select = document.getElementById('week-select');
           const filter = document.getElementById('comm-week-filter');
           if(!select || !filter) return;
           
+          const optionsHtml = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+
           const currentSelectWeek = select.value;
-          select.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+          select.innerHTML = optionsHtml;
           if(state.weeks.includes(currentSelectWeek)) select.value = currentSelectWeek;
           
           const currentFilterWeek = filter.value;
-          filter.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+          filter.innerHTML = optionsHtml;
           if(state.weeks.includes(currentFilterWeek)) filter.value = currentFilterWeek;
           
           app.updateCommunityWorks();
@@ -705,6 +694,7 @@
         const week = document.getElementById('week-select').value;
         const workName = document.getElementById('omr-work-name').value.trim();
         if(!workName) return showToast("작품명을 반드시 입력하세요.", "error");
+        if(!week) return showToast("선택된 주차가 없습니다.", "error");
 
         const ans = [];
         for(let i=1; i<=10; i++) {
@@ -731,6 +721,7 @@
         const week = document.getElementById('week-select').value;
         const workName = document.getElementById('essay-work-name').value.trim();
         if(!workName) return showToast("작품명을 반드시 입력하세요.", "error");
+        if(!week) return showToast("선택된 주차가 없습니다.", "error");
 
         const ess = [];
         for(let i=1; i<=2; i++) {
