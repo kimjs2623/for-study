@@ -269,10 +269,11 @@
     </section>
   </main>
 
-  <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    // 🌟 getDoc 추가 (프로필 데이터 조회를 위해 필수)
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc, updateDoc, getDocs, where, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     /**
      * ⚙️ GITHUB_CONFIG
@@ -294,7 +295,7 @@
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-study-app';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app';
     const apiKey = ""; 
 
     const state = {
@@ -306,15 +307,9 @@
       currentFileName: "",
       isFetching: false,
       mode: 'tutor',
-      weeks: [], // Firestore schedule에서 불러올 주차 데이터
+      weeks: [],
       allSubmissions: [],
-      // 🌟 PDF.js 렌더링 상태 관리
-      pdfDoc: null,
-      pageNum: 1,
-      pageRendering: false,
-      pageNumPending: null,
-      pdfScale: 1.0,
-      userZoomed: false
+      editingDocId: null 
     };
 
     function showToast(msg, type='info') {
@@ -325,17 +320,15 @@
       setTimeout(() => toast.remove(), 4000);
     }
 
-    // 초기 UI 세팅
     function initUI() {
         const omrGrid = document.getElementById('omr-grid-container');
         if(omrGrid) {
             let html = '';
             for(let i=1; i<=10; i++) {
-                html += `
-                    <div class="space-y-1 text-center">
-                        <label class="text-[9px] font-black text-slate-400 uppercase ml-1">${i}</label>
-                        <input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-center outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white uppercase shadow-sm">
-                    </div>`;
+                html += `<div class="space-y-1 text-center">
+                            <label class="text-[9px] font-black text-slate-400 uppercase ml-1">${i}</label>
+                            <input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-center outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white uppercase shadow-sm">
+                        </div>`;
             }
             omrGrid.innerHTML = html;
         }
@@ -344,14 +337,13 @@
         if(essayGrid) {
             let html = '';
             for(let i=1; i<=2; i++) {
-                html += `
-                    <div class="space-y-0 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-                        <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800">
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">SET 0${i}</span>
-                            <input type="text" id="essay-num-${i}" placeholder="문제 번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] text-center dark:text-white outline-none rounded shadow-sm py-1">
-                        </div>
-                        <textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white custom-scrollbar border-none"></textarea>
-                    </div>`;
+                html += `<div class="space-y-0 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                            <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">SET 0${i}</span>
+                                <input type="text" id="essay-num-${i}" placeholder="문제 번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] text-center dark:text-white outline-none rounded shadow-sm py-1">
+                            </div>
+                            <textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white custom-scrollbar border-none"></textarea>
+                        </div>`;
             }
             essayGrid.innerHTML = html;
         }
@@ -405,7 +397,6 @@
         lucide.createIcons();
     }
 
-    // 🌟 안전하고 유연한 Firestore 일정(schedule) 연동 로직
     function fetchStudySchedule() {
         if(!state.user) return;
         const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
@@ -413,26 +404,20 @@
             let dbWeeks = [];
             if(docSnap.exists()) {
                 const data = docSnap.data();
-                // 데이터 형식이 객체 배열일 수도, 문자열 배열일 수도 있으므로 유연하게 파싱
                 const weeksArray = data.weeks || data.schedule || [];
                 if(Array.isArray(weeksArray)) {
                     dbWeeks = weeksArray.map(w => {
-                        // 객체 형태면 weekNum 추출, 아니면 문자열 그대로 사용
                         const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week || w.title) : w;
-                        // 만약 값이 단순 숫자 '1' 이면 '1주차'로 자동 포맷팅
                         const strVal = String(val).trim();
                         return /^\d+$/.test(strVal) ? strVal + '주차' : strVal;
                     }).filter(w => w !== '' && w !== 'undefined');
                 }
             }
             
-            // 기존에 제출된 공동 학습 기록의 주차 정보와 병합
             const existingWeeks = state.allSubmissions.map(s => String(s.week));
             state.weeks = [...new Set([...dbWeeks, ...existingWeeks])];
+            if(state.weeks.length === 0) state.weeks = ['1주차'];
             
-            if(state.weeks.length === 0) state.weeks = ['1주차']; // 데이터가 아예 없을 때의 최소 방어선
-            
-            // 1주차, 2주차 순서대로 깔끔하게 숫자 기반 정렬
             state.weeks.sort((a, b) => {
                 const numA = parseInt(a.replace(/[^0-9]/g, '')) || 0;
                 const numB = parseInt(b.replace(/[^0-9]/g, '')) || 0;
@@ -440,7 +425,7 @@
             });
 
             app.updateWeekDropdowns();
-        }, (error) => { console.error("Schedule Fetch Error:", error); });
+        }, (error) => { console.error("Schedule Error:", error); });
     }
 
     function fetchPublicSubmissions() {
@@ -454,7 +439,6 @@
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs;
             
-            // 제출 기록에 새로운 주차가 있다면 병합 및 재정렬
             let updated = false;
             subs.forEach(s => { 
                 if(s.week && !state.weeks.includes(String(s.week))) {
@@ -477,7 +461,6 @@
         }, (error) => { console.error("Records Error:", error); });
     }
 
-    // 초기 설정
     initUI();
     
     const initAuth = async () => {
@@ -492,13 +475,47 @@
 
     initAuth();
 
-    onAuthStateChanged(auth, (user) => {
+    // 🌟 메인 페이지 프로필과 완벽 연동되도록 수정한 getUserName
+    async function getUserName() {
+        if(!state.user) return "익명스터디원";
+        
+        try {
+            // 메인 페이지에서 등록한 계정 정보 경로로 직접 접근
+            const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
+            const profileSnap = await getDoc(profileRef);
+            if(profileSnap.exists() && profileSnap.data().name) {
+                return profileSnap.data().name;
+            }
+        } catch(e) { console.error("Profile fetch error:", e); }
+
+        // 프로필 데이터가 없으면 기존 로그인 이름 또는 UID 사용
+        if(state.user.displayName) return state.user.displayName;
+        return `익명-${state.user.uid.substring(0,4)}`;
+    }
+
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
             state.user = user;
+            
+            // 네비게이션 바에 연동된 내 이름 표시하기
+            const uName = await getUserName();
+            const navUserEl = document.getElementById('nav-username');
+            if(navUserEl) navUserEl.textContent = uName;
+
             scanGitHub();
             loadGlobalAnswerKey();
-            fetchStudySchedule(); // 주차 정보 불러오기
+            fetchStudySchedule();
             fetchPublicSubmissions();
+            
+            // 🌟 무한 로딩 해결: 로딩 화면 끄고 메인 화면 보여주기
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('dashboard-screen').classList.remove('hidden');
+        } else {
+            // 로그인되어 있지 않은 경우 인증 화면 띄우기
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('dashboard-screen').classList.add('hidden');
         }
     });
 
@@ -527,8 +544,14 @@
         if(mode === 'omr' || mode === 'essay') weekBar.classList.remove('hidden');
         else weekBar.classList.add('hidden');
 
+        if(mode !== 'omr' && mode !== 'essay') {
+            state.editingDocId = null;
+            document.getElementById('editing-badge').classList.add('hidden');
+            document.getElementById('omr-btn-text').textContent = "정답 제출 및 공유하기";
+            document.getElementById('essay-btn-text').textContent = "서술형 제출 및 공유하기";
+        }
+
         document.getElementById('ai-response-area').classList.add('hidden');
-        
         if(mode === 'community') app.renderCommunityRecords();
         lucide.createIcons();
       },
@@ -556,13 +579,13 @@
         if(viewer.classList.contains('viewer-fullscreen')) {
             document.body.style.overflow = 'hidden'; 
             fabBtn.classList.remove('hidden');
-            fabBtn.classList.add('flex');
+            fabBtn.style.display = 'flex';
             if(icon) icon.setAttribute('data-lucide', 'minimize');
             if(text) text.textContent = "줄이기";
         } else {
             document.body.style.overflow = '';
             fabBtn.classList.add('hidden');
-            fabBtn.classList.remove('flex');
+            fabBtn.style.display = 'none';
             if(icon) icon.setAttribute('data-lucide', 'maximize');
             if(text) text.textContent = "크게 보기";
         }
@@ -577,130 +600,40 @@
         const activeBtn = document.getElementById(`btn-${name}`);
         if(activeBtn) activeBtn.classList.add('border-brand-500', 'bg-brand-50/30');
         
-        // 🌟 로드 시 UI 제어
-        document.getElementById('viewer-filename').textContent = "LINKING...";
-        
         try {
           const res = await fetch(url);
           const blob = await res.blob();
+          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+          const blobUrl = URL.createObjectURL(pdfBlob);
           
           const reader = new FileReader();
           reader.onloadend = () => {
             state.problemPdfData = reader.result.split(',')[1];
             state.currentFileName = name;
             
-            // UI 요소 활성화
+            document.getElementById('pdf-embed').src = blobUrl;
+            document.getElementById('pdf-container').classList.remove('hidden');
             document.getElementById('viewer-placeholder').classList.add('hidden');
-            document.getElementById('pdf-canvas-container').classList.remove('hidden');
-            document.getElementById('pdf-controls').classList.remove('hidden');
-            document.getElementById('pdf-controls').classList.add('flex');
             document.getElementById('viewer-filename').textContent = name;
-            
-            // 🌟 PDF.js 렌더링 실행
-            app.renderPDF(state.problemPdfData);
             
             showToast(`${name} 로드 완료`);
             state.isFetching = false;
           };
-          reader.readAsDataURL(blob);
+          reader.readAsDataURL(pdfBlob);
         } catch (e) { showToast("로드 실패", "error"); state.isFetching = false; }
       },
-
-      // 🌟 PDF.js 전용 렌더링 로직 (모바일 하얀화면 방지)
-      renderPDF: async (base64Data) => {
-        try {
-            const pdfData = atob(base64Data);
-            const uint8Array = new Uint8Array(pdfData.length);
-            for (let i = 0; i < pdfData.length; i++) {
-              uint8Array[i] = pdfData.charCodeAt(i);
-            }
-
-            const loadingTask = pdfjsLib.getDocument({data: uint8Array});
-            state.pdfDoc = await loadingTask.promise;
-            document.getElementById('page_count').textContent = state.pdfDoc.numPages;
-            state.pageNum = 1;
-            state.userZoomed = false;
-            app.renderPage(state.pageNum);
-        } catch (error) {
-            console.error('PDF Render Error:', error);
-            showToast("PDF 렌더링 오류", "error");
-        }
-      },
-
-      renderPage: (num) => {
-        state.pageRendering = true;
-        state.pdfDoc.getPage(num).then((page) => {
-          const canvas = document.getElementById('pdf-canvas');
-          const ctx = canvas.getContext('2d');
-          
-          let finalScale = state.pdfScale;
-          if(!state.userZoomed) {
-              const containerWidth = document.getElementById('pdf-canvas-container').clientWidth;
-              const unscaledViewport = page.getViewport({scale: 1});
-              // 화면 너비에 캔버스를 맞춥니다. (여백 20px)
-              finalScale = (containerWidth - 20) / unscaledViewport.width; 
-              state.pdfScale = finalScale;
-          }
-
-          const viewport = page.getViewport({scale: finalScale});
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-
-          const renderContext = { canvasContext: ctx, viewport: viewport };
-          
-          page.render(renderContext).promise.then(() => {
-            state.pageRendering = false;
-            // 캔버스 노출
-            canvas.classList.remove('hidden');
-            if (state.pageNumPending !== null) {
-              app.renderPage(state.pageNumPending);
-              state.pageNumPending = null;
-            }
-          });
-        });
-        document.getElementById('page_num').textContent = num;
-      },
-
-      queueRenderPage: (num) => {
-        if (state.pageRendering) state.pageNumPending = num;
-        else app.renderPage(num);
-      },
-      prevPage: () => {
-        if (state.pageNum <= 1) return;
-        state.pageNum--;
-        app.queueRenderPage(state.pageNum);
-      },
-      nextPage: () => {
-        if (state.pageNum >= state.pdfDoc.numPages) return;
-        state.pageNum++;
-        app.queueRenderPage(state.pageNum);
-      },
-      zoomIn: () => {
-        state.userZoomed = true;
-        state.pdfScale += 0.2;
-        app.queueRenderPage(state.pageNum);
-      },
-      zoomOut: () => {
-        if (state.pdfScale <= 0.6) return;
-        state.userZoomed = true;
-        state.pdfScale -= 0.2;
-        app.queueRenderPage(state.pageNum);
-      },
-
-      // 🌟 주차 드롭다운 업데이트 (Firestore schedule 연동)
+      
       updateWeekDropdowns: () => {
           const select = document.getElementById('week-select');
           const filter = document.getElementById('comm-week-filter');
           if(!select || !filter) return;
           
-          const optionsHtml = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
-
           const currentSelectWeek = select.value;
-          select.innerHTML = optionsHtml;
+          select.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
           if(state.weeks.includes(currentSelectWeek)) select.value = currentSelectWeek;
           
           const currentFilterWeek = filter.value;
-          filter.innerHTML = optionsHtml;
+          filter.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
           if(state.weeks.includes(currentFilterWeek)) filter.value = currentFilterWeek;
           
           app.updateCommunityWorks();
@@ -711,7 +644,7 @@
           const workSelect = document.getElementById('comm-work-filter');
           if(!wFilter || !workSelect) return;
 
-          const works = [...new Set(state.allSubmissions.filter(s => s.week === wFilter).map(s => s.workName))];
+          const works = [...new Set(state.allSubmissions.filter(s => s.week === wFilter && !s.isDeleted).map(s => s.workName))];
           if(works.length === 0) workSelect.innerHTML = `<option value="">작품 없음</option>`;
           else workSelect.innerHTML = `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('');
           app.renderCommunityRecords();
@@ -745,9 +678,12 @@
         const btn = document.getElementById('ai-omr-btn');
         const icon = document.getElementById('ai-omr-icon');
         
+        // 제출자 이름 불러오기 연동
+        const uName = await getUserName();
+        
         const recordData = {
             week, workName, type: "OMR", userAnswers: ans, timestamp: Date.now(),
-            userId: state.user.uid, userName: `익명-${state.user.uid.substring(0,4)}`
+            userId: state.user.uid, userName: uName, isDeleted: false
         };
 
         const sysPrompt = "당신은 문학 강사입니다. 제공된 '정답 해설지'를 바탕으로 학생의 OMR 답안을 채점하고 상세 해설을 제공하세요.";
@@ -772,10 +708,13 @@
 
         const btn = document.getElementById('ai-essay-btn');
         const icon = document.getElementById('ai-essay-icon');
+        
+        // 제출자 이름 불러오기 연동
+        const uName = await getUserName();
 
         const recordData = {
             week, workName, type: "Essay", userAnswers: ess, timestamp: Date.now(),
-            userId: state.user.uid, userName: `익명-${state.user.uid.substring(0,4)}`
+            userId: state.user.uid, userName: uName, isDeleted: false
         };
 
         const sysPrompt = "당신은 임용 국어 전문가입니다. '정답 해설지'의 핵심 키워드를 기준으로 학생의 서술형 답안을 엄격히 채점하고 예상 점수와 피드백을 제공하세요.";
@@ -809,11 +748,28 @@
 
           if(recordData && state.user) {
               recordData.aiFeedback = res;
-              const submissionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
-              await addDoc(submissionsRef, recordData);
-              showToast("공동 기록에 공유되었습니다.", "success");
+              
+              if(state.editingDocId) {
+                  recordData.isEdited = true;
+                  recordData.editedAt = Date.now();
+                  const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId);
+                  await updateDoc(docRef, recordData);
+                  showToast("답안이 성공적으로 수정되었습니다.", "success");
+                  
+                  state.editingDocId = null;
+                  document.getElementById('editing-badge').classList.add('hidden');
+                  document.getElementById('omr-btn-text').textContent = "정답 제출 및 공유하기";
+                  document.getElementById('essay-btn-text').textContent = "서술형 제출 및 공유하기";
+              } else {
+                  const submissionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
+                  await addDoc(submissionsRef, recordData);
+                  showToast("답안이 공동 기록에 공유되었습니다.", "success");
+              }
           }
-        } catch (e) { showToast("AI 통신 오류", "error"); } finally { 
+        } catch (e) { 
+            console.error(e);
+            showToast("분석 실패: " + e.message, "error"); 
+        } finally { 
             btn.disabled = false; 
             if(icon) icon.classList.remove('animate-spin-custom'); 
         }
@@ -827,10 +783,71 @@
             body: JSON.stringify({ contents: [{ parts }], systemInstruction: { parts: [{ text: system }] } }) 
         });
         const data = await res.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || "결과 생성 실패";
+        
+        if (!res.ok) {
+            const errCode = data.error?.code;
+            if(errCode === 400 || errCode === 413) throw new Error("PDF 용량이 너무 큽니다. 해설지나 문제지의 용량을 줄여주세요.");
+            throw new Error(data.error?.message || "AI 통신 오류");
+        }
+        if(!data.candidates || data.candidates.length === 0) throw new Error("AI가 응답을 생성하지 못했습니다.");
+        
+        return data.candidates[0].content.parts[0].text;
       },
 
-      // 🔒 공동 기록 열람
+      deleteSubmission: async (docId) => {
+          if(!confirm("정말 이 답안을 삭제하시겠습니까? (삭제된 기록이 남습니다)")) return;
+          try {
+              const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'submissions', docId);
+              await updateDoc(docRef, { 
+                  isDeleted: true, deletedAt: Date.now(), userAnswers: [], aiFeedback: "🚫 작성자에 의해 삭제된 답안입니다." 
+              });
+              showToast("삭제되었습니다.", "success");
+          } catch(e) { showToast("삭제 실패", "error"); }
+      },
+
+      editSubmission: (docId, type) => {
+          const record = state.allSubmissions.find(s => s.id === docId);
+          if(!record || record.isDeleted) return;
+          
+          state.editingDocId = docId;
+          document.getElementById('editing-badge').classList.remove('hidden');
+          
+          if(type === 'OMR') {
+              app.setMode('omr');
+              document.getElementById('week-select').value = record.week;
+              document.getElementById('omr-work-name').value = record.workName;
+              for(let i=1; i<=10; i++) document.getElementById(`omr-${i}`).value = ''; 
+              
+              record.userAnswers.forEach(ans => {
+                  const match = ans.match(/Q(\d+):\s*(.*)/);
+                  if(match) {
+                      const input = document.getElementById(`omr-${match[1]}`);
+                      if(input) input.value = match[2];
+                  }
+              });
+              document.getElementById('omr-btn-text').textContent = "수정된 답안 제출하기";
+              showToast("수정 모드: 답안을 수정한 뒤 다시 제출해주세요.");
+          } else if (type === 'Essay') {
+              app.setMode('essay');
+              document.getElementById('week-select').value = record.week;
+              document.getElementById('essay-work-name').value = record.workName;
+              for(let i=1; i<=2; i++) {
+                  document.getElementById(`essay-num-${i}`).value = '';
+                  document.getElementById(`essay-ans-${i}`).value = '';
+              }
+              
+              record.userAnswers.forEach((ans, idx) => {
+                  const match = ans.match(/\[(.*?)번 문항\]\s*(.*)/);
+                  if(match && idx < 2) {
+                      document.getElementById(`essay-num-${idx+1}`).value = match[1];
+                      document.getElementById(`essay-ans-${idx+1}`).value = match[2];
+                  }
+              });
+              document.getElementById('essay-btn-text').textContent = "수정된 서술형 제출하기";
+              showToast("수정 모드: 답안을 수정한 뒤 다시 제출해주세요.");
+          }
+      },
+
       renderCommunityRecords: () => {
           const container = document.getElementById('community-container');
           const wFilter = document.getElementById('comm-week-filter').value;
@@ -842,7 +859,7 @@
           }
 
           const workSubs = state.allSubmissions.filter(s => s.week === wFilter && s.workName === workFilter);
-          const hasSubmitted = workSubs.some(s => s.userId === state.user.uid);
+          const hasSubmitted = workSubs.some(s => s.userId === state.user.uid && !s.isDeleted);
 
           if(!hasSubmitted) {
               container.innerHTML = `
@@ -865,23 +882,43 @@
 
           container.innerHTML = workSubs.map((r, i) => {
               const isMine = r.userId === state.user.uid;
+              const isDeleted = r.isDeleted;
+              const isEdited = r.isEdited && !isDeleted;
+              
+              let actionBtns = '';
+              if(isMine && !isDeleted) {
+                  actionBtns = `
+                    <div class="flex items-center space-x-2 ml-auto mr-3">
+                        <button onclick="app.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded transition-colors">수정</button>
+                        <button onclick="app.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded transition-colors">삭제</button>
+                    </div>
+                  `;
+              }
+
               return `
-              <div class="bg-white dark:bg-slate-900 border ${isMine ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mx-1">
+              <div class="bg-white dark:bg-slate-900 border ${isMine ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} ${isDeleted ? 'opacity-60' : ''} rounded-xl overflow-hidden mx-1">
                   <div onclick="document.getElementById('comm-detail-${i}').classList.toggle('hidden')" class="p-3.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between">
                       <div class="flex items-center space-x-2.5">
-                          <span class="w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-500">${i+1}</span>
-                          <span class="text-[11px] font-black ${isMine ? 'text-brand-600 dark:text-brand-400' : 'text-slate-700 dark:text-slate-300'}">${isMine ? '🌟 나의 답안' : r.userName}</span>
+                          <span class="w-6 h-6 rounded ${isDeleted ? 'bg-red-50 text-red-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'} flex items-center justify-center text-[10px] font-black">${isDeleted ? 'X' : (i+1)}</span>
+                          <span class="text-[11px] font-black ${isMine ? 'text-brand-600 dark:text-brand-400' : 'text-slate-700 dark:text-slate-300'}">
+                            ${isMine ? '🌟 나의 답안' : r.userName} 
+                            ${isEdited ? '<span class="text-amber-500 text-[8px] ml-1">[수정됨]</span>' : ''}
+                            ${isDeleted ? '<span class="text-red-500 text-[8px] ml-1">[삭제됨]</span>' : ''}
+                          </span>
                           <span class="text-[9px] font-bold text-slate-400 uppercase border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded">${r.type}</span>
                       </div>
+                      ${actionBtns}
                       <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                   </div>
                   <div id="comm-detail-${i}" class="hidden border-t border-slate-100 dark:border-slate-800">
                       <div class="p-4 bg-slate-50 dark:bg-slate-950">
+                          ${!isDeleted ? `
                           <p class="text-[9px] font-black text-slate-400 mb-2 uppercase tracking-widest">Submitted</p>
                           <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-4 whitespace-pre-wrap pl-2 border-l-2 border-slate-300 dark:border-slate-700">${r.userAnswers.join('\n')}</div>
+                          ` : ''}
                           
-                          <p class="text-[9px] font-black text-brand-500 mb-2 uppercase tracking-widest">AI Feedback</p>
-                          <div class="p-3.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] leading-relaxed dark:text-slate-300 prose prose-sm prose-slate dark:prose-invert max-w-none">
+                          <p class="text-[9px] font-black text-brand-500 mb-2 uppercase tracking-widest">Feedback / Status</p>
+                          <div class="p-3.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-[11px] leading-relaxed ${isDeleted ? 'text-red-500 font-bold' : 'dark:text-slate-300 prose prose-sm prose-slate dark:prose-invert max-w-none'}">
                               ${r.aiFeedback.replace(/\n/g, '<br>')}
                           </div>
                       </div>
@@ -893,5 +930,3 @@
     };
 
   </script>
-</body>
-</html>
