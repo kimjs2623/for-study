@@ -7,7 +7,6 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- PDF 렌더링 엔진 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -57,10 +56,8 @@
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen relative">
 
-  <!-- 토스트 알림 영역 -->
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- 자체 커스텀 삭제 확인 모달 (기본 Alert 대신 사용) -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -78,7 +75,6 @@
       <i data-lucide="minimize-2" class="w-5 h-5 mr-2"></i> 원래 화면으로 돌아가기
   </button>
 
-  <!-- 네비게이션 -->
   <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 h-16 shrink-0 z-50 sticky top-0 lg:relative">
     <div class="max-w-[1800px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
       <div class="flex items-center space-x-4 sm:space-x-6 h-full">
@@ -168,17 +164,15 @@
                     <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
                         <i data-lucide="book-open" class="w-6 h-6 text-slate-300 dark:text-slate-500"></i>
                     </div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library to start reading</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 오른쪽 패널 -->
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
-            <!-- 주차 필터 바 & 수정 모드 뱃지 -->
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
@@ -186,7 +180,6 @@
                         <option value="">불러오는 중...</option>
                     </select>
                 </div>
-                <!-- 수정 모드 표시 -->
                 <div id="editing-badge" class="hidden px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 text-[9px] font-black rounded uppercase animate-pulse flex items-center">
                     <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> 수정 모드
                 </div>
@@ -194,7 +187,6 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
                 
-                <!-- OMR -->
                 <div id="view-omr" class="space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -206,7 +198,6 @@
                     </button>
                 </div>
 
-                <!-- 서술형 -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -218,7 +209,6 @@
                     </button>
                 </div>
 
-                <!-- 커뮤니티 -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
                     <div class="bg-brand-50/50 dark:bg-brand-900/10 p-4 rounded-xl border border-brand-100 dark:border-brand-800/50 shrink-0 shadow-sm">
                         <h3 class="text-[11px] font-black text-brand-700 dark:text-brand-400 mb-1 uppercase tracking-widest flex items-center">
@@ -245,12 +235,15 @@
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    /* ==========================================
+       1. 전역 설정 (GitHub 환경)
+       ========================================== */
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf" };
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
         apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
     };
-    
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-study-app';
+
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
@@ -260,6 +253,23 @@
       isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false
     };
 
+    // 🌟 누락되었던 이름 불러오기 함수 복구
+    async function getUserName() {
+        if(!state.user) return "익명";
+        try {
+            const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
+            const profileSnap = await getDoc(profileRef);
+            if(profileSnap.exists()) {
+                const data = profileSnap.data();
+                return data.name || data.appAccountId || "스터디원";
+            }
+        } catch(e) {}
+        return state.user.displayName || "스터디원";
+    }
+
+    /* ==========================================
+       2. 통합 컨트롤러 (window.StudyApp)
+       ========================================== */
     window.StudyApp = {
       showToast: (msg, type='info') => {
         const toast = document.createElement('div');
@@ -300,14 +310,12 @@
             }
         });
         
-        // 커뮤니티 탭 진입 시에만 주차 필터 숨기기 해제 (수정 모드일 때는 보임)
         const bar = document.getElementById('week-selector-bar');
         if(bar) {
             if(mode === 'community' || state.editingDocId) bar.classList.remove('hidden');
             else bar.classList.add('hidden');
         }
 
-        // 수정 모드가 아닌데 다른 탭으로 이동하면 수정 모드 초기화
         if (mode !== 'omr' && mode !== 'essay') {
             state.editingDocId = null;
             document.getElementById('editing-badge')?.classList.add('hidden');
@@ -416,7 +424,6 @@
             canvas.classList.remove('hidden');
           });
         });
-        
         const numEl = document.getElementById('page_num');
         if (numEl) numEl.textContent = num;
       },
@@ -448,7 +455,6 @@
           window.StudyApp.renderCommunityRecords();
       },
 
-      // 🌟 데이터 제출 및 수정 (통합 로직)
       submitOMR: async () => {
         const weekEl = document.getElementById('week-select');
         const workEl = document.getElementById('omr-work-name');
@@ -470,7 +476,7 @@
         window.StudyApp.showToast(state.editingDocId ? "수정하는 중..." : "답안을 공유하는 중...");
         
         try {
-            const userName = await getUserName();
+            const userName = await getUserName(); // 🌟 복원된 함수 사용
             const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, userName: userName, isDeleted: false };
             
             if (state.editingDocId) {
@@ -484,7 +490,6 @@
                 window.StudyApp.showToast("공유 완료!", "success");
             }
             
-            // 초기화 후 이동
             state.editingDocId = null;
             document.getElementById('editing-badge')?.classList.add('hidden');
             btn.innerHTML = '<i data-lucide="send" class="w-4 h-4 mr-2"></i> 정답 제출 및 공유하기';
@@ -520,7 +525,7 @@
         window.StudyApp.showToast(state.editingDocId ? "수정하는 중..." : "답안을 공유하는 중...");
         
         try {
-            const userName = await getUserName();
+            const userName = await getUserName(); // 🌟 복원된 함수 사용
             const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, userName: userName, isDeleted: false };
             
             if (state.editingDocId) {
@@ -534,7 +539,6 @@
                 window.StudyApp.showToast("공유 완료!", "success");
             }
 
-            // 초기화 후 이동
             state.editingDocId = null;
             document.getElementById('editing-badge')?.classList.add('hidden');
             btn.innerHTML = '<i data-lucide="send" class="w-4 h-4 mr-2"></i> 서술형 제출 및 공유하기';
@@ -547,7 +551,7 @@
         }
       },
 
-      // 🌟 답안 수정 및 삭제 함수 추가
+      // 🌟 누락되었던 수정/삭제 기능 복원
       editSubmission: (docId, type) => {
           const record = state.allSubmissions.find(s => s.id === docId);
           if(!record || record.isDeleted) return;
@@ -560,7 +564,10 @@
               window.StudyApp.setMode('omr');
               document.getElementById('week-select').value = record.week;
               document.getElementById('omr-work-name').value = record.workName;
-              for(let i=1; i<=10; i++) document.getElementById(`omr-${i}`).value = ''; 
+              for(let i=1; i<=10; i++) {
+                  const input = document.getElementById(`omr-${i}`);
+                  if(input) input.value = '';
+              }
               
               record.userAnswers.forEach(ans => {
                   const match = ans.match(/Q(\d+):\s*(.*)/);
@@ -569,25 +576,31 @@
                       if(input) input.value = match[2];
                   }
               });
-              document.getElementById('submit-omr-btn').innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 답안 다시 제출하기';
+              const btn = document.getElementById('submit-omr-btn');
+              if(btn) btn.innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 답안 다시 제출하기';
               window.StudyApp.showToast("수정 모드: 답안을 수정한 뒤 하단 버튼을 클릭하세요.");
           } else if (type === 'Essay') {
               window.StudyApp.setMode('essay');
               document.getElementById('week-select').value = record.week;
               document.getElementById('essay-work-name').value = record.workName;
               for(let i=1; i<=2; i++) {
-                  document.getElementById(`essay-num-${i}`).value = '';
-                  document.getElementById(`essay-ans-${i}`).value = '';
+                  const numInput = document.getElementById(`essay-num-${i}`);
+                  const ansInput = document.getElementById(`essay-ans-${i}`);
+                  if(numInput) numInput.value = '';
+                  if(ansInput) ansInput.value = '';
               }
               
               record.userAnswers.forEach((ans, idx) => {
-                  const match = ans.match(/\[(.*?)번 문항\]\s*(.*)/); // 형식 통일
+                  const match = ans.match(/\[(.*?)번\]\s*(.*)/) || ans.match(/\[(.*?)번 문항\]\s*(.*)/);
                   if(match && idx < 2) {
-                      document.getElementById(`essay-num-${idx+1}`).value = match[1];
-                      document.getElementById(`essay-ans-${idx+1}`).value = match[2];
+                      const numInput = document.getElementById(`essay-num-${idx+1}`);
+                      const ansInput = document.getElementById(`essay-ans-${idx+1}`);
+                      if(numInput) numInput.value = match[1];
+                      if(ansInput) ansInput.value = match[2];
                   }
               });
-              document.getElementById('submit-essay-btn').innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 서술형 다시 제출하기';
+              const btn = document.getElementById('submit-essay-btn');
+              if(btn) btn.innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 서술형 다시 제출하기';
               window.StudyApp.showToast("수정 모드: 답안을 수정한 뒤 하단 버튼을 클릭하세요.");
           }
           if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -646,7 +659,7 @@
               const isDeleted = r.isDeleted;
               const isEdited = r.isEdited && !isDeleted;
               
-              // 🌟 본인 답안인 경우 수정/삭제 버튼 노출
+              // 🌟 렌더링 시 수정/삭제 버튼 추가
               let actionBtns = '';
               if(isMine && !isDeleted) {
                   actionBtns = `
