@@ -54,7 +54,7 @@
     .fab-button:active { transform: translateX(-50%) scale(0.95); }
     canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 100%; height: auto !important; }
     
-    /* Markdown 렌더링 스타일 (AI 응답용) */
+    /* Markdown 렌더링 스타일 */
     .markdown-body h3 { font-size: 13px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
     .dark .markdown-body h3 { border-bottom-color: #334155; color: #818cf8; }
     .markdown-body ul { list-style-type: disc; padding-left: 20px; margin-bottom: 12px; }
@@ -106,8 +106,9 @@
       </div>
       
       <div class="flex items-center space-x-3 shrink-0">
-        <div id="answer-key-badge" class="hidden sm:flex items-center bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 px-2 py-1 rounded text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
-            <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> AI Key Loaded
+        <!-- 🌟 해설지 상태를 명확히 보여주는 뱃지 -->
+        <div id="answer-key-badge" class="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            <i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> Checking Key...
         </div>
         <button onclick="window.StudyApp.toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 transition-all">
           <i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i>
@@ -185,7 +186,7 @@
         </div>
     </section>
 
-    <!-- 우측 작업 영역 -->
+    <!-- 오른쪽 작업 영역 -->
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
@@ -197,7 +198,7 @@
                         <option value="">불러오는 중...</option>
                     </select>
                 </div>
-                <!-- 수정 모드 배지 -->
+                <!-- 수정 모드 표시 -->
                 <div id="editing-badge" class="hidden px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 text-[9px] font-black rounded uppercase animate-pulse flex items-center">
                     <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> 수정 모드
                 </div>
@@ -215,7 +216,7 @@
                     </button>
                 </div>
 
-                <!-- 뷰 B: OMR -->
+                <!-- OMR -->
                 <div id="view-omr" class="hidden space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -227,7 +228,7 @@
                     </button>
                 </div>
 
-                <!-- 뷰 C: 서술형 -->
+                <!-- 서술형 -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -239,7 +240,7 @@
                     </button>
                 </div>
 
-                <!-- 뷰 D: 커뮤니티 -->
+                <!-- 커뮤니티 -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
                     <div class="bg-brand-50/50 dark:bg-brand-900/10 p-4 rounded-xl border border-brand-100 dark:border-brand-800/50 shrink-0 shadow-sm">
                         <h3 class="text-[11px] font-black text-brand-700 dark:text-brand-400 mb-1 uppercase tracking-widest flex items-center">
@@ -256,7 +257,7 @@
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2"></div>
                 </div>
 
-                <!-- AI 응답 즉시 확인 영역 -->
+                <!-- AI 응답 모달 (채점 결과 즉시 확인) -->
                 <div id="ai-response-area" class="hidden animate-fade-in mt-4">
                     <div class="p-5 bg-brand-50/50 dark:bg-slate-800/50 rounded-2xl border border-brand-200 dark:border-slate-700 shadow-lg relative">
                         <button onclick="document.getElementById('ai-response-area').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
@@ -323,7 +324,6 @@
         return state.user.displayName || "스터디원";
     }
 
-    // 🌟 주차 목록 업데이트 로직 (삭제 시 필터 풀림 현상 방지)
     function updateGlobalWeeks() {
         const existingWeeks = state.allSubmissions.filter(s => !s.isDeleted).map(s => String(s.week));
         state.weeks = [...new Set([...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
@@ -349,7 +349,6 @@
         window.StudyApp.updateCommunityWorks();
     }
 
-    // PDF 텍스트 추출 로직 (최대 20페이지)
     async function extractTextFromBlobPDF(blob) {
         if(!blob) return "";
         try {
@@ -370,7 +369,6 @@
         }
     }
 
-    // 정규식을 활용한 간단한 마크다운 파서 (AI 응답 UI 포맷팅)
     function parseMarkdown(text) {
         let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
@@ -386,11 +384,13 @@
       showToast: (msg, type='info', duration=4000) => {
         const toast = document.createElement('div');
         const finalDuration = type === 'error' ? 7000 : duration;
-        toast.className = `p-4 rounded-xl shadow-2xl border text-[10px] font-black transition-all duration-300 z-[1000000] pointer-events-auto ${type==='error'?'bg-red-50 text-red-600 border-red-200':'bg-brand-50 text-brand-600 border-brand-200'}`;
-        toast.textContent = msg;
+        toast.className = `p-4 rounded-xl shadow-2xl border text-[10px] font-black transition-all duration-300 z-[1000000] pointer-events-auto flex items-center ${type==='error'?'bg-red-50 text-red-600 border-red-200':'bg-brand-50 text-brand-600 border-brand-200'}`;
+        toast.innerHTML = type === 'error' ? `<i data-lucide="alert-circle" class="w-4 h-4 mr-2 shrink-0"></i> <span>${msg}</span>` : `<i data-lucide="info" class="w-4 h-4 mr-2 shrink-0"></i> <span>${msg}</span>`;
+        
         const container = document.getElementById('toast-container');
         if (container) {
             container.appendChild(toast);
+            if(typeof lucide !== 'undefined') lucide.createIcons();
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, finalDuration);
         }
       },
@@ -407,6 +407,13 @@
             let html = '';
             for(let i=1; i<=2; i++) html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800"><div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800"><span class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Question 0${i}</span><input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] text-center dark:text-white outline-none rounded shadow-sm py-1 transition-colors"></div><textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white custom-scrollbar border-none transition-colors"></textarea></div>`;
             essayGrid.innerHTML = html;
+        }
+        
+        // 초기 배지 세팅
+        const badge = document.getElementById('answer-key-badge');
+        if(badge) {
+            badge.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> Checking Key...`;
+            badge.classList.remove('hidden');
         }
         if(typeof lucide !== 'undefined') lucide.createIcons();
       },
@@ -561,12 +568,11 @@
           if(!filterEl || !workSelect) return;
           
           const w = filterEl.value;
-          const prevWork = workSelect.value; // 🌟 삭제 시 선택 유지용 저장
+          const prevWork = workSelect.value;
           
           const works = [...new Set(state.allSubmissions.filter(x => x.week === w && !x.isDeleted).map(x => x.workName))];
           workSelect.innerHTML = works.length ? `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('') : `<option value="">기록 없음</option>`;
           
-          // 🌟 목록 갱신 후에도 이전 선택값이 존재하면 다시 선택해줌 (새로고침 없이 유지)
           if (works.includes(prevWork)) {
               workSelect.value = prevWork;
           }
@@ -600,6 +606,11 @@
         if(!week || week.includes("오류") || week.includes("없음")) return window.StudyApp.showToast("올바른 주차 정보가 없습니다. DB 경로를 확인하세요.", "error");
         if(!workName) return window.StudyApp.showToast("작품명을 입력하세요.", "error");
         
+        // 🌟 1. 해설지 검증 차단
+        if(!state.answerKeyText || state.answerKeyText.length < 10) {
+            return window.StudyApp.showToast("정답 해설지가 로드되지 않아 채점할 수 없습니다. 우측 상단의 뱃지 상태를 확인하세요.", "error");
+        }
+
         const ans = [];
         for(let i=1; i<=10; i++) {
             const vEl = document.getElementById(`omr-${i}`);
@@ -610,27 +621,31 @@
 
         const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, isDeleted: false };
         
-        // 🌟 채점 시 PDF 배제 & 오직 해설지 기준 + 양식 강제 고정
-        const systemMsg = `학생이 입력한 작품명은 [${workName}] 입니다.
-제공된 [공식 정답 해설지 원문]의 텍스트 중에서 오직 [${workName}] 작품에 해당하는 정답과 해설만을 완벽하게 찾아내어 학생의 OMR 답안을 채점하세요. 문제지(PDF)의 내용은 환각을 일으킬 수 있으니 절대 참고하지 마세요. 해설지의 정답과 학생의 답이 다르면 무조건 오답입니다.
+        // 🌟 2. 멱살잡기 프롬프트 (환각 완벽 차단 및 양식 고정)
+        const systemMsg = `너는 매우 엄격하고 정확한 문학 채점관이다. 학생이 입력한 작품명은 [${workName}] 이다.
 
-반드시 다음 마크다운 양식을 엄격하게 지켜서 출력하세요:
+[가장 중요한 채점 원칙 - 환각 금지]
+1. 제공된 [공식 정답 해설지 원문]에서 오직 [${workName}] 작품에 대한 정답만 찾아라.
+2. 해설지에 4번, 5번 등 학생이 제출한 번호의 문항이 아예 존재하지 않는다면 절대 임의로 유추하거나 정답 처리하지 말고 반드시 "문항 없음 (채점 불가)"로 표기해라.
+3. 해설지에 명시된 정답과 학생의 답이 일치할 때만 정답이다.
+
+반드시 다음 마크다운 양식을 엄격하게 지켜서 출력해라:
 ---
 ### 📊 채점 결과
-* **총점:** [맞은 개수]/[전체 푼 개수]
+* **총점:** [맞은 개수]/[제출한 개수]
 
 ### 📝 문항별 해설
-* **[번호]번:** [정답/오답] (학생 답: [X], 실제 정답: [Y])
-  * 해설: [정답해설지 기반 해설 1~2줄]
+* **[번호]번:** [정답/오답/문항없음] (학생 답: [X], 실제 정답: [Y 또는 확인불가])
+  * 해설: [해설지에 해당 번호의 내용이 있으면 요약, 없으면 '해설지에 해당 문항이 없습니다.' 출력]
 (모든 문항 반복)
 
 ### 💡 총평
-[전체적인 평가 및 보완할 점 2줄 내외]
+[2줄 내외 평가]
 ---`;
 
         window.StudyApp.processAIRequest(
             document.getElementById('submit-omr-btn'), 
-            [{ text: `[작품명: ${workName}]\n[학생 OMR 답안]:\n${ans.join('\n')}` }], 
+            [{ text: `[학생 OMR 답안]\n${ans.join('\n')}` }], 
             systemMsg, 
             recordData
         );
@@ -646,6 +661,11 @@
         if(!week || week.includes("오류") || week.includes("없음")) return window.StudyApp.showToast("올바른 주차 정보가 없습니다. DB 경로를 확인하세요.", "error");
         if(!workName) return window.StudyApp.showToast("작품명을 입력하세요.", "error");
         
+        // 🌟 1. 해설지 검증 차단
+        if(!state.answerKeyText || state.answerKeyText.length < 10) {
+            return window.StudyApp.showToast("정답 해설지가 로드되지 않아 채점할 수 없습니다. 우측 상단의 뱃지 상태를 확인하세요.", "error");
+        }
+
         const ess = [];
         for(let i=1; i<=2; i++) {
             const nEl = document.getElementById(`essay-num-${i}`);
@@ -658,28 +678,32 @@
 
         const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, isDeleted: false };
         
-        // 🌟 채점 시 PDF 배제 & 오직 해설지 기준 + 양식 강제 고정
-        const systemMsg = `학생이 입력한 작품명은 [${workName}] 입니다.
-제공된 [공식 정답 해설지 원문]의 텍스트 중에서 오직 [${workName}] 작품에 대한 서술형 해설과 채점 기준(키워드)만을 찾아내어 학생의 서술형 답안을 정밀 채점하세요. 문제지(PDF)의 내용은 절대 참고하지 마세요.
+        // 🌟 2. 멱살잡기 프롬프트 (환각 완벽 차단 및 양식 고정)
+        const systemMsg = `너는 매우 엄격하고 정확한 문학 서술형 채점관이다. 학생이 입력한 작품명은 [${workName}] 이다.
 
-반드시 다음 마크다운 양식을 엄격하게 지켜서 출력하세요:
+[가장 중요한 채점 원칙 - 환각 금지]
+1. 제공된 [공식 정답 해설지 원문]에서 오직 [${workName}] 작품에 대한 서술형 해설만 찾아라.
+2. 해설지에 학생이 제출한 문항 번호나 관련 내용이 아예 존재하지 않는다면 "문항 없음 (채점 불가)"로 표기해라.
+3. 해설지에 명시된 핵심 키워드가 학생 답안에 포함되어 있는지 엄격하게 검사해라.
+
+반드시 다음 마크다운 양식을 엄격하게 지켜서 출력해라:
 ---
 ### 📊 서술형 채점 결과
-* **[문항 번호]번:** [Pass/Fail 또는 점수]
+* **[문항 번호]번:** [Pass/Fail 또는 점수 또는 문항없음]
 
 ### 📝 상세 피드백
-* **작성 답안 요약:** [학생이 쓴 답안 요약]
-* **모범 답안 키워드:** [해설지에 명시된 필수 키워드들]
-* **피드백:** [키워드 포함 여부 및 보완할 점 2~3줄]
+* **작성 답안 요약:** [학생이 쓴 답안 핵심]
+* **모범 답안 키워드:** [해설지에 명시된 필수 키워드들, 없으면 '확인불가']
+* **피드백:** [키워드 포함 여부 및 보완할 점 2~3줄, 해설지에 없으면 '해설지에 해당 내용이 없습니다.']
 (모든 문항 반복)
 
 ### 💡 총평
-[전체적인 평가 2줄 내외]
+[2줄 내외 평가]
 ---`;
 
         window.StudyApp.processAIRequest(
             document.getElementById('submit-essay-btn'), 
-            [{ text: `[작품명: ${workName}]\n[학생 서술형 답안]:\n\n${ess.join('\n\n')}` }], 
+            [{ text: `[학생 서술형 답안]\n\n${ess.join('\n\n')}` }], 
             systemMsg, 
             recordData
         );
@@ -690,7 +714,6 @@
         const cont = document.getElementById('ai-response-content');
         if (!area || !cont || !btn) return;
         
-        // 🌟 버튼 시각적 로딩 상태 처리
         const originalBtnText = btn.innerHTML; 
         btn.disabled = true; 
         btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin-custom"></i> AI 분석 및 채점 중...`;
@@ -700,17 +723,15 @@
         window.StudyApp.showToast("AI가 분석을 시작했습니다. 잠시만 기다려주세요...", "info");
         
         try {
-            // 🌟 튜터(Tutor) 모드일 때만 문제지 PDF 텍스트를 제공 (채점 모드에서는 배제)
+            // Tutor 모드일 때만 문제지 제공 (환각 방지를 위해 OMR/Essay 채점 시엔 문제지 PDF를 절대 주지 않음)
             if (state.mode === 'tutor' && state.problemPdfBlob) {
                 const problemText = await extractTextFromBlobPDF(state.problemPdfBlob);
                 if (problemText) parts.push({ text: `\n\n[참고 자료: 현재 화면의 문제지 원문]\n${problemText}` });
             }
             
-            // 해설지는 항상 제공
+            // 해설지는 무조건 제공 (submit 함수에서 사전에 차단하긴 했지만 안전장치)
             if (state.answerKeyText) {
                 parts.push({ text: `\n\n[절대적 채점 기준: 공식 정답 해설지 원문]\n${state.answerKeyText}` });
-            } else {
-                parts.push({ text: `\n\n[주의: 현재 해설지 텍스트를 불러오지 못했습니다. 일반적인 지식을 바탕으로 채점하세요.]` });
             }
             
             const res = await window.StudyApp.callGemini(parts, sysMsg);
@@ -719,12 +740,10 @@
                 recordData.userName = await getUserName();
                 recordData.aiFeedback = res; 
                 
-                // 🌟 결과를 즉시 모달로 보여줌 (커뮤니티 탭으로 튕기지 않음)
                 cont.innerHTML = parseMarkdown(res);
                 area.classList.remove('hidden'); 
                 area.scrollIntoView({ behavior: 'smooth' });
                 
-                // 백그라운드 DB 저장 처리
                 if (state.editingDocId) {
                     recordData.isEdited = true;
                     recordData.editedAt = Date.now();
@@ -733,14 +752,13 @@
                 } else {
                     recordData.timestamp = Date.now();
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
-                    window.StudyApp.showToast("채점 완료! 커뮤니티에도 자동 공유되었습니다.", "success");
+                    window.StudyApp.showToast("채점 완료! 결과가 커뮤니티에도 공유되었습니다.", "success");
                 }
                 
                 state.editingDocId = null;
                 document.getElementById('editing-badge')?.classList.add('hidden');
                 
             } else {
-                // Tutor 모드 결과 출력
                 cont.innerHTML = parseMarkdown(res);
                 area.classList.remove('hidden'); 
                 area.scrollIntoView({ behavior: 'smooth' });
@@ -750,7 +768,6 @@
             window.StudyApp.showToast(`[AI 통신 에러] ${e.message}`, "error"); 
             console.error("AI 에러 상세:", e);
         } finally { 
-            // 🌟 버튼 원래 상태 복구
             btn.innerHTML = originalBtnText;
             btn.disabled = false; 
             if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -857,7 +874,6 @@
           const wFilter = wFilterEl.value;
           const workFilter = workFilterEl.value;
           
-          // 필터값이 없으면 목록을 비움
           if(!wFilter || !workFilter) {
               container.innerHTML = `<div class="text-center py-16 text-[10px] text-slate-400 font-bold uppercase tracking-widest">조회할 주차와 작품을 선택해주세요.</div>`;
               return;
@@ -933,40 +949,34 @@
         }
     }
 
-    function renderFileList() {
-        const container = document.getElementById('material-list');
-        if (!container) return;
-        if (state.filteredFiles.length === 0) {
-            container.innerHTML = `<p class="text-center text-[10px] text-slate-400 py-10 font-black uppercase">No Files Found</p>`;
-            return;
-        }
-        container.innerHTML = state.filteredFiles.map(file => `
-            <button onclick="window.StudyApp.loadMaterial('${file.name}', '${file.download_url}')" 
-                id="btn-${file.name.replace(/\s+/g, '')}"
-                class="file-btn w-full flex items-center p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-brand-500 transition-all text-left group">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-2 text-slate-300 group-hover:text-brand-500 shrink-0"></i>
-                <div class="flex-1 truncate font-bold text-[10px] uppercase tracking-tighter">${file.name}</div>
-            </button>
-        `).join('');
-        if(typeof lucide !== 'undefined') lucide.createIcons();
-    }
-
+    // 🌟 정답해설지 명확한 상태 UI 처리 (성공/실패 뱃지)
     async function loadGlobalAnswerKey() {
         const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folder}/${GITHUB_CONFIG.answerKeyFileName}`;
+        const badge = document.getElementById('answer-key-badge');
         try {
             const res = await fetch(url);
             if(res.ok) {
                 const blob = await res.blob();
-                // 🌟 해설지 텍스트 사전 완벽 추출 (로딩 지연 및 누락 방지)
                 state.answerKeyText = await extractTextFromBlobPDF(blob); 
                 
-                const badge = document.getElementById('answer-key-badge');
                 if (badge && state.answerKeyText.length > 50) {
-                    badge.classList.remove('hidden');
-                    console.log("해설지 텍스트 로드 완료");
+                    badge.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> AI Key Loaded`;
+                    badge.className = "hidden sm:flex items-center bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 px-2 py-1 rounded text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest";
+                } else {
+                    throw new Error("Text Extraction Failed");
                 }
+            } else {
+                throw new Error("File Not Found");
             }
-        } catch(e) { console.warn("Answer key load failed", e); }
+        } catch(e) { 
+            console.warn("Answer key load failed", e);
+            state.answerKeyText = ""; 
+            if (badge) {
+                badge.innerHTML = `<i data-lucide="x-circle" class="w-3 h-3 mr-1"></i> Key Missing`;
+                badge.className = "hidden sm:flex items-center bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 px-2 py-1 rounded text-[9px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest";
+            }
+        }
+        if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function fetchStudySchedule() {
@@ -1000,7 +1010,7 @@
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs;
             updateGlobalWeeks();
-            // 🌟 onSnapshot 발동(삭제 등) 시 UI 즉시 갱신
+            // 🌟 삭제 등 DB 업데이트 시 현재 탭 갱신 (새로고침 없이)
             if(state.mode === 'community') window.StudyApp.updateCommunityWorks();
         });
     }
