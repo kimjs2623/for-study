@@ -269,21 +269,22 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     /* ===============================================================
-       [환경 변수 세팅]
+       1. 깃허브 배포 전용 완벽 하드코딩 환경 설정
        =============================================================== */
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
     
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+    // Firebase 연결 정보 고정
+    const firebaseConfig = {
         apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
     };
     
-    // 🌟 요청하신 정확한 앱 아이디 하드코딩 적용 (기존 깃허브 환경 연동 오류 해결)
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app';
+    // 앱 아이디를 알려주신 DB 폴더명과 100% 동일하게 강제 고정
+    const appId = 'my-study-app'; 
     
-    // 🌟 요청하신 API Key 명시적 주입 및 정식 1.5-flash 모델 적용 (깃허브 배포 환경)
+    // 🌟 제공해주신 실제 Gemini API Key 적용 및 가장 안정적인 1.5-flash 버전 명시
     const apiKey = "AIzaSyA-frmY9mZMwNtHjR5W4UOGcNT0cBe4Tng"; 
     const GEMINI_MODEL = "gemini-1.5-flash"; 
 
@@ -310,16 +311,34 @@
         return state.user.displayName || "스터디원";
     }
 
+    // 🌟 주차 목록 업데이트 (임의 1~5주차 생성 로직 완전히 삭제)
     function updateGlobalWeeks() {
         const existingWeeks = state.allSubmissions.filter(s => !s.isDeleted).map(s => String(s.week));
-        // 안전을 위해 기본 주차 생성 (DB가 비어있을 경우 대비)
-        const baseWeeks = ['1주차', '2주차', '3주차', '4주차', '5주차']; 
-        state.weeks = [...new Set([...baseWeeks, ...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
-        state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
-        window.StudyApp.updateWeekDropdowns();
+        state.weeks = [...new Set([...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
+        
+        let isEmpty = false;
+        if(state.weeks.length === 0) {
+            isEmpty = true;
+        } else {
+            state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
+        }
+        
+        ['week-select', 'comm-week-filter'].forEach(id => {
+            const el = document.getElementById(id);
+            if(!el) return;
+            if (isEmpty) {
+                // 🌟 DB가 비어있거나 경로가 틀렸을 경우 명확히 표시
+                el.innerHTML = '<option value="">[DB 비어있음/경로오류]</option>';
+            } else {
+                const prev = el.value;
+                el.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+                if(state.weeks.includes(prev)) el.value = prev;
+            }
+        });
+        window.StudyApp.updateCommunityWorks();
     }
 
-    // PDF 글자 추출 우회 로직
+    // PDF 텍스트 추출 로직
     async function extractTextFromBlobPDF(blob) {
         try {
             const arrayBuffer = await blob.arrayBuffer();
@@ -527,9 +546,14 @@
           ['week-select', 'comm-week-filter'].forEach(id => {
               const el = document.getElementById(id);
               if(!el) return;
-              const prev = el.value;
-              el.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
-              if(state.weeks.includes(prev)) el.value = prev;
+              // 만약 DB가 비어서 오류 문구가 떠야 한다면 선택을 막음
+              if (state.weeks.length === 0) {
+                 el.innerHTML = '<option value="">[DB 비어있음/경로오류]</option>';
+              } else {
+                 const prev = el.value;
+                 el.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+                 if(state.weeks.includes(prev)) el.value = prev;
+              }
           });
           window.StudyApp.updateCommunityWorks();
       },
@@ -567,6 +591,8 @@
         if (!weekEl || !workEl) return;
         const week = weekEl.value;
         const workName = workEl.value.trim();
+        
+        if(!week || week.includes("DB 비어있음")) return window.StudyApp.showToast("주차 정보가 없습니다. DB 경로를 확인하세요.", "error");
         if(!workName) return window.StudyApp.showToast("작품명을 입력하세요.", "error");
         
         const ans = [];
@@ -592,6 +618,8 @@
         if (!weekEl || !workEl) return;
         const week = weekEl.value;
         const workName = workEl.value.trim();
+        
+        if(!week || week.includes("DB 비어있음")) return window.StudyApp.showToast("주차 정보가 없습니다. DB 경로를 확인하세요.", "error");
         if(!workName) return window.StudyApp.showToast("작품명을 입력하세요.", "error");
         
         const ess = [];
@@ -665,7 +693,7 @@
                 window.StudyApp.showToast("분석이 완료되었습니다.", "success");
             }
         } catch (e) { 
-            window.StudyApp.showToast("AI 통신 실패: 깃허브 배포 시 API 키를 확인해주세요.", "error"); 
+            window.StudyApp.showToast("AI 통신 실패: 깃허브에 올바른 API 키가 세팅되었는지 확인하세요.", "error"); 
             console.error(e);
         } finally { 
             btn.disabled = false; 
@@ -674,7 +702,6 @@
       },
 
       callGemini: async (parts, system) => {
-        // 🌟 하드코딩된 API Key 사용
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
         const res = await fetch(url, { 
             method: 'POST', 
@@ -682,7 +709,7 @@
             body: JSON.stringify({ contents: [{ parts }], systemInstruction: { parts: [{ text: system }] } }) 
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error?.message || "Unknown API Error");
+        if (!res.ok) throw new Error(data.error?.message || "알 수 없는 API 에러 발생");
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답이 없습니다.";
       },
 
@@ -782,7 +809,7 @@
               if(isMine) {
                   actionBtns += `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="edit" class="w-3 h-3 mr-1"></i>수정</button>`;
               }
-              // 테스트용 완전 삭제 버튼
+              // 테스트용: 누구나 완전 삭제 가능
               actionBtns += `<button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>삭제</button>`;
               actionBtns += `</div>`;
 
@@ -873,24 +900,31 @@
         } catch(e) { console.warn("Answer key load failed"); }
     }
 
-    // 🌟 주차 연동 로직 (알려주신 정확한 경로에서 데이터 가져오기)
+    // 🌟 DB 경로 스캔 및 비어있음 알림 처리
     function fetchStudySchedule() {
         const scheduleDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
         onSnapshot(scheduleDocRef, (docSnap) => {
             state.docWeeks = [];
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                (data.weeks || []).forEach(w => {
-                    const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week || w.title) : w;
-                    if(val) {
-                        const str = String(val).trim();
-                        state.docWeeks.push(str.includes('주차') ? str : str + '주차');
-                    }
-                });
+                if (data.weeks && data.weeks.length > 0) {
+                    (data.weeks || []).forEach(w => {
+                        const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week || w.title) : w;
+                        if(val) {
+                            const str = String(val).trim();
+                            state.docWeeks.push(str.includes('주차') ? str : str + '주차');
+                        }
+                    });
+                } else {
+                    window.StudyApp.showToast("DB에 'weeks' 데이터가 비어있습니다. 일정을 확인해주세요.", "error");
+                }
+            } else {
+                window.StudyApp.showToast("DB 경로 오류: studyInfo/schedule 문서가 없습니다.", "error");
             }
             updateGlobalWeeks();
         }, (e) => {
             console.error("Schedule load error:", e);
+            window.StudyApp.showToast("DB 통신 권한 에러", "error");
         });
     }
 
