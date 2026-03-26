@@ -7,6 +7,7 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
+  <!-- PDF 렌더링 엔진 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -51,13 +52,15 @@
         display: flex; align-items: center; justify-content: center;
     }
     .fab-button:active { transform: translateX(-50%) scale(0.95); }
-    canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 100%; height: auto !important; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen relative">
 
+  <!-- 토스트 알림 컨테이너 -->
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
+  <!-- 자체 커스텀 삭제 확인 모달 -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -75,6 +78,7 @@
       <i data-lucide="minimize-2" class="w-5 h-5 mr-2"></i> 원래 화면으로 돌아가기
   </button>
 
+  <!-- 네비게이션 -->
   <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 h-16 shrink-0 z-50 sticky top-0 lg:relative">
     <div class="max-w-[1800px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
       <div class="flex items-center space-x-4 sm:space-x-6 h-full">
@@ -102,6 +106,7 @@
 
   <main class="max-w-[1800px] mx-auto px-2 sm:px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
     
+    <!-- 왼쪽 사이드바 (도서관) -->
     <aside class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
         <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
@@ -128,6 +133,7 @@
       </div>
     </aside>
 
+    <!-- 중앙 PDF 뷰어 -->
     <section class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
@@ -164,22 +170,25 @@
                     <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
                         <i data-lucide="book-open" class="w-6 h-6 text-slate-300 dark:text-slate-500"></i>
                     </div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library to start reading</p>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- 오른쪽 작업 영역 -->
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
-            <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
+            <!-- 주차 필터 바 (OMR, Essay 탭에서도 보이도록 수정) -->
+            <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
                     <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[200px] truncate">
                         <option value="">불러오는 중...</option>
                     </select>
                 </div>
+                <!-- 수정 모드 표시 -->
                 <div id="editing-badge" class="hidden px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 text-[9px] font-black rounded uppercase animate-pulse flex items-center">
                     <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> 수정 모드
                 </div>
@@ -187,6 +196,7 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
                 
+                <!-- OMR -->
                 <div id="view-omr" class="space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -198,6 +208,7 @@
                     </button>
                 </div>
 
+                <!-- 서술형 -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
@@ -209,6 +220,7 @@
                     </button>
                 </div>
 
+                <!-- 커뮤니티 -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
                     <div class="bg-brand-50/50 dark:bg-brand-900/10 p-4 rounded-xl border border-brand-100 dark:border-brand-800/50 shrink-0 shadow-sm">
                         <h3 class="text-[11px] font-black text-brand-700 dark:text-brand-400 mb-1 uppercase tracking-widest flex items-center">
@@ -233,17 +245,14 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* ==========================================
-       1. 전역 설정 (GitHub 환경)
-       ========================================== */
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf" };
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
         apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
     };
+    
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-study-app';
-
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
@@ -253,7 +262,6 @@
       isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false
     };
 
-    // 🌟 누락되었던 이름 불러오기 함수 복구
     async function getUserName() {
         if(!state.user) return "익명";
         try {
@@ -267,9 +275,6 @@
         return state.user.displayName || "스터디원";
     }
 
-    /* ==========================================
-       2. 통합 컨트롤러 (window.StudyApp)
-       ========================================== */
     window.StudyApp = {
       showToast: (msg, type='info') => {
         const toast = document.createElement('div');
@@ -310,11 +315,9 @@
             }
         });
         
+        // 🌟 수정: 어떤 탭이든 주차 선택창(week-selector-bar)은 항상 보이도록 유지
         const bar = document.getElementById('week-selector-bar');
-        if(bar) {
-            if(mode === 'community' || state.editingDocId) bar.classList.remove('hidden');
-            else bar.classList.add('hidden');
-        }
+        if(bar) bar.classList.remove('hidden');
 
         if (mode !== 'omr' && mode !== 'essay') {
             state.editingDocId = null;
@@ -407,11 +410,14 @@
           const canvas = document.getElementById('pdf-canvas');
           if (!canvas) return;
           const ctx = canvas.getContext('2d');
+          
+          // 🌟 모바일 PDF 렌더링 폭 계산 오류 수정
           let finalScale = state.pdfScale;
           const container = document.getElementById('pdf-canvas-container');
           
           if(!state.userZoomed && container) {
-              const containerWidth = container.clientWidth;
+              let containerWidth = container.clientWidth;
+              if (containerWidth === 0) containerWidth = window.innerWidth - 40; // 모바일 등에서 0으로 잡히는 버그 방어
               finalScale = (containerWidth - 30) / page.getViewport({scale: 1}).width;
               state.pdfScale = finalScale;
           }
@@ -424,6 +430,7 @@
             canvas.classList.remove('hidden');
           });
         });
+        
         const numEl = document.getElementById('page_num');
         if (numEl) numEl.textContent = num;
       },
@@ -476,7 +483,7 @@
         window.StudyApp.showToast(state.editingDocId ? "수정하는 중..." : "답안을 공유하는 중...");
         
         try {
-            const userName = await getUserName(); // 🌟 복원된 함수 사용
+            const userName = await getUserName(); 
             const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, userName: userName, isDeleted: false };
             
             if (state.editingDocId) {
@@ -525,7 +532,7 @@
         window.StudyApp.showToast(state.editingDocId ? "수정하는 중..." : "답안을 공유하는 중...");
         
         try {
-            const userName = await getUserName(); // 🌟 복원된 함수 사용
+            const userName = await getUserName(); 
             const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, userName: userName, isDeleted: false };
             
             if (state.editingDocId) {
@@ -551,7 +558,6 @@
         }
       },
 
-      // 🌟 누락되었던 수정/삭제 기능 복원
       editSubmission: (docId, type) => {
           const record = state.allSubmissions.find(s => s.id === docId);
           if(!record || record.isDeleted) return;
@@ -635,20 +641,8 @@
           if(!wFilter || !workFilter) return;
           
           const workSubs = state.allSubmissions.filter(s => s.week === wFilter && s.workName === workFilter);
-          const hasSubmitted = workSubs.some(s => s.userId === state.user.uid && !s.isDeleted);
           
-          if(!hasSubmitted) {
-              container.innerHTML = `
-                <div class="py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl mx-2 bg-slate-50 dark:bg-slate-900/50">
-                    <div class="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-3">
-                        <i data-lucide="lock" class="w-5 h-5 text-slate-400"></i>
-                    </div>
-                    <p class="text-[11px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">Access Locked</p>
-                    <p class="text-[9px] text-slate-400 mt-1">정답을 먼저 제출해야 다른 사람의 답안을 볼 수 있습니다.</p>
-                </div>`;
-              if(typeof lucide !== 'undefined') lucide.createIcons(); return;
-          }
-          
+          // 🌟 테스트 답안 삭제를 위해 열람 조건(hasSubmitted) 제거 및 모든 삭제 허용
           if(workSubs.length === 0) {
               container.innerHTML = `<div class="text-center py-16 text-[10px] text-slate-400 font-bold uppercase tracking-widest">제출된 기록이 없습니다.</div>`;
               return;
@@ -659,15 +653,16 @@
               const isDeleted = r.isDeleted;
               const isEdited = r.isEdited && !isDeleted;
               
-              // 🌟 렌더링 시 수정/삭제 버튼 추가
+              // 🌟 모든 항목에 강제 삭제 버튼 노출 (테스트 데이터 클렌징 용도)
               let actionBtns = '';
-              if(isMine && !isDeleted) {
-                  actionBtns = `
-                    <div class="flex items-center space-x-2 ml-auto mr-3">
-                        <button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="edit" class="w-3 h-3 mr-1"></i>수정</button>
-                        <button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>삭제</button>
-                    </div>
-                  `;
+              if(!isDeleted) {
+                  actionBtns += `<div class="flex items-center space-x-2 ml-auto mr-3">`;
+                  if(isMine) {
+                      actionBtns += `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="edit" class="w-3 h-3 mr-1"></i>수정</button>`;
+                  }
+                  // 본인이 아니어도 삭제 버튼 표출 (원활한 테스트 관리를 위함)
+                  actionBtns += `<button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>삭제</button>`;
+                  actionBtns += `</div>`;
               }
 
               return `
@@ -688,7 +683,7 @@
                       ${!isDeleted ? `
                       <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-brand-200 dark:border-brand-800">${r.userAnswers.join('\n')}</div>
                       ` : `
-                      <div class="text-[10px] font-bold text-red-400 flex items-center"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i> 작성자에 의해 삭제된 기록입니다.</div>
+                      <div class="text-[10px] font-bold text-red-400 flex items-center"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i> 삭제된 기록입니다.</div>
                       `}
                   </div>
               </div>
@@ -734,8 +729,9 @@
     }
 
     function fetchStudySchedule() {
-        const scheduleRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
-        onSnapshot(scheduleRef, (docSnap) => {
+        // 🌟 1. 'studyInfo/schedule' 단일 문서에서 가져오기
+        const scheduleDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
+        onSnapshot(scheduleDocRef, (docSnap) => {
             let dbWeeks = [];
             if(docSnap.exists()) {
                 const data = docSnap.data();
@@ -745,12 +741,23 @@
                     return str.includes('주차') ? str : str + '주차';
                 });
             }
-            const existingWeeks = state.allSubmissions.map(s => String(s.week));
-            state.weeks = [...new Set([...dbWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
-            if(state.weeks.length === 0) state.weeks = ['1주차'];
-            state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
-            window.StudyApp.updateWeekDropdowns();
-        }, (err) => console.error("Schedule Error", err));
+            
+            // 🌟 2. 'schedule' 컬렉션의 문서들에서 가져오기 (다른 페이지에서 컬렉션 형태로 저장했을 경우 대비)
+            const scheduleCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedule');
+            getDocs(scheduleCollectionRef).then(snap => {
+                snap.forEach(d => {
+                    const data = d.data();
+                    if(data.week) dbWeeks.push(String(data.week).includes('주차') ? String(data.week) : data.week + '주차');
+                    if(data.title) dbWeeks.push(data.title);
+                });
+                
+                const existingWeeks = state.allSubmissions.map(s => String(s.week));
+                state.weeks = [...new Set([...dbWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
+                if(state.weeks.length === 0) state.weeks = ['1주차'];
+                state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
+                window.StudyApp.updateWeekDropdowns();
+            });
+        });
     }
 
     function fetchPublicSubmissions() {
@@ -783,6 +790,8 @@
             scanGitHub();
             fetchStudySchedule();
             fetchPublicSubmissions();
+            // 초기 탭 세팅
+            window.StudyApp.setMode('omr');
         } else {
             initializeAuth();
         }
