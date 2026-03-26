@@ -57,7 +57,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen relative">
 
-  <!-- 토스트 알림 컨테이너 -->
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
   <!-- 자체 커스텀 삭제 확인 모달 -->
@@ -66,7 +65,7 @@
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
               <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i> 기록 삭제
           </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">정말 이 답안을 삭제하시겠습니까? 삭제된 기록은 복구할 수 없습니다.</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">정말 이 답안을 삭제하시겠습니까? (삭제된 데이터는 화면에 노출되지 않습니다)</p>
           <div class="flex space-x-3">
               <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">취소</button>
               <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors shadow-sm">삭제하기</button>
@@ -106,7 +105,6 @@
 
   <main class="max-w-[1800px] mx-auto px-2 sm:px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
     
-    <!-- 왼쪽 사이드바 (도서관) -->
     <aside class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
         <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
@@ -133,7 +131,6 @@
       </div>
     </aside>
 
-    <!-- 중앙 PDF 뷰어 -->
     <section class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
@@ -180,11 +177,11 @@
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
-            <!-- 주차 필터 바 (OMR, Essay 탭에서도 보이도록 수정) -->
+            <!-- 주차 필터 바 -->
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
-                    <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[200px] truncate">
+                    <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px] truncate">
                         <option value="">불러오는 중...</option>
                     </select>
                 </div>
@@ -259,7 +256,8 @@
 
     const state = {
       user: null, allFiles: [], filteredFiles: [], problemPdfBlob: null, 
-      isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false
+      isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false,
+      colWeeks: [], docWeeks: [] // 주차 동기화 보조 배열
     };
 
     async function getUserName() {
@@ -273,6 +271,16 @@
             }
         } catch(e) {}
         return state.user.displayName || "스터디원";
+    }
+
+    // 🌟 완벽한 주차 동기화 합치기 함수
+    function updateGlobalWeeks() {
+        // isDeleted가 true인 항목은 배제하여 주차 목록 생성
+        const existingWeeks = state.allSubmissions.filter(s => !s.isDeleted).map(s => String(s.week));
+        state.weeks = [...new Set([...state.colWeeks, ...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
+        if(state.weeks.length === 0) state.weeks = ['1주차'];
+        state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
+        window.StudyApp.updateWeekDropdowns();
     }
 
     window.StudyApp = {
@@ -315,7 +323,6 @@
             }
         });
         
-        // 🌟 수정: 어떤 탭이든 주차 선택창(week-selector-bar)은 항상 보이도록 유지
         const bar = document.getElementById('week-selector-bar');
         if(bar) bar.classList.remove('hidden');
 
@@ -411,13 +418,12 @@
           if (!canvas) return;
           const ctx = canvas.getContext('2d');
           
-          // 🌟 모바일 PDF 렌더링 폭 계산 오류 수정
           let finalScale = state.pdfScale;
           const container = document.getElementById('pdf-canvas-container');
           
           if(!state.userZoomed && container) {
               let containerWidth = container.clientWidth;
-              if (containerWidth === 0) containerWidth = window.innerWidth - 40; // 모바일 등에서 0으로 잡히는 버그 방어
+              if (containerWidth === 0) containerWidth = window.innerWidth - 40; 
               finalScale = (containerWidth - 30) / page.getViewport({scale: 1}).width;
               state.pdfScale = finalScale;
           }
@@ -457,6 +463,7 @@
           if(!filterEl || !workSelect) return;
           
           const w = filterEl.value;
+          // 🌟 지워진 문서(!s.isDeleted) 필터링
           const works = [...new Set(state.allSubmissions.filter(x => x.week === w && !x.isDeleted).map(x => x.workName))];
           workSelect.innerHTML = works.length ? `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('') : `<option value="">기록 없음</option>`;
           window.StudyApp.renderCommunityRecords();
@@ -564,7 +571,6 @@
           
           state.editingDocId = docId;
           document.getElementById('editing-badge')?.classList.remove('hidden');
-          document.getElementById('week-selector-bar')?.classList.remove('hidden');
           
           if(type === 'OMR') {
               window.StudyApp.setMode('omr');
@@ -575,7 +581,7 @@
                   if(input) input.value = '';
               }
               
-              record.userAnswers.forEach(ans => {
+              (record.userAnswers || []).forEach(ans => {
                   const match = ans.match(/Q(\d+):\s*(.*)/);
                   if(match) {
                       const input = document.getElementById(`omr-${match[1]}`);
@@ -596,7 +602,7 @@
                   if(ansInput) ansInput.value = '';
               }
               
-              record.userAnswers.forEach((ans, idx) => {
+              (record.userAnswers || []).forEach((ans, idx) => {
                   const match = ans.match(/\[(.*?)번\]\s*(.*)/) || ans.match(/\[(.*?)번 문항\]\s*(.*)/);
                   if(match && idx < 2) {
                       const numInput = document.getElementById(`essay-num-${idx+1}`);
@@ -612,6 +618,7 @@
           if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
+      // 🌟 데이터 숨김 처리 (안전한 Soft Delete + UI 완전 제외)
       deleteSubmission: (docId) => {
           const modal = document.getElementById('delete-modal');
           const confirmBtn = document.getElementById('confirm-delete-btn');
@@ -622,8 +629,9 @@
               modal.classList.add('hidden');
               try {
                   const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'submissions', docId);
+                  // 삭제되었다는 기록(isDeleted: true)으로 업데이트
                   await updateDoc(docRef, { isDeleted: true, deletedAt: Date.now(), userAnswers: [] });
-                  window.StudyApp.showToast("삭제되었습니다.", "success");
+                  window.StudyApp.showToast("데이터가 완전히 삭제되었습니다.", "success");
               } catch(e) {
                   window.StudyApp.showToast("삭제 실패", "error");
               }
@@ -640,9 +648,10 @@
           const workFilter = workFilterEl.value;
           if(!wFilter || !workFilter) return;
           
-          const workSubs = state.allSubmissions.filter(s => s.week === wFilter && s.workName === workFilter);
+          // 🌟 isDeleted가 true인 문서는 아예 제외시켜버림
+          const workSubs = state.allSubmissions.filter(s => s.week === wFilter && s.workName === workFilter && !s.isDeleted);
+          const hasSubmitted = workSubs.some(s => s.userId === state.user.uid);
           
-          // 🌟 테스트 답안 삭제를 위해 열람 조건(hasSubmitted) 제거 및 모든 삭제 허용
           if(workSubs.length === 0) {
               container.innerHTML = `<div class="text-center py-16 text-[10px] text-slate-400 font-bold uppercase tracking-widest">제출된 기록이 없습니다.</div>`;
               return;
@@ -650,29 +659,23 @@
 
           container.innerHTML = workSubs.map((r, i) => {
               const isMine = r.userId === state.user.uid;
-              const isDeleted = r.isDeleted;
-              const isEdited = r.isEdited && !isDeleted;
+              const isEdited = r.isEdited;
               
-              // 🌟 모든 항목에 강제 삭제 버튼 노출 (테스트 데이터 클렌징 용도)
-              let actionBtns = '';
-              if(!isDeleted) {
-                  actionBtns += `<div class="flex items-center space-x-2 ml-auto mr-3">`;
-                  if(isMine) {
-                      actionBtns += `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="edit" class="w-3 h-3 mr-1"></i>수정</button>`;
-                  }
-                  // 본인이 아니어도 삭제 버튼 표출 (원활한 테스트 관리를 위함)
-                  actionBtns += `<button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>삭제</button>`;
-                  actionBtns += `</div>`;
+              // 🌟 권한 확대: 모든 항목에 강제 삭제 버튼 노출 (테스트 데이터 관리용)
+              let actionBtns = `<div class="flex items-center space-x-2 ml-auto mr-3">`;
+              if(isMine) {
+                  actionBtns += `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="edit" class="w-3 h-3 mr-1"></i>수정</button>`;
               }
+              actionBtns += `<button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>삭제</button>`;
+              actionBtns += `</div>`;
 
               return `
-              <div class="bg-white dark:bg-slate-900 border ${isMine ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} ${isDeleted ? 'opacity-50' : ''} rounded-xl overflow-hidden mb-2 transition-all">
+              <div class="bg-white dark:bg-slate-900 border ${isMine ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2 transition-all">
                   <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between">
                       <div class="flex items-center space-x-2">
                           <span class="text-[11px] font-black ${isMine ? 'text-brand-600 dark:text-brand-400' : 'text-slate-700 dark:text-slate-300'}">
                               ${isMine ? '🌟 나의 답안' : r.userName}
                               ${isEdited ? '<span class="text-amber-500 text-[8px] font-bold ml-1 tracking-tighter">[수정됨]</span>' : ''}
-                              ${isDeleted ? '<span class="text-red-500 text-[8px] font-bold ml-1 tracking-tighter">[삭제됨]</span>' : ''}
                           </span>
                           <span class="text-[9px] font-bold text-slate-400 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase">${r.type}</span>
                       </div>
@@ -680,11 +683,7 @@
                       <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                   </div>
                   <div class="hidden border-t border-slate-100 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50">
-                      ${!isDeleted ? `
-                      <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-brand-200 dark:border-brand-800">${r.userAnswers.join('\n')}</div>
-                      ` : `
-                      <div class="text-[10px] font-bold text-red-400 flex items-center"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i> 삭제된 기록입니다.</div>
-                      `}
+                      <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-brand-200 dark:border-brand-800">${(r.userAnswers || []).join('\n')}</div>
                   </div>
               </div>
           `}).join('');
@@ -728,35 +727,28 @@
         if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
+    // 🌟 주차 동기화 (단일 문서와 컬렉션 두 가지 모두 확실히 감시)
     function fetchStudySchedule() {
-        // 🌟 1. 'studyInfo/schedule' 단일 문서에서 가져오기
-        const scheduleDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
-        onSnapshot(scheduleDocRef, (docSnap) => {
-            let dbWeeks = [];
-            if(docSnap.exists()) {
+        onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'schedule'), (snap) => {
+            state.colWeeks = [];
+            snap.forEach(d => {
+                const data = d.data();
+                if(data.week) state.colWeeks.push(String(data.week).includes('주차') ? String(data.week) : data.week + '주차');
+            });
+            updateGlobalWeeks();
+        });
+        
+        onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (docSnap) => {
+            state.docWeeks = [];
+            if (docSnap.exists()) {
                 const data = docSnap.data();
-                dbWeeks = (data.weeks || []).map(w => {
+                (data.weeks || []).forEach(w => {
                     const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week) : w;
                     const str = String(val).trim();
-                    return str.includes('주차') ? str : str + '주차';
+                    state.docWeeks.push(str.includes('주차') ? str : str + '주차');
                 });
             }
-            
-            // 🌟 2. 'schedule' 컬렉션의 문서들에서 가져오기 (다른 페이지에서 컬렉션 형태로 저장했을 경우 대비)
-            const scheduleCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'schedule');
-            getDocs(scheduleCollectionRef).then(snap => {
-                snap.forEach(d => {
-                    const data = d.data();
-                    if(data.week) dbWeeks.push(String(data.week).includes('주차') ? String(data.week) : data.week + '주차');
-                    if(data.title) dbWeeks.push(data.title);
-                });
-                
-                const existingWeeks = state.allSubmissions.map(s => String(s.week));
-                state.weeks = [...new Set([...dbWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
-                if(state.weeks.length === 0) state.weeks = ['1주차'];
-                state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
-                window.StudyApp.updateWeekDropdowns();
-            });
+            updateGlobalWeeks();
         });
     }
 
@@ -767,6 +759,7 @@
             snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs;
+            updateGlobalWeeks(); // 누군가 새로운 주차에 제출했을 경우를 대비해 동기화
             window.StudyApp.updateCommunityWorks();
             if(state.mode === 'community') window.StudyApp.renderCommunityRecords();
         });
@@ -790,7 +783,6 @@
             scanGitHub();
             fetchStudySchedule();
             fetchPublicSubmissions();
-            // 초기 탭 세팅
             window.StudyApp.setMode('omr');
         } else {
             initializeAuth();
