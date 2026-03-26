@@ -65,10 +65,10 @@
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
               <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i> 기록 삭제
           </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">정말 이 답안을 삭제하시겠습니까? (삭제된 데이터는 화면에 노출되지 않습니다)</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">데이터베이스에서 흔적 없이 완전히 삭제합니다. 진행하시겠습니까?</p>
           <div class="flex space-x-3">
               <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">취소</button>
-              <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors shadow-sm">삭제하기</button>
+              <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors shadow-sm">영구 삭제</button>
           </div>
       </div>
   </div>
@@ -77,7 +77,6 @@
       <i data-lucide="minimize-2" class="w-5 h-5 mr-2"></i> 원래 화면으로 돌아가기
   </button>
 
-  <!-- 네비게이션 -->
   <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 h-16 shrink-0 z-50 sticky top-0 lg:relative">
     <div class="max-w-[1800px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
       <div class="flex items-center space-x-4 sm:space-x-6 h-full">
@@ -87,7 +86,8 @@
         <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 shrink-0"></div>
         
         <div class="flex space-x-1 sm:space-x-2 h-full items-center overflow-x-auto no-scrollbar flex-nowrap">
-            <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="tab-active text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">OMR Score</button>
+            <button onclick="window.StudyApp.setMode('tutor')" id="tab-tutor" class="tab-active text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">AI Tutor</button>
+            <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">OMR Score</button>
             <button onclick="window.StudyApp.setMode('essay')" id="tab-essay" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">Essay</button>
             <button onclick="window.StudyApp.setMode('community')" id="tab-community" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-brand-500 whitespace-nowrap flex items-center transition-colors">
                 <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Shared Records
@@ -96,6 +96,9 @@
       </div>
       
       <div class="flex items-center space-x-3 shrink-0">
+        <div id="answer-key-badge" class="hidden sm:flex items-center bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 px-2 py-1 rounded text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+            <i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> AI Key Loaded
+        </div>
         <button onclick="window.StudyApp.toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 transition-all">
           <i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i>
         </button>
@@ -178,7 +181,7 @@
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
             <!-- 주차 필터 바 -->
-            <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0">
+            <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
                     <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px] truncate">
@@ -193,15 +196,25 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
                 
+                <!-- 뷰 A: AI Tutor -->
+                <div id="view-tutor" class="space-y-4 fade-in">
+                    <h3 class="text-[11px] font-black uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">AI Tutoring</h3>
+                    <input type="text" id="ai-tutor-target" placeholder="작품명 (예: 상춘곡)" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white font-bold mb-1 shadow-sm">
+                    <textarea id="ai-tutor-prompt" placeholder="PDF 속 내용을 AI에게 자유롭게 질문하세요." class="w-full h-40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs leading-relaxed resize-none outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white custom-scrollbar shadow-sm"></textarea>
+                    <button onclick="window.StudyApp.askAITutor()" id="ai-tutor-btn" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center">
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 분석 시작
+                    </button>
+                </div>
+
                 <!-- OMR -->
-                <div id="view-omr" class="space-y-5 fade-in">
+                <div id="view-omr" class="hidden space-y-5 fade-in">
                     <div>
                         <label class="block text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
                         <input type="text" id="omr-work-name" placeholder="현재 풀고 있는 작품명을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-950/30 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white transition-all">
                     </div>
                     <div id="omr-grid-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm"></div>
                     <button onclick="window.StudyApp.submitOMR()" id="submit-omr-btn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center">
-                        <i data-lucide="send" class="w-4 h-4 mr-2"></i> 정답 제출 및 공유하기
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 채점 및 공유하기
                     </button>
                 </div>
 
@@ -213,7 +226,7 @@
                     </div>
                     <div id="essay-grid-container" class="space-y-4"></div>
                     <button onclick="window.StudyApp.submitEssay()" id="submit-essay-btn" class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center">
-                        <i data-lucide="send" class="w-4 h-4 mr-2"></i> 서술형 제출 및 공유하기
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 서술형 채점 및 공유하기
                     </button>
                 </div>
 
@@ -223,7 +236,7 @@
                         <h3 class="text-[11px] font-black text-brand-700 dark:text-brand-400 mb-1 uppercase tracking-widest flex items-center">
                             <i data-lucide="users" class="w-4 h-4 mr-1.5"></i> Shared Community
                         </h3>
-                        <p class="text-[9px] text-brand-600/70 dark:text-brand-400/70 leading-relaxed">스터디원들의 답안을 확인하고 비교해보세요. (답안 제출 후에만 열람 가능합니다)</p>
+                        <p class="text-[9px] text-brand-600/70 dark:text-brand-400/70 leading-relaxed">스터디원들의 답안과 AI 피드백을 확인하고 비교해보세요.</p>
                     </div>
                     <div class="flex space-x-2 shrink-0">
                         <select id="comm-week-filter" onchange="window.StudyApp.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black text-slate-700 dark:text-slate-300 outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all"></select>
@@ -234,6 +247,20 @@
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2"></div>
                 </div>
 
+                <!-- AI 응답 모달 -->
+                <div id="ai-response-area" class="hidden animate-fade-in mt-4">
+                    <div class="p-5 bg-brand-50/50 dark:bg-slate-800/50 rounded-2xl border border-brand-100 dark:border-slate-700 shadow-sm relative">
+                        <button onclick="document.getElementById('ai-response-area').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                        <div class="flex items-center mb-3">
+                            <i data-lucide="bot" class="w-4 h-4 text-brand-500 mr-2"></i>
+                            <span class="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">AI Feedback</span>
+                        </div>
+                        <div id="ai-response-content" class="text-[11px] leading-relaxed dark:text-slate-300 prose prose-sm prose-slate dark:prose-invert max-w-none"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
@@ -242,22 +269,32 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf" };
+    /* ===============================================================
+       [환경 변수 세팅]
+       =============================================================== */
+    const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
+    
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
         apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
     };
     
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-study-app';
+    // 🌟 요청하신 정확한 앱 아이디 하드코딩 적용 (기존 깃허브 환경 연동 오류 해결)
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app';
+    
+    // 🌟 요청하신 API Key 명시적 주입 및 정식 1.5-flash 모델 적용 (깃허브 배포 환경)
+    const apiKey = "AIzaSyA-frmY9mZMwNtHjR5W4UOGcNT0cBe4Tng"; 
+    const GEMINI_MODEL = "gemini-1.5-flash"; 
+
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
 
     const state = {
-      user: null, allFiles: [], filteredFiles: [], problemPdfBlob: null, 
-      isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false,
-      colWeeks: [], docWeeks: [] // 주차 동기화 보조 배열
+      user: null, allFiles: [], filteredFiles: [], problemPdfBlob: null, answerKeyPdfData: null,
+      isFetching: false, mode: 'tutor', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false,
+      docWeeks: [] 
     };
 
     async function getUserName() {
@@ -273,14 +310,49 @@
         return state.user.displayName || "스터디원";
     }
 
-    // 🌟 완벽한 주차 동기화 합치기 함수
     function updateGlobalWeeks() {
-        // isDeleted가 true인 항목은 배제하여 주차 목록 생성
         const existingWeeks = state.allSubmissions.filter(s => !s.isDeleted).map(s => String(s.week));
-        state.weeks = [...new Set([...state.colWeeks, ...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
-        if(state.weeks.length === 0) state.weeks = ['1주차'];
+        // 안전을 위해 기본 주차 생성 (DB가 비어있을 경우 대비)
+        const baseWeeks = ['1주차', '2주차', '3주차', '4주차', '5주차']; 
+        state.weeks = [...new Set([...baseWeeks, ...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
         state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
         window.StudyApp.updateWeekDropdowns();
+    }
+
+    // PDF 글자 추출 우회 로직
+    async function extractTextFromBlobPDF(blob) {
+        try {
+            const arrayBuffer = await blob.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = "";
+            const maxPages = Math.min(pdf.numPages, 10); 
+            for (let i = 1; i <= maxPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `[${i}페이지]\n${pageText}\n\n`;
+            }
+            return fullText;
+        } catch(e) { return ""; }
+    }
+
+    async function extractTextFromBase64PDF(base64Data) {
+        try {
+            const binaryString = atob(base64Data.replace(/\s/g, ''));
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+            const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+            let fullText = "";
+            const maxPages = Math.min(pdf.numPages, 10);
+            for (let i = 1; i <= maxPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `[${i}페이지]\n${pageText}\n\n`;
+            }
+            return fullText;
+        } catch(e) { return ""; }
     }
 
     window.StudyApp = {
@@ -313,7 +385,7 @@
 
       setMode: (mode) => {
         state.mode = mode;
-        ['omr', 'essay', 'community'].forEach(m => {
+        ['tutor', 'omr', 'essay', 'community'].forEach(m => {
             const el = document.getElementById(`view-${m}`);
             if(el) el.classList.toggle('hidden', m !== mode);
             const tab = document.getElementById(`tab-${m}`);
@@ -324,15 +396,20 @@
         });
         
         const bar = document.getElementById('week-selector-bar');
-        if(bar) bar.classList.remove('hidden');
+        if(bar) {
+            if(mode === 'tutor') bar.classList.add('hidden');
+            else bar.classList.remove('hidden');
+        }
+        
+        document.getElementById('ai-response-area').classList.add('hidden');
 
         if (mode !== 'omr' && mode !== 'essay') {
             state.editingDocId = null;
             document.getElementById('editing-badge')?.classList.add('hidden');
             const omrBtn = document.getElementById('submit-omr-btn');
-            if(omrBtn) omrBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4 mr-2"></i> 정답 제출 및 공유하기';
+            if(omrBtn) omrBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 채점 및 공유하기';
             const essayBtn = document.getElementById('submit-essay-btn');
-            if(essayBtn) essayBtn.innerHTML = '<i data-lucide="send" class="w-4 h-4 mr-2"></i> 서술형 제출 및 공유하기';
+            if(essayBtn) essayBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 서술형 채점 및 공유하기';
         }
 
         if(mode === 'community') window.StudyApp.renderCommunityRecords();
@@ -463,10 +540,25 @@
           if(!filterEl || !workSelect) return;
           
           const w = filterEl.value;
-          // 🌟 지워진 문서(!s.isDeleted) 필터링
           const works = [...new Set(state.allSubmissions.filter(x => x.week === w && !x.isDeleted).map(x => x.workName))];
           workSelect.innerHTML = works.length ? `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('') : `<option value="">기록 없음</option>`;
           window.StudyApp.renderCommunityRecords();
+      },
+
+      askAITutor: async () => {
+        const targetEl = document.getElementById('ai-tutor-target');
+        const promptEl = document.getElementById('ai-tutor-prompt');
+        if (!targetEl || !promptEl) return;
+        const target = targetEl.value.trim();
+        const prompt = promptEl.value.trim();
+        if (!prompt) return window.StudyApp.showToast("질문할 내용을 입력하세요.", "error");
+        
+        window.StudyApp.processAIRequest(
+            document.getElementById('ai-tutor-btn'), 
+            [{ text: `[타겟: ${target}]\n[학생 질문]: ${prompt}` }], 
+            "문학 전문가로서 학생의 질문에 대해 상세히 친절하게 답변하세요.", 
+            null
+        ); 
       },
 
       submitOMR: async () => {
@@ -485,35 +577,13 @@
         }
         if(!ans.length) return window.StudyApp.showToast("최소 1개의 답안을 입력하세요.", "error");
 
-        const btn = document.getElementById('submit-omr-btn');
-        btn.disabled = true;
-        window.StudyApp.showToast(state.editingDocId ? "수정하는 중..." : "답안을 공유하는 중...");
-        
-        try {
-            const userName = await getUserName(); 
-            const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, userName: userName, isDeleted: false };
-            
-            if (state.editingDocId) {
-                recordData.isEdited = true;
-                recordData.editedAt = Date.now();
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), recordData);
-                window.StudyApp.showToast("답안이 수정되었습니다.", "success");
-            } else {
-                recordData.timestamp = Date.now();
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
-                window.StudyApp.showToast("공유 완료!", "success");
-            }
-            
-            state.editingDocId = null;
-            document.getElementById('editing-badge')?.classList.add('hidden');
-            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4 mr-2"></i> 정답 제출 및 공유하기';
-            window.StudyApp.setMode('community');
-        } catch (e) {
-            window.StudyApp.showToast("저장 실패", "error");
-        } finally {
-            btn.disabled = false;
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-        }
+        const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, isDeleted: false };
+        window.StudyApp.processAIRequest(
+            document.getElementById('submit-omr-btn'), 
+            [{ text: `[작품명: ${workName}]\n[학생 OMR 답안]:\n${ans.join('\n')}` }], 
+            "제공된 정답 해설지를 바탕으로 학생의 답안을 1번부터 차례대로 정밀 채점하고, 틀린 문제 위주로 상세히 해설을 제공하세요.", 
+            recordData
+        );
       },
 
       submitEssay: async () => {
@@ -534,35 +604,86 @@
         }
         if(!ess.length) return window.StudyApp.showToast("답안을 입력하세요.", "error");
 
-        const btn = document.getElementById('submit-essay-btn');
-        btn.disabled = true;
-        window.StudyApp.showToast(state.editingDocId ? "수정하는 중..." : "답안을 공유하는 중...");
+        const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, isDeleted: false };
+        window.StudyApp.processAIRequest(
+            document.getElementById('submit-essay-btn'), 
+            [{ text: `[작품명: ${workName}]\n[학생 서술형 답안]:\n\n${ess.join('\n\n')}` }], 
+            "공식 해설지의 핵심 키워드 유무를 기준으로 학생의 서술형 답안을 정밀하게 채점하고, 모범 답안과 비교하여 피드백을 제공하세요.", 
+            recordData
+        );
+      },
+
+      processAIRequest: async (btn, parts, sysMsg, recordData) => {
+        const area = document.getElementById('ai-response-area');
+        const cont = document.getElementById('ai-response-content');
+        if (!area || !cont || !btn) return;
+        
+        btn.disabled = true; 
+        area.classList.add('hidden');
+        window.StudyApp.showToast("AI가 문서를 읽고 채점 중입니다... (약 10초 소요)");
         
         try {
-            const userName = await getUserName(); 
-            const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, userName: userName, isDeleted: false };
-            
-            if (state.editingDocId) {
-                recordData.isEdited = true;
-                recordData.editedAt = Date.now();
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), recordData);
-                window.StudyApp.showToast("답안이 수정되었습니다.", "success");
-            } else {
-                recordData.timestamp = Date.now();
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
-                window.StudyApp.showToast("공유 완료!", "success");
+            if (state.problemPdfBlob) {
+                const problemText = await extractTextFromBlobPDF(state.problemPdfBlob);
+                if (problemText) parts.push({ text: `\n\n[참고 자료: 현재 화면의 문제지 원문]\n${problemText}` });
             }
-
-            state.editingDocId = null;
-            document.getElementById('editing-badge')?.classList.add('hidden');
-            btn.innerHTML = '<i data-lucide="send" class="w-4 h-4 mr-2"></i> 서술형 제출 및 공유하기';
-            window.StudyApp.setMode('community');
-        } catch (e) {
-            window.StudyApp.showToast("저장 실패", "error");
-        } finally {
-            btn.disabled = false;
+            if (state.answerKeyPdfData) {
+                const keyText = await extractTextFromBase64PDF(state.answerKeyPdfData);
+                if (keyText) parts.push({ text: `\n\n[절대적 채점 기준: 공식 정답 해설지 원문]\n${keyText}` });
+            }
+            
+            const res = await window.StudyApp.callGemini(parts, sysMsg);
+            
+            if(recordData) {
+                recordData.userName = await getUserName();
+                recordData.aiFeedback = res; 
+                
+                if (state.editingDocId) {
+                    recordData.isEdited = true;
+                    recordData.editedAt = Date.now();
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), recordData);
+                    window.StudyApp.showToast("답안이 수정되었습니다.", "success");
+                } else {
+                    recordData.timestamp = Date.now();
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
+                    window.StudyApp.showToast("채점 및 공유 완료!", "success");
+                }
+                
+                state.editingDocId = null;
+                document.getElementById('editing-badge')?.classList.add('hidden');
+                
+                const omrBtn = document.getElementById('submit-omr-btn');
+                if(omrBtn) omrBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 채점 및 공유하기';
+                const essayBtn = document.getElementById('submit-essay-btn');
+                if(essayBtn) essayBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 서술형 채점 및 공유하기';
+                
+                window.StudyApp.setMode('community');
+            } else {
+                cont.innerHTML = res.replace(/\n/g, "<br>");
+                area.classList.remove('hidden'); 
+                area.scrollIntoView({ behavior: 'smooth' });
+                window.StudyApp.showToast("분석이 완료되었습니다.", "success");
+            }
+        } catch (e) { 
+            window.StudyApp.showToast("AI 통신 실패: 깃허브 배포 시 API 키를 확인해주세요.", "error"); 
+            console.error(e);
+        } finally { 
+            btn.disabled = false; 
             if(typeof lucide !== 'undefined') lucide.createIcons();
         }
+      },
+
+      callGemini: async (parts, system) => {
+        // 🌟 하드코딩된 API Key 사용
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ contents: [{ parts }], systemInstruction: { parts: [{ text: system }] } }) 
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || "Unknown API Error");
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답이 없습니다.";
       },
 
       editSubmission: (docId, type) => {
@@ -589,8 +710,8 @@
                   }
               });
               const btn = document.getElementById('submit-omr-btn');
-              if(btn) btn.innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 답안 다시 제출하기';
-              window.StudyApp.showToast("수정 모드: 답안을 수정한 뒤 하단 버튼을 클릭하세요.");
+              if(btn) btn.innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 답안 AI 재채점하기';
+              window.StudyApp.showToast("수정 모드: 답안을 수정하세요.");
           } else if (type === 'Essay') {
               window.StudyApp.setMode('essay');
               document.getElementById('week-select').value = record.week;
@@ -612,13 +733,12 @@
                   }
               });
               const btn = document.getElementById('submit-essay-btn');
-              if(btn) btn.innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 서술형 다시 제출하기';
-              window.StudyApp.showToast("수정 모드: 답안을 수정한 뒤 하단 버튼을 클릭하세요.");
+              if(btn) btn.innerHTML = '<i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> 수정된 서술형 AI 재채점하기';
+              window.StudyApp.showToast("수정 모드: 답안을 수정하세요.");
           }
           if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
-      // 🌟 데이터 숨김 처리 (안전한 Soft Delete + UI 완전 제외)
       deleteSubmission: (docId) => {
           const modal = document.getElementById('delete-modal');
           const confirmBtn = document.getElementById('confirm-delete-btn');
@@ -629,11 +749,10 @@
               modal.classList.add('hidden');
               try {
                   const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'submissions', docId);
-                  // 삭제되었다는 기록(isDeleted: true)으로 업데이트
-                  await updateDoc(docRef, { isDeleted: true, deletedAt: Date.now(), userAnswers: [] });
+                  await deleteDoc(docRef);
                   window.StudyApp.showToast("데이터가 완전히 삭제되었습니다.", "success");
               } catch(e) {
-                  window.StudyApp.showToast("삭제 실패", "error");
+                  window.StudyApp.showToast("삭제 실패: 권한 부족 또는 통신 에러", "error");
               }
           };
       },
@@ -648,9 +767,7 @@
           const workFilter = workFilterEl.value;
           if(!wFilter || !workFilter) return;
           
-          // 🌟 isDeleted가 true인 문서는 아예 제외시켜버림
-          const workSubs = state.allSubmissions.filter(s => s.week === wFilter && s.workName === workFilter && !s.isDeleted);
-          const hasSubmitted = workSubs.some(s => s.userId === state.user.uid);
+          const workSubs = state.allSubmissions.filter(s => s.week === wFilter && s.workName === workFilter);
           
           if(workSubs.length === 0) {
               container.innerHTML = `<div class="text-center py-16 text-[10px] text-slate-400 font-bold uppercase tracking-widest">제출된 기록이 없습니다.</div>`;
@@ -661,11 +778,11 @@
               const isMine = r.userId === state.user.uid;
               const isEdited = r.isEdited;
               
-              // 🌟 권한 확대: 모든 항목에 강제 삭제 버튼 노출 (테스트 데이터 관리용)
               let actionBtns = `<div class="flex items-center space-x-2 ml-auto mr-3">`;
               if(isMine) {
                   actionBtns += `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="edit" class="w-3 h-3 mr-1"></i>수정</button>`;
               }
+              // 테스트용 완전 삭제 버튼
               actionBtns += `<button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>삭제</button>`;
               actionBtns += `</div>`;
 
@@ -682,8 +799,20 @@
                       ${actionBtns}
                       <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                   </div>
-                  <div class="hidden border-t border-slate-100 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50">
-                      <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-brand-200 dark:border-brand-800">${(r.userAnswers || []).join('\n')}</div>
+                  <div class="hidden border-t border-slate-100 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50 space-y-4">
+                      <div>
+                          <div class="text-[9px] font-black text-slate-400 uppercase mb-1">제출 답안</div>
+                          <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-brand-200 dark:border-brand-800">${(r.userAnswers || []).join('\n')}</div>
+                      </div>
+                      ${r.aiFeedback ? `
+                      <div class="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                          <div class="flex items-center mb-2">
+                              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-500 mr-1.5"></i>
+                              <span class="text-[9px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">AI Feedback</span>
+                          </div>
+                          <div class="text-[11px] leading-relaxed dark:text-slate-300">${r.aiFeedback.replace(/\n/g, '<br>')}</div>
+                      </div>
+                      ` : ''}
                   </div>
               </div>
           `}).join('');
@@ -700,7 +829,7 @@
             const res = await fetch(url);
             if (!res.ok) throw new Error();
             const data = await res.json();
-            state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+            state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf') && f.name !== GITHUB_CONFIG.answerKeyFileName);
             state.filteredFiles = [...state.allFiles];
             renderFileList();
         } catch (e) {
@@ -727,28 +856,41 @@
         if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
-    // 🌟 주차 동기화 (단일 문서와 컬렉션 두 가지 모두 확실히 감시)
+    async function loadGlobalAnswerKey() {
+        const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folder}/${GITHUB_CONFIG.answerKeyFileName}`;
+        try {
+            const res = await fetch(url);
+            if(res.ok) {
+                const blob = await res.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => { 
+                    state.answerKeyPdfData = reader.result.split(',')[1]; 
+                    const badge = document.getElementById('answer-key-badge');
+                    if (badge) badge.classList.remove('hidden');
+                };
+                reader.readAsDataURL(blob);
+            }
+        } catch(e) { console.warn("Answer key load failed"); }
+    }
+
+    // 🌟 주차 연동 로직 (알려주신 정확한 경로에서 데이터 가져오기)
     function fetchStudySchedule() {
-        onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'schedule'), (snap) => {
-            state.colWeeks = [];
-            snap.forEach(d => {
-                const data = d.data();
-                if(data.week) state.colWeeks.push(String(data.week).includes('주차') ? String(data.week) : data.week + '주차');
-            });
-            updateGlobalWeeks();
-        });
-        
-        onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (docSnap) => {
+        const scheduleDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
+        onSnapshot(scheduleDocRef, (docSnap) => {
             state.docWeeks = [];
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 (data.weeks || []).forEach(w => {
-                    const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week) : w;
-                    const str = String(val).trim();
-                    state.docWeeks.push(str.includes('주차') ? str : str + '주차');
+                    const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week || w.title) : w;
+                    if(val) {
+                        const str = String(val).trim();
+                        state.docWeeks.push(str.includes('주차') ? str : str + '주차');
+                    }
                 });
             }
             updateGlobalWeeks();
+        }, (e) => {
+            console.error("Schedule load error:", e);
         });
     }
 
@@ -759,7 +901,7 @@
             snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs;
-            updateGlobalWeeks(); // 누군가 새로운 주차에 제출했을 경우를 대비해 동기화
+            updateGlobalWeeks();
             window.StudyApp.updateCommunityWorks();
             if(state.mode === 'community') window.StudyApp.renderCommunityRecords();
         });
@@ -781,6 +923,7 @@
             state.user = user;
             window.StudyApp.initUI(); 
             scanGitHub();
+            loadGlobalAnswerKey(); 
             fetchStudySchedule();
             fetchPublicSubmissions();
             window.StudyApp.setMode('omr');
