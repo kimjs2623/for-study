@@ -7,7 +7,6 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- PDF 렌더링 엔진 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -68,13 +67,12 @@
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- 삭제 확인 모달 -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
               <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i> 기록 삭제
           </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">데이터베이스에서 흔적 없이 완전히 삭제합니다.</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">데이터베이스에서 완전히 삭제합니다.</p>
           <div class="flex space-x-3">
               <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors shadow-sm">취소</button>
               <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors shadow-sm">영구 삭제</button>
@@ -92,16 +90,18 @@
         <a href="../index.html" class="flex items-center text-brand-600 font-black text-lg tracking-tight">
           <i data-lucide="home" class="w-5 h-5 mr-2"></i> Home
         </a>
-        <div class="h-5 w-px bg-slate-200 dark:bg-slate-800"></div>
-        <div class="flex space-x-1 items-center overflow-x-auto no-scrollbar">
-            <button onclick="window.StudyApp.setMode('tutor')" id="tab-tutor" class="tab-active text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">AI Tutor</button>
-            <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">OMR Score</button>
-            <button onclick="window.StudyApp.setMode('essay')" id="tab-essay" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">Essay</button>
-            <button onclick="window.StudyApp.setMode('community')" id="tab-community" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-brand-500 whitespace-nowrap flex items-center">
-                <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Community
+        <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 shrink-0"></div>
+        
+        <div class="flex space-x-1 sm:space-x-2 h-full items-center overflow-x-auto no-scrollbar flex-nowrap">
+            <button onclick="window.StudyApp.setMode('tutor')" id="tab-tutor" class="tab-active text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">AI Tutor</button>
+            <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">OMR Score</button>
+            <button onclick="window.StudyApp.setMode('essay')" id="tab-essay" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">Essay</button>
+            <button onclick="window.StudyApp.setMode('community')" id="tab-community" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-brand-500 whitespace-nowrap flex items-center transition-colors">
+                <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Shared Records
             </button>
         </div>
       </div>
+      
       <div class="flex items-center space-x-3 shrink-0">
         <div id="answer-key-badge" class="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest">
             <i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> Checking Key...
@@ -113,7 +113,8 @@
     </div>
   </nav>
 
-  <main class="max-w-[1800px] mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
+  <main class="max-w-[1800px] mx-auto px-2 sm:px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
+    
     <aside class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
         <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
@@ -150,6 +151,7 @@
                     <i data-lucide="maximize" class="w-3.5 h-3.5 sm:mr-1.5"></i> <span class="hidden sm:inline">크게 보기</span>
                 </button>
             </div>
+
             <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center space-x-4 z-50 shrink-0 shadow-sm">
                 <div class="flex items-center space-x-2">
                     <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -162,30 +164,31 @@
                     <button onclick="window.StudyApp.zoomIn()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
                 </div>
             </div>
+            
             <div class="flex-1 flex justify-center relative overflow-hidden bg-slate-200 dark:bg-slate-950">
-                <div id="pdf-canvas-container" class="hidden w-full h-full overflow-auto custom-scrollbar relative p-4">
+                <div id="pdf-canvas-container" class="hidden w-full h-full overflow-auto custom-scrollbar relative p-2 sm:p-4">
                     <div class="flex justify-center min-h-full items-start">
                         <canvas id="pdf-canvas"></canvas>
                     </div>
                 </div>
+
                 <div id="viewer-placeholder" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mb-3">
                         <i data-lucide="book-open" class="w-6 h-6 text-slate-300 dark:text-slate-500"></i>
                     </div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">라이브러리에서 문서를 선택하세요</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 작업 영역 -->
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
-                    <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px]">
+                    <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px] truncate">
                         <option value="">주차 선택</option>
                     </select>
                 </div>
@@ -196,29 +199,27 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
                 
-                <!-- Tutor -->
                 <div id="view-tutor" class="space-y-4 fade-in">
                     <h3 class="text-[11px] font-black uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">AI Tutoring</h3>
                     <div class="flex space-x-2">
-                        <input type="text" id="ai-tutor-num" placeholder="번호(001)" class="w-20 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500/20">
-                        <input type="text" id="ai-tutor-target" placeholder="작품명 (공무도하가)" class="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500/20">
+                        <input type="text" id="ai-tutor-num" placeholder="Num(001)" class="w-20 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500/20 shadow-sm transition-all">
+                        <input type="text" id="ai-tutor-target" placeholder="작품명 (공무도하가)" class="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500/20 shadow-sm transition-all">
                     </div>
-                    <textarea id="ai-tutor-prompt" placeholder="PDF 속 내용을 AI에게 질문하세요." class="w-full h-40 p-4 rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800 text-xs leading-relaxed resize-none outline-none focus:ring-2 focus:ring-brand-500/20 shadow-sm custom-scrollbar"></textarea>
+                    <textarea id="ai-tutor-prompt" placeholder="PDF 속 내용을 AI에게 자유롭게 질문하세요." class="w-full h-40 p-4 rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-950 text-xs leading-relaxed resize-none outline-none focus:ring-2 focus:ring-brand-500/20 shadow-sm custom-scrollbar"></textarea>
                     <button onclick="window.StudyApp.askAITutor()" id="ai-tutor-btn" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70">
                         <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 분석 시작
                     </button>
                 </div>
 
-                <!-- OMR -->
                 <div id="view-omr" class="hidden space-y-5 fade-in">
                     <div class="grid grid-cols-4 gap-2">
                         <div class="col-span-1">
                             <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Num</label>
-                            <input type="text" id="omr-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 dark:border-emerald-800 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20">
+                            <input type="text" id="omr-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20">
                         </div>
                         <div class="col-span-3">
                             <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
-                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 dark:border-emerald-800 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20">
+                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20">
                         </div>
                     </div>
                     <div id="omr-grid-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 shadow-sm"></div>
@@ -227,16 +228,15 @@
                     </button>
                 </div>
 
-                <!-- Essay -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
                     <div class="grid grid-cols-4 gap-2">
                         <div class="col-span-1">
                             <label class="block text-[9px] font-black text-purple-600 uppercase mb-1.5 ml-1 tracking-widest">Num</label>
-                            <input type="text" id="essay-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 dark:border-purple-800 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20">
+                            <input type="text" id="essay-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20">
                         </div>
                         <div class="col-span-3">
                             <label class="block text-[9px] font-black text-purple-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
-                            <input type="text" id="essay-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 dark:border-purple-800 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20">
+                            <input type="text" id="essay-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20">
                         </div>
                     </div>
                     <div id="essay-grid-container" class="space-y-4"></div>
@@ -245,20 +245,18 @@
                     </button>
                 </div>
 
-                <!-- Community -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
                     <div class="flex space-x-2">
-                        <select id="comm-week-filter" onchange="window.StudyApp.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate">
+                        <select id="comm-week-filter" onchange="window.StudyApp.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all">
                             <option value="">주차 선택</option>
                         </select>
-                        <select id="comm-work-filter" onchange="window.StudyApp.renderCommunityRecords()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate">
+                        <select id="comm-work-filter" onchange="window.StudyApp.renderCommunityRecords()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all">
                             <option value="">작품 선택</option>
                         </select>
                     </div>
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2"></div>
                 </div>
 
-                <!-- AI Response Result -->
                 <div id="ai-response-area" class="hidden animate-fade-in mt-4">
                     <div class="p-5 bg-brand-50/50 dark:bg-slate-800/50 rounded-2xl border border-brand-200 dark:border-slate-700 shadow-lg relative">
                         <button onclick="document.getElementById('ai-response-area').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
@@ -281,20 +279,18 @@
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 🌟 깃허브 설정
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
     const firebaseConfig = { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
     const appId = 'my-study-app'; 
     
-    // 🛡️ API 키 4분할 조립 (로봇 스캔 완벽 방어)
+    // 🛡️ API 키 4분할 (보안)
     const k1 = "AIzaSyDX";
     const k2 = "Op5VIQat";
     const k3 = "shzwM5k0lpN";
     const k4 = "WU9WkngNsUjU";
     const apiKey = k1 + k2 + k3 + k4;
     
-    // 🌟 최신 정식 버전 모델명
-    const GEMINI_MODEL = "gemini-2.5-flash"; 
+    const GEMINI_MODEL = "gemini-1.5-flash"; 
 
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
@@ -328,6 +324,7 @@
         window.StudyApp.updateCommunityWorks();
     }
 
+    // 🌟 PDF 텍스트 추출 로직 강화
     async function extractTextFromBlobPDF(blob) {
         if(!blob) return "";
         try {
@@ -337,19 +334,38 @@
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
-                fullText += textContent.items.map(item => item.str).join(' ') + "\n";
+                // 🌟 글자 간격 유지 및 줄바꿈 최적화
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += `--- PAGE ${i} ---\n${pageText}\n\n`;
             }
             return fullText;
         } catch(e) { return ""; }
     }
 
+    // 🌟 해설지 검색 정확도 향상
     function sliceAnswerText(fullText, targetNum, targetName) {
         if(!fullText) return "";
+        
+        const cleanFull = fullText.replace(/\s/g, "");
+        const cleanNum = targetNum.trim().replace(/\s/g, "");
+        const cleanName = targetName.trim().replace(/\s/g, "");
+        
         let indexStart = -1;
-        if(targetNum && targetNum.trim() !== "") indexStart = fullText.indexOf(targetNum.trim());
-        if(indexStart === -1 && targetName) indexStart = fullText.indexOf(targetName.trim());
-        if(indexStart === -1) return "해설지에서 해당 정보를 찾을 수 없습니다.";
-        return fullText.substring(indexStart, indexStart + 4500); 
+        
+        // 1순위: 번호로 찾기 (예: "001")
+        if(cleanNum.length > 0) {
+            indexStart = fullText.indexOf(targetNum.trim());
+        }
+        
+        // 2순위: 이름으로 찾기
+        if(indexStart === -1 && cleanName.length > 0) {
+            indexStart = fullText.indexOf(targetName.trim());
+        }
+        
+        if(indexStart === -1) return "해설지에서 해당 정보를 찾을 수 없습니다. 작품 번호나 이름을 정확히 입력했는지 확인해주세요.";
+        
+        // 🌟 검색 위치로부터 8000자(약 2~3페이지 분량) 넉넉히 잘라 제공
+        return fullText.substring(indexStart, indexStart + 8000); 
     }
 
     function parseMarkdown(text) {
@@ -377,13 +393,13 @@
         const omrGrid = document.getElementById('omr-grid-container');
         if(omrGrid) {
             let html = '';
-            for(let i=1; i<=10; i++) html += `<div class="space-y-1 text-center"><label class="text-[9px] font-black text-slate-400 uppercase">${i}</label><input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-center outline-none uppercase shadow-sm"></div>`;
+            for(let i=1; i<=10; i++) html += `<div class="space-y-1 text-center"><label class="text-[9px] font-black text-slate-400 uppercase">${i}</label><input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-center outline-none uppercase transition-all focus:ring-2 focus:ring-brand-500/20"></div>`;
             omrGrid.innerHTML = html;
         }
         const essayGrid = document.getElementById('essay-grid-container');
         if(essayGrid) {
             let html = '';
-            for(let i=1; i<=2; i++) html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800"><div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800"><span class="text-[9px] font-black text-slate-400 uppercase ml-1">Question 0${i}</span><input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 text-[10px] text-center rounded py-1 outline-none"></div><textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none custom-scrollbar border-none shadow-sm"></textarea></div>`;
+            for(let i=1; i<=2; i++) html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-brand-500/10"><div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800"><span class="text-[9px] font-black text-slate-400 uppercase ml-1">Question 0${i}</span><input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 text-[10px] text-center rounded py-1 outline-none"></div><textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none custom-scrollbar border-none transition-all"></textarea></div>`;
             essayGrid.innerHTML = html;
         }
         if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -440,7 +456,6 @@
           const blob = await res.blob();
           state.problemPdfBlob = blob;
           await window.StudyApp.renderPDF(blob);
-          // 🌟 수동 입력 모드: 클릭해도 입력칸이 채워지지 않음
           window.StudyApp.showToast(`${name} 로드 완료`);
         } catch (e) { window.StudyApp.showToast("PDF 로드 실패", "error"); }
         finally { state.isFetching = false; }
@@ -504,7 +519,11 @@
             if(v) ans.push(`Q${i}: ${v}`);
         }
         if(!ans.length) return window.StudyApp.showToast("답안을 입력해 주세요.", "error");
-        const sysMsg = `너는 채점관이다. 번호 [${workNum}], 작품명 [${workName}]의 해설을 해설지에서 찾아 채점하라. 정답 이유와 오답 이유를 상세히 설명하라.`;
+
+        // 🌟 AI에게 점수를 추출하도록 명령
+        const sysMsg = `너는 채점관이다. 번호 [${workNum}], 작품명 [${workName}]의 해설을 해설지에서 찾아 채점하라. 정답 이유와 오답 이유를 상세히 설명하라. 
+        [반드시 지킬 것]: 응답 마지막에 "Score: [맞은개수]/[제출개수]" 형식을 포함하라.`;
+        
         window.StudyApp.processAIRequest(document.getElementById('submit-omr-btn'), [{ text: `[학생 OMR 답안]\n${ans.join('\n')}` }], sysMsg, { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, isDeleted: false }, workNum, workName);
       },
 
@@ -521,7 +540,11 @@
             if(a) ess.push(`[${n || i}번 문항] ${a}`);
         }
         if(!ess.length) return window.StudyApp.showToast("서술형 답안을 입력해 주세요.", "error");
-        const sysMsg = `번호 [${workNum}], 작품명 [${workName}]의 서술형 기준을 찾아 채점하라. 키워드 포함 여부를 평가하고 피드백을 주라.`;
+
+        // 🌟 AI에게 Pass/Fail 여부를 추출하도록 명령
+        const sysMsg = `너는 채점관이다. 번호 [${workNum}], 작품명 [${workName}]의 서술형 기준을 찾아 채점하라. 키워드 포함 여부를 평가하고 피드백을 주라. 
+        [반드시 지킬 것]: 응답 마지막에 "Result: [Pass 또는 Fail]" 형식을 포함하라.`;
+        
         window.StudyApp.processAIRequest(document.getElementById('submit-essay-btn'), [{ text: `[학생 서술형]\n${ess.join('\n')}` }], sysMsg, { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, isDeleted: false }, workNum, workName);
       },
 
@@ -536,11 +559,26 @@
                 parts.push({ text: `\n[절대적 채점 기준 해설지]\n${targetText}` });
             }
             const res = await window.StudyApp.callGemini(parts, sysMsg);
+            
+            // 🌟 응답에서 점수 데이터 추출
+            let displayScore = "";
+            if (recordData?.type === "OMR") {
+                const match = res.match(/Score:\s*(\d+\/\d+)/i);
+                if (match) displayScore = match[1];
+            } else if (recordData?.type === "Essay") {
+                const match = res.match(/Result:\s*(Pass|Fail)/i);
+                if (match) displayScore = match[1];
+            }
+
             document.getElementById('ai-response-content').innerHTML = parseMarkdown(res);
             document.getElementById('ai-response-area').classList.remove('hidden');
             document.getElementById('ai-response-area').scrollIntoView({ behavior: 'smooth' });
+            
             if(recordData) {
-                recordData.userName = await getUserName(); recordData.aiFeedback = res;
+                recordData.userName = await getUserName(); 
+                recordData.aiFeedback = res;
+                recordData.displayScore = displayScore; // 🌟 점수 저장
+                
                 if (state.editingDocId) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), { ...recordData, isEdited: true, editedAt: Date.now() });
                 else await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), { ...recordData, timestamp: Date.now() });
                 state.editingDocId = null; document.getElementById('editing-badge').classList.add('hidden');
@@ -584,11 +622,13 @@
           const container = document.getElementById('community-container');
           if(!w || !work) { container.innerHTML = `<p class="text-center py-10 text-[10px] text-slate-400">조회할 주차와 작품을 선택하세요.</p>`; return; }
           const subs = state.allSubmissions.filter(s => s.week === w && s.workName === work);
+          
           container.innerHTML = subs.map(r => `
-              <div class="bg-white dark:bg-slate-900 border ${r.userId === state.user.uid ? 'border-brand-400' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2">
-                  <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3.5 cursor-pointer flex items-center justify-between">
+              <div class="bg-white dark:bg-slate-900 border ${r.userId === state.user.uid ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2 transition-all">
+                  <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3.5 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30">
                       <div class="flex items-center space-x-2">
                           <span class="text-[11px] font-black">${r.userId === state.user.uid ? '🌟 나의 답안' : r.userName}</span>
+                          ${r.displayScore ? `<span class="bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-300 text-[9px] font-black px-1.5 py-0.5 rounded border border-brand-100 dark:border-brand-800">[${r.displayScore}]</span>` : ''}
                           <span class="text-[9px] font-bold text-slate-400 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase">${r.type}</span>
                       </div>
                       <div class="flex space-x-1">
@@ -596,9 +636,9 @@
                           <button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded transition-all hover:bg-red-100">삭제</button>
                       </div>
                   </div>
-                  <div class="hidden border-t p-4 bg-slate-50/30 dark:bg-slate-800/30 space-y-3">
-                      <p class="text-[11px] font-bold whitespace-pre-wrap">${r.userAnswers.join('\n')}</p>
-                      <div class="p-3 bg-white dark:bg-slate-800 rounded-lg border text-[11px] markdown-body shadow-sm">${parseMarkdown(r.aiFeedback)}</div>
+                  <div class="hidden border-t p-4 bg-slate-50/30 dark:bg-slate-800/20 space-y-3">
+                      <p class="text-[11px] font-bold whitespace-pre-wrap pl-2 border-l-2 border-brand-200 dark:border-brand-800">${r.userAnswers.join('\n')}</p>
+                      <div class="p-3 bg-white dark:bg-slate-800 rounded-lg border dark:border-slate-700 text-[11px] markdown-body shadow-sm">${parseMarkdown(r.aiFeedback)}</div>
                   </div>
               </div>
           `).join('');
