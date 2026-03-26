@@ -54,22 +54,21 @@
     .fab-button:active { transform: translateX(-50%) scale(0.95); }
     canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 100%; height: auto !important; }
     
-    /* Markdown 렌더링 스타일 */
-    .markdown-body h3 { font-size: 13px; font-weight: 900; margin-top: 16px; margin-bottom: 8px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
-    .dark .markdown-body h3 { border-bottom-color: #334155; color: #818cf8; }
-    .markdown-body ul { list-style-type: disc; padding-left: 20px; margin-bottom: 12px; }
-    .markdown-body li { margin-bottom: 4px; }
-    .markdown-body strong { font-weight: 900; color: #1e293b; }
-    .dark .markdown-body strong { color: #f8fafc; }
-    .markdown-body hr { border: 0; border-top: 1px dashed #cbd5e1; margin: 16px 0; }
-    .dark .markdown-body hr { border-top-color: #475569; }
+    .markdown-body h3 { font-size: 14px; font-weight: 900; margin-top: 18px; margin-bottom: 10px; color: #4f46e5; border-left: 4px solid #4f46e5; padding-left: 8px; }
+    .dark .markdown-body h3 { color: #818cf8; border-left-color: #818cf8; }
+    .markdown-body ul { list-style-type: none; padding-left: 0; margin-bottom: 14px; }
+    .markdown-body li { margin-bottom: 8px; padding-left: 14px; position: relative; }
+    .markdown-body li::before { content: "•"; position: absolute; left: 0; color: #4f46e5; font-weight: bold; }
+    .markdown-body strong { font-weight: 900; color: #1e293b; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; }
+    .dark .markdown-body strong { color: #f8fafc; background: #334155; }
+    .markdown-body hr { border: 0; border-top: 1px dashed #cbd5e1; margin: 20px 0; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen relative">
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- 자체 삭제 확인 모달 -->
+  <!-- 삭제 모달 -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -88,26 +87,23 @@
   </button>
 
   <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 h-16 shrink-0 z-50 sticky top-0 lg:relative">
-    <div class="max-w-[1800px] mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
-      <div class="flex items-center space-x-4 sm:space-x-6 h-full">
-        <a href="../index.html" class="flex items-center text-brand-600 hover:text-brand-700 dark:text-brand-400 font-black text-lg tracking-tight shrink-0">
-          <i data-lucide="home" class="w-5 h-5 mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Home</span>
+    <div class="max-w-[1800px] mx-auto px-4 h-full flex items-center justify-between">
+      <div class="flex items-center space-x-4 h-full">
+        <a href="../index.html" class="flex items-center text-brand-600 font-black text-lg tracking-tight">
+          <i data-lucide="home" class="w-5 h-5 mr-2"></i> Home
         </a>
-        <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 shrink-0"></div>
-        
-        <div class="flex space-x-1 sm:space-x-2 h-full items-center overflow-x-auto no-scrollbar flex-nowrap">
-            <button onclick="window.StudyApp.setMode('tutor')" id="tab-tutor" class="tab-active text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">AI Tutor</button>
-            <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">OMR Score</button>
-            <button onclick="window.StudyApp.setMode('essay')" id="tab-essay" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">Essay</button>
-            <button onclick="window.StudyApp.setMode('community')" id="tab-community" class="text-[10px] sm:text-xs px-2 sm:px-4 py-5 rounded-lg uppercase tracking-widest text-brand-500 whitespace-nowrap flex items-center transition-colors">
-                <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Shared Records
+        <div class="h-5 w-px bg-slate-200 dark:bg-slate-800"></div>
+        <div class="flex space-x-1 items-center overflow-x-auto no-scrollbar">
+            <button onclick="window.StudyApp.setMode('tutor')" id="tab-tutor" class="tab-active text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">AI Tutor</button>
+            <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">OMR Score</button>
+            <button onclick="window.StudyApp.setMode('essay')" id="tab-essay" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap">Essay</button>
+            <button onclick="window.StudyApp.setMode('community')" id="tab-community" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-brand-500 whitespace-nowrap flex items-center">
+                <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Community
             </button>
         </div>
       </div>
-      
-      <div class="flex items-center space-x-3 shrink-0">
-        <!-- 🌟 해설지 상태를 명확히 보여주는 뱃지 -->
-        <div id="answer-key-badge" class="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[9px] font-black text-slate-500 uppercase tracking-widest">
+      <div class="flex items-center space-x-3">
+        <div id="answer-key-badge" class="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest">
             <i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> Checking Key...
         </div>
         <button onclick="window.StudyApp.toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 transition-all">
@@ -117,8 +113,8 @@
     </div>
   </nav>
 
-  <main class="max-w-[1800px] mx-auto px-2 sm:px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
-    
+  <main class="max-w-[1800px] mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
+    <!-- 라이브러리 사이드바 -->
     <aside class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
         <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
@@ -138,68 +134,64 @@
         <div id="material-list" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar bg-slate-50/30 dark:bg-slate-950/30">
             <div class="flex flex-col items-center justify-center py-10 text-slate-300">
                 <i data-lucide="loader-2" class="w-5 h-5 animate-spin mb-2"></i>
-                <p class="text-[9px] font-black uppercase tracking-widest">Scanning Files...</p>
+                <p class="text-[9px] font-black uppercase tracking-widest text-center">Scanning Files...</p>
             </div>
         </div>
       </div>
     </aside>
 
+    <!-- PDF 뷰어 영역 -->
     <section class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
-            <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
+            <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50">
                 <div class="flex items-center space-x-2 overflow-hidden flex-1 mr-2">
                     <i data-lucide="file-text" class="w-4 h-4 text-brand-500 shrink-0"></i>
                     <span id="viewer-filename" class="text-[10px] font-black text-slate-500 uppercase italic truncate">No File Selected</span>
                 </div>
-                <button onclick="window.StudyApp.toggleFullScreen()" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg uppercase tracking-tighter flex items-center shrink-0 shadow-sm transition-colors">
+                <button onclick="window.StudyApp.toggleFullScreen()" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg uppercase tracking-tighter flex items-center shadow-sm">
                     <i data-lucide="maximize" class="w-3.5 h-3.5 sm:mr-1.5"></i> <span class="hidden sm:inline">크게 보기</span>
                 </button>
             </div>
-
-            <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center space-x-4 z-50 shrink-0 shadow-sm">
+            <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center space-x-4 z-50">
                 <div class="flex items-center space-x-2">
-                    <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                    <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                     <span class="text-[11px] font-black w-14 text-center"><span id="page_num">1</span> / <span id="page_count">-</span></span>
-                    <button onclick="window.StudyApp.nextPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                    <button onclick="window.StudyApp.nextPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                 </div>
                 <div class="w-px h-4 bg-slate-200 dark:bg-slate-700"></div>
                 <div class="flex items-center space-x-2">
-                    <button onclick="window.StudyApp.zoomOut()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
-                    <button onclick="window.StudyApp.zoomIn()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+                    <button onclick="window.StudyApp.zoomOut()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+                    <button onclick="window.StudyApp.zoomIn()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
                 </div>
             </div>
-            
             <div class="flex-1 flex justify-center relative overflow-hidden bg-slate-200 dark:bg-slate-950">
-                <div id="pdf-canvas-container" class="hidden w-full h-full overflow-auto custom-scrollbar relative p-2 sm:p-4">
+                <div id="pdf-canvas-container" class="hidden w-full h-full overflow-auto custom-scrollbar relative p-4">
                     <div class="flex justify-center min-h-full items-start">
                         <canvas id="pdf-canvas"></canvas>
                     </div>
                 </div>
-
                 <div id="viewer-placeholder" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mb-3">
                         <i data-lucide="book-open" class="w-6 h-6 text-slate-300 dark:text-slate-500"></i>
                     </div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Select a document from Library</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">라이브러리에서 문서를 선택하세요</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 오른쪽 작업 영역 -->
+    <!-- 작업창 영역 -->
     <section class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
-            <!-- 주차 필터 바 -->
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0 hidden">
                 <div class="flex items-center space-x-2 flex-1">
-                    <i data-lucide="calendar" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
-                    <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px] truncate">
+                    <i data-lucide="calendar" class="w-4 h-4 text-brand-600"></i>
+                    <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 outline-none cursor-pointer uppercase max-w-[250px] truncate">
                         <option value="">불러오는 중...</option>
                     </select>
                 </div>
-                <!-- 수정 모드 표시 -->
-                <div id="editing-badge" class="hidden px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 text-[9px] font-black rounded uppercase animate-pulse flex items-center">
+                <div id="editing-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-black rounded uppercase animate-pulse flex items-center">
                     <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> 수정 모드
                 </div>
             </div>
@@ -209,46 +201,55 @@
                 <!-- 뷰 A: AI Tutor -->
                 <div id="view-tutor" class="space-y-4 fade-in">
                     <h3 class="text-[11px] font-black uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">AI Tutoring</h3>
-                    <input type="text" id="ai-tutor-target" placeholder="작품명 (예: 상춘곡)" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white font-bold mb-1 shadow-sm">
-                    <textarea id="ai-tutor-prompt" placeholder="PDF 속 내용을 AI에게 자유롭게 질문하세요." class="w-full h-40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs leading-relaxed resize-none outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white custom-scrollbar shadow-sm"></textarea>
-                    <button onclick="window.StudyApp.askAITutor()" id="ai-tutor-btn" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed">
+                    <div class="flex space-x-2">
+                        <input type="text" id="ai-tutor-num" placeholder="번호(001)" class="w-20 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500/20">
+                        <input type="text" id="ai-tutor-target" placeholder="작품명 (공무도하가)" class="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800 text-xs font-bold outline-none focus:ring-2 focus:ring-brand-500/20">
+                    </div>
+                    <textarea id="ai-tutor-prompt" placeholder="PDF 속 내용을 AI에게 자유롭게 질문하세요." class="w-full h-40 p-4 rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-950 dark:border-slate-800 text-xs leading-relaxed resize-none outline-none focus:ring-2 focus:ring-brand-500/20"></textarea>
+                    <button onclick="window.StudyApp.askAITutor()" id="ai-tutor-btn" class="w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70">
                         <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 분석 시작
                     </button>
                 </div>
 
-                <!-- OMR -->
+                <!-- 뷰 B: OMR -->
                 <div id="view-omr" class="hidden space-y-5 fade-in">
-                    <div>
-                        <label class="block text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
-                        <input type="text" id="omr-work-name" placeholder="현재 풀고 있는 작품명을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/30 dark:bg-emerald-950/30 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white transition-all">
+                    <div class="grid grid-cols-4 gap-2">
+                        <div class="col-span-1">
+                            <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Num</label>
+                            <input type="text" id="omr-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 dark:border-emerald-800 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
+                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 dark:border-emerald-800 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20">
+                        </div>
                     </div>
                     <div id="omr-grid-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm"></div>
-                    <button onclick="window.StudyApp.submitOMR()" id="submit-omr-btn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed">
+                    <button onclick="window.StudyApp.submitOMR()" id="submit-omr-btn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70">
                         <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 채점 및 공유하기
                     </button>
                 </div>
 
-                <!-- 서술형 -->
+                <!-- 뷰 C: Essay -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
-                    <div>
-                        <label class="block text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 ml-1 tracking-widest"><span class="text-red-500">*</span> Target Work (작품명)</label>
-                        <input type="text" id="essay-work-name" placeholder="현재 풀고 있는 작품명을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-purple-200 dark:border-purple-800/50 bg-purple-50/30 dark:bg-purple-950/30 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white transition-all">
+                    <div class="grid grid-cols-4 gap-2">
+                        <div class="col-span-1">
+                            <label class="block text-[9px] font-black text-purple-600 uppercase mb-1.5 ml-1 tracking-widest">Num</label>
+                            <input type="text" id="essay-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 dark:border-purple-800 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="block text-[9px] font-black text-purple-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
+                            <input type="text" id="essay-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 dark:border-purple-800 text-xs font-bold outline-none focus:ring-2 focus:ring-purple-500/20">
+                        </div>
                     </div>
                     <div id="essay-grid-container" class="space-y-4"></div>
-                    <button onclick="window.StudyApp.submitEssay()" id="submit-essay-btn" class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed">
+                    <button onclick="window.StudyApp.submitEssay()" id="submit-essay-btn" class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70">
                         <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 서술형 채점 및 공유하기
                     </button>
                 </div>
 
-                <!-- 커뮤니티 -->
+                <!-- 뷰 D: Community -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
-                    <div class="bg-brand-50/50 dark:bg-brand-900/10 p-4 rounded-xl border border-brand-100 dark:border-brand-800/50 shrink-0 shadow-sm">
-                        <h3 class="text-[11px] font-black text-brand-700 dark:text-brand-400 mb-1 uppercase tracking-widest flex items-center">
-                            <i data-lucide="users" class="w-4 h-4 mr-1.5"></i> Shared Community
-                        </h3>
-                        <p class="text-[9px] text-brand-600/70 dark:text-brand-400/70 leading-relaxed">스터디원들의 답안과 AI 피드백을 확인하고 비교해보세요.</p>
-                    </div>
-                    <div class="flex space-x-2 shrink-0">
+                    <div class="flex space-x-2">
                         <select id="comm-week-filter" onchange="window.StudyApp.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black text-slate-700 dark:text-slate-300 outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all"></select>
                         <select id="comm-work-filter" onchange="window.StudyApp.renderCommunityRecords()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black text-slate-700 dark:text-slate-300 outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all">
                             <option value="">작품 선택</option>
@@ -257,20 +258,19 @@
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2"></div>
                 </div>
 
-                <!-- AI 응답 모달 (채점 결과 즉시 확인) -->
+                <!-- AI 응답 결과 창 -->
                 <div id="ai-response-area" class="hidden animate-fade-in mt-4">
                     <div class="p-5 bg-brand-50/50 dark:bg-slate-800/50 rounded-2xl border border-brand-200 dark:border-slate-700 shadow-lg relative">
-                        <button onclick="document.getElementById('ai-response-area').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
+                        <button onclick="document.getElementById('ai-response-area').classList.add('hidden')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                         <div class="flex items-center mb-3">
                             <i data-lucide="bot" class="w-4 h-4 text-brand-500 mr-2"></i>
                             <span class="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">AI Feedback Result</span>
                         </div>
-                        <div id="ai-response-content" class="text-[11px] leading-relaxed dark:text-slate-300 markdown-body"></div>
+                        <div id="ai-response-content" class="text-[12px] leading-relaxed dark:text-slate-300 markdown-body"></div>
                     </div>
                 </div>
-
             </div>
         </div>
     </section>
@@ -278,73 +278,49 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    /* ===============================================================
-       [깃허브 배포 전용 하드코딩 환경 설정]
-       =============================================================== */
-    const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
-    
-    const firebaseConfig = {
-        apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
+    // 🌟 GitHub 환경 설정
+    const GITHUB_CONFIG = { 
+        username: "kimjs2623", 
+        repo: "for-study", 
+        branch: "main", 
+        folder: "01/pdf", 
+        answerKeyFileName: "정답해설.pdf" 
     };
-    
+
+    const firebaseConfig = { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
     const appId = 'my-study-app'; 
-    
-    // AI 채점용 API 키 (난독화)
-    const keyPart1 = "AIzaSyCy3vs";
-    const keyPart2 = "KFz6_TTiNd0";
-    const keyPart3 = "WXn3ys9H6iAiWKWW4";
-    const apiKey = keyPart1 + keyPart2 + keyPart3; 
-    
-    const GEMINI_MODEL = "gemini-2.5-flash"; 
+    const apiKey = "AIzaSyCy3vsKFz6_TTiNd0WXn3ys9H6iAiWKWW4";
+    const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025"; 
 
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
 
-    const state = {
-      user: null, allFiles: [], filteredFiles: [], problemPdfBlob: null, 
-      answerKeyText: "", // 해설지 텍스트를 미리 추출하여 보관
-      isFetching: false, mode: 'tutor', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false,
-      docWeeks: [] 
-    };
+    const state = { user: null, allFiles: [], filteredFiles: [], problemPdfBlob: null, fullAnswerKeyText: "", isFetching: false, mode: 'tutor', weeks: [], allSubmissions: [], editingDocId: null, pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false, docWeeks: [] };
 
     async function getUserName() {
         if(!state.user) return "익명";
         try {
             const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
             const profileSnap = await getDoc(profileRef);
-            if(profileSnap.exists()) {
-                const data = profileSnap.data();
-                return data.name || data.appAccountId || "스터디원";
-            }
+            if(profileSnap.exists()) return profileSnap.data().name || "스터디원";
         } catch(e) {}
-        return state.user.displayName || "스터디원";
+        return "스터디원";
     }
 
     function updateGlobalWeeks() {
         const existingWeeks = state.allSubmissions.filter(s => !s.isDeleted).map(s => String(s.week));
         state.weeks = [...new Set([...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined');
-        
-        let emptyMessage = "";
-        if(state.weeks.length === 0) {
-            emptyMessage = "[데이터 없음/DB오류]";
-        } else {
-            state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
-        }
-        
+        state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
         ['week-select', 'comm-week-filter'].forEach(id => {
             const el = document.getElementById(id);
             if(!el) return;
-            if (emptyMessage) {
-                el.innerHTML = `<option value="">${emptyMessage}</option>`;
-            } else {
-                const prev = el.value;
-                el.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
-                if(state.weeks.includes(prev)) el.value = prev;
-            }
+            const prev = el.value;
+            el.innerHTML = state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+            if(state.weeks.includes(prev)) el.value = prev;
         });
         window.StudyApp.updateCommunityWorks();
     }
@@ -355,18 +331,31 @@
             const arrayBuffer = await blob.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             let fullText = "";
-            const maxPages = Math.min(pdf.numPages, 20); 
-            for (let i = 1; i <= maxPages; i++) {
+            for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
                 const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += `[${i}페이지]\n${pageText}\n\n`;
+                fullText += textContent.items.map(item => item.str).join(' ') + "\n";
             }
             return fullText;
-        } catch(e) { 
-            console.error("PDF 텍스트 추출 에러:", e);
-            return ""; 
+        } catch(e) { return ""; }
+    }
+
+    // 🌟 번호와 이름을 사용하여 해설지에서 정밀 추출
+    function sliceAnswerText(fullText, targetNum, targetName) {
+        if(!fullText) return "";
+        
+        // 1. 번호로 먼저 찾기 (예: "001" 검색)
+        let indexStart = fullText.indexOf(targetNum.trim());
+        
+        // 2. 번호가 없으면 이름으로 찾기
+        if(indexStart === -1) {
+            indexStart = fullText.indexOf(targetName.trim());
         }
+        
+        if(indexStart === -1) return "해설지에서 해당 작품의 정보를 찾을 수 없습니다.";
+        
+        // 찾은 지점부터 충분한 분량(4000자)만 잘라 AI에게 전달
+        return fullText.substring(indexStart, indexStart + 4500); 
     }
 
     function parseMarkdown(text) {
@@ -381,39 +370,27 @@
     }
 
     window.StudyApp = {
-      showToast: (msg, type='info', duration=4000) => {
+      showToast: (msg, type='info') => {
         const toast = document.createElement('div');
-        const finalDuration = type === 'error' ? 7000 : duration;
         toast.className = `p-4 rounded-xl shadow-2xl border text-[10px] font-black transition-all duration-300 z-[1000000] pointer-events-auto flex items-center ${type==='error'?'bg-red-50 text-red-600 border-red-200':'bg-brand-50 text-brand-600 border-brand-200'}`;
-        toast.innerHTML = type === 'error' ? `<i data-lucide="alert-circle" class="w-4 h-4 mr-2 shrink-0"></i> <span>${msg}</span>` : `<i data-lucide="info" class="w-4 h-4 mr-2 shrink-0"></i> <span>${msg}</span>`;
-        
-        const container = document.getElementById('toast-container');
-        if (container) {
-            container.appendChild(toast);
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, finalDuration);
-        }
+        toast.innerHTML = `<i data-lucide="${type==='error'?'alert-circle':'info'}" class="w-4 h-4 mr-2"></i><span>${msg}</span>`;
+        document.getElementById('toast-container').appendChild(toast);
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
       },
 
       initUI: () => {
         const omrGrid = document.getElementById('omr-grid-container');
         if(omrGrid) {
             let html = '';
-            for(let i=1; i<=10; i++) html += `<div class="space-y-1 text-center"><label class="text-[9px] font-black text-slate-400 uppercase">${i}</label><input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-center outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white uppercase shadow-sm transition-colors"></div>`;
+            for(let i=1; i<=10; i++) html += `<div class="space-y-1 text-center"><label class="text-[9px] font-black text-slate-400 uppercase">${i}</label><input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-center outline-none focus:ring-2 focus:ring-emerald-500/20 dark:text-white uppercase shadow-sm"></div>`;
             omrGrid.innerHTML = html;
         }
         const essayGrid = document.getElementById('essay-grid-container');
         if(essayGrid) {
             let html = '';
-            for(let i=1; i<=2; i++) html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800"><div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800"><span class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Question 0${i}</span><input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] text-center dark:text-white outline-none rounded shadow-sm py-1 transition-colors"></div><textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white custom-scrollbar border-none transition-colors"></textarea></div>`;
+            for(let i=1; i<=2; i++) html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800"><div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800"><span class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Question 0${i}</span><input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] text-center dark:text-white outline-none rounded py-1"></div><textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none focus:ring-2 focus:ring-purple-500/20 dark:text-white custom-scrollbar border-none"></textarea></div>`;
             essayGrid.innerHTML = html;
-        }
-        
-        // 초기 배지 세팅
-        const badge = document.getElementById('answer-key-badge');
-        if(badge) {
-            badge.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> Checking Key...`;
-            badge.classList.remove('hidden');
         }
         if(typeof lucide !== 'undefined') lucide.createIcons();
       },
@@ -429,25 +406,9 @@
                 else { tab.classList.remove('tab-active'); tab.classList.add('text-slate-500'); }
             }
         });
-        
-        const bar = document.getElementById('week-selector-bar');
-        if(bar) {
-            if(mode === 'tutor') bar.classList.add('hidden');
-            else bar.classList.remove('hidden');
-        }
-        
+        document.getElementById('week-selector-bar').classList.toggle('hidden', mode === 'tutor');
         document.getElementById('ai-response-area').classList.add('hidden');
-
-        if (mode !== 'omr' && mode !== 'essay') {
-            state.editingDocId = null;
-            document.getElementById('editing-badge')?.classList.add('hidden');
-            const omrBtn = document.getElementById('submit-omr-btn');
-            if(omrBtn) omrBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 채점 및 공유하기';
-            const essayBtn = document.getElementById('submit-essay-btn');
-            if(essayBtn) essayBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> AI 서술형 채점 및 공유하기';
-        }
-
-        if(mode === 'community') window.StudyApp.renderCommunityRecords();
+        if(mode === 'community') window.StudyApp.updateCommunityWorks();
         if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
@@ -460,97 +421,71 @@
 
       refreshFiles: () => scanGitHub(),
       filterFiles: () => {
-        const searchEl = document.getElementById('file-search');
-        if(!searchEl) return;
-        const q = searchEl.value.toLowerCase();
+        const q = document.getElementById('file-search').value.toLowerCase();
         state.filteredFiles = state.allFiles.filter(f => f.name.toLowerCase().includes(q));
         renderFileList();
       },
 
       toggleFullScreen: () => {
         const viewer = document.getElementById('viewer-container');
-        const fabBtn = document.getElementById('exit-fullscreen-fab');
-        if (viewer) {
-            const isFull = viewer.classList.toggle('viewer-fullscreen');
-            document.body.style.overflow = isFull ? 'hidden' : '';
-            if (fabBtn) fabBtn.classList.toggle('hidden', !isFull);
-            if(state.pdfDoc) window.StudyApp.renderPage(state.pageNum);
-        }
+        const isFull = viewer.classList.toggle('viewer-fullscreen');
+        document.body.style.overflow = isFull ? 'hidden' : '';
+        document.getElementById('exit-fullscreen-fab').classList.toggle('hidden', !isFull);
+        if(state.pdfDoc) window.StudyApp.renderPage(state.pageNum);
       },
 
       loadMaterial: async (name, url) => {
         if (state.isFetching) return;
         state.isFetching = true;
-        const filenameDisplay = document.getElementById('viewer-filename');
-        if (filenameDisplay) filenameDisplay.textContent = name;
-        const placeholder = document.getElementById('viewer-placeholder');
-        if (placeholder) placeholder.classList.add('hidden');
-        
+        document.getElementById('viewer-filename').textContent = name;
+        document.getElementById('viewer-placeholder').classList.add('hidden');
         document.querySelectorAll('.file-btn').forEach(b => b.classList.remove('border-brand-500', 'bg-brand-50/30'));
-        const activeBtn = document.getElementById(`btn-${name.replace(/\s+/g, '')}`);
-        if(activeBtn) activeBtn.classList.add('border-brand-500', 'bg-brand-50/30');
+        document.getElementById(`btn-${name.replace(/\s+/g, '')}`)?.classList.add('border-brand-500', 'bg-brand-50/30');
         
         try {
           const res = await fetch(url);
           const blob = await res.blob();
           state.problemPdfBlob = blob;
           await window.StudyApp.renderPDF(blob);
-          window.StudyApp.showToast(`${name} 문서 로드 완료`);
-        } catch (e) { 
-            window.StudyApp.showToast("PDF 로드 실패", "error"); 
-            if (filenameDisplay) filenameDisplay.textContent = "Load Error";
-        } finally { state.isFetching = false; }
+          
+          // 🌟 작품 정보 자동 채우기 시도 (파일명이 '001_공무도하가.pdf' 형식일 때)
+          const match = name.match(/(\d+)[_\s-](.+)\.pdf/i);
+          if(match) {
+              const num = match[1]; const nme = match[2];
+              ['ai-tutor', 'omr', 'essay'].forEach(p => {
+                  const numIn = document.getElementById(`${p}-num`);
+                  const targetIn = document.getElementById(`${p}-target`) || document.getElementById(`${p}-work-name`);
+                  if(numIn) numIn.value = num;
+                  if(targetIn) targetIn.value = nme;
+              });
+          }
+          
+          window.StudyApp.showToast(`${name} 로드 완료`);
+        } catch (e) { window.StudyApp.showToast("PDF 로드 실패", "error"); }
+        finally { state.isFetching = false; }
       },
 
       renderPDF: async (blob) => {
-        try {
-            const arrayBuffer = await blob.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-            state.pdfDoc = await loadingTask.promise;
-            
-            const countEl = document.getElementById('page_count');
-            if (countEl) countEl.textContent = state.pdfDoc.numPages;
-            
-            const controls = document.getElementById('pdf-controls');
-            if (controls) { controls.classList.remove('hidden'); controls.classList.add('flex'); }
-            
-            const container = document.getElementById('pdf-canvas-container');
-            if (container) container.classList.remove('hidden');
-            
-            state.pageNum = 1;
-            state.userZoomed = false;
-            window.StudyApp.renderPage(state.pageNum);
-        } catch (error) { window.StudyApp.showToast("PDF 렌더링 오류", "error"); }
+        const arrayBuffer = await blob.arrayBuffer();
+        state.pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        document.getElementById('page_count').textContent = state.pdfDoc.numPages;
+        document.getElementById('pdf-controls').classList.remove('hidden');
+        document.getElementById('pdf-canvas-container').classList.remove('hidden');
+        state.pageNum = 1; state.userZoomed = false;
+        window.StudyApp.renderPage(state.pageNum);
       },
 
       renderPage: (num) => {
-        if(!state.pdfDoc) return;
         state.pdfDoc.getPage(num).then((page) => {
           const canvas = document.getElementById('pdf-canvas');
-          if (!canvas) return;
           const ctx = canvas.getContext('2d');
-          
-          let finalScale = state.pdfScale;
           const container = document.getElementById('pdf-canvas-container');
-          
-          if(!state.userZoomed && container) {
-              let containerWidth = container.clientWidth;
-              if (containerWidth === 0) containerWidth = window.innerWidth - 40; 
-              finalScale = (containerWidth - 30) / page.getViewport({scale: 1}).width;
-              state.pdfScale = finalScale;
-          }
-          
-          const viewport = page.getViewport({scale: finalScale});
-          canvas.height = viewport.height; 
-          canvas.width = viewport.width;
-          
-          page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
-            canvas.classList.remove('hidden');
-          });
+          if(!state.userZoomed) state.pdfScale = (container.clientWidth - 30) / page.getViewport({scale: 1}).width;
+          const viewport = page.getViewport({scale: state.pdfScale});
+          canvas.height = viewport.height; canvas.width = viewport.width;
+          page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => canvas.classList.remove('hidden'));
+          document.getElementById('page_num').textContent = num;
         });
-        
-        const numEl = document.getElementById('page_num');
-        if (numEl) numEl.textContent = num;
       },
 
       prevPage: () => { if (state.pageNum > 1) { state.pageNum--; window.StudyApp.renderPage(state.pageNum); } },
@@ -558,398 +493,173 @@
       zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.StudyApp.renderPage(state.pageNum); },
       zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.StudyApp.renderPage(state.pageNum); } },
 
-      updateWeekDropdowns: () => {
-          updateGlobalWeeks();
-      },
-
       updateCommunityWorks: () => {
-          const filterEl = document.getElementById('comm-week-filter');
-          const workSelect = document.getElementById('comm-work-filter');
-          if(!filterEl || !workSelect) return;
-          
-          const w = filterEl.value;
-          const prevWork = workSelect.value;
-          
-          const works = [...new Set(state.allSubmissions.filter(x => x.week === w && !x.isDeleted).map(x => x.workName))];
-          workSelect.innerHTML = works.length ? `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('') : `<option value="">기록 없음</option>`;
-          
-          if (works.includes(prevWork)) {
-              workSelect.value = prevWork;
-          }
-          
+          const w = document.getElementById('comm-week-filter').value;
+          const prevWork = document.getElementById('comm-work-filter').value;
+          const works = [...new Set(state.allSubmissions.filter(s => s.week === w && !s.isDeleted).map(s => s.workName))];
+          const el = document.getElementById('comm-work-filter');
+          el.innerHTML = works.length ? `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('') : `<option value="">기록 없음</option>`;
+          if (works.includes(prevWork)) el.value = prevWork;
           window.StudyApp.renderCommunityRecords();
       },
 
       askAITutor: async () => {
-        const targetEl = document.getElementById('ai-tutor-target');
-        const promptEl = document.getElementById('ai-tutor-prompt');
-        if (!targetEl || !promptEl) return;
-        const target = targetEl.value.trim();
-        const prompt = promptEl.value.trim();
-        if (!prompt) return window.StudyApp.showToast("질문할 내용을 입력하세요.", "error");
-        
-        window.StudyApp.processAIRequest(
-            document.getElementById('ai-tutor-btn'), 
-            [{ text: `[타겟: ${target}]\n[학생 질문]: ${prompt}` }], 
-            "문학 전문가로서 학생의 질문에 대해 상세히 친절하게 답변하세요.", 
-            null
-        ); 
+        const num = document.getElementById('ai-tutor-num').value.trim();
+        const target = document.getElementById('ai-tutor-target').value.trim();
+        const prompt = document.getElementById('ai-tutor-prompt').value.trim();
+        if (!prompt) return window.StudyApp.showToast("질문을 입력하세요.", "error");
+        window.StudyApp.processAIRequest(document.getElementById('ai-tutor-btn'), [{ text: `[번호: ${num}, 작품명: ${target}]\n[질문]: ${prompt}` }], "문학 전문가로서 상세히 답변하세요.", null, num, target);
       },
 
       submitOMR: async () => {
-        const weekEl = document.getElementById('week-select');
-        const workEl = document.getElementById('omr-work-name');
-        if (!weekEl || !workEl) return;
-        const week = weekEl.value;
-        const workName = workEl.value.trim();
-        
-        if(!week || week.includes("오류") || week.includes("없음")) return window.StudyApp.showToast("올바른 주차 정보가 없습니다. DB 경로를 확인하세요.", "error");
-        if(!workName) return window.StudyApp.showToast("작품명을 입력하세요.", "error");
-        
-        // 🌟 1. 해설지 검증 차단
-        if(!state.answerKeyText || state.answerKeyText.length < 10) {
-            return window.StudyApp.showToast("정답 해설지가 로드되지 않아 채점할 수 없습니다. 우측 상단의 뱃지 상태를 확인하세요.", "error");
-        }
-
+        const week = document.getElementById('week-select').value;
+        const workNum = document.getElementById('omr-work-num').value.trim();
+        const workName = document.getElementById('omr-work-name').value.trim();
+        if(!workName || !state.fullAnswerKeyText) return window.StudyApp.showToast("작품명 입력 및 해설지 로딩 대기 필요", "error");
         const ans = [];
         for(let i=1; i<=10; i++) {
-            const vEl = document.getElementById(`omr-${i}`);
-            const v = vEl ? vEl.value.trim() : "";
+            const v = document.getElementById(`omr-${i}`).value.trim();
             if(v) ans.push(`Q${i}: ${v}`);
         }
-        if(!ans.length) return window.StudyApp.showToast("최소 1개의 답안을 입력하세요.", "error");
-
-        const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, isDeleted: false };
-        
-        // 🌟 2. 멱살잡기 프롬프트 (환각 완벽 차단 및 양식 고정)
-        const systemMsg = `너는 매우 엄격하고 정확한 문학 채점관이다. 학생이 입력한 작품명은 [${workName}] 이다.
-
-[가장 중요한 채점 원칙 - 환각 금지]
-1. 제공된 [공식 정답 해설지 원문]에서 오직 [${workName}] 작품에 대한 정답만 찾아라.
-2. 해설지에 4번, 5번 등 학생이 제출한 번호의 문항이 아예 존재하지 않는다면 절대 임의로 유추하거나 정답 처리하지 말고 반드시 "문항 없음 (채점 불가)"로 표기해라.
-3. 해설지에 명시된 정답과 학생의 답이 일치할 때만 정답이다.
-
-반드시 다음 마크다운 양식을 엄격하게 지켜서 출력해라:
----
-### 📊 채점 결과
-* **총점:** [맞은 개수]/[제출한 개수]
-
-### 📝 문항별 해설
-* **[번호]번:** [정답/오답/문항없음] (학생 답: [X], 실제 정답: [Y 또는 확인불가])
-  * 해설: [해설지에 해당 번호의 내용이 있으면 요약, 없으면 '해설지에 해당 문항이 없습니다.' 출력]
-(모든 문항 반복)
-
-### 💡 총평
-[2줄 내외 평가]
----`;
-
-        window.StudyApp.processAIRequest(
-            document.getElementById('submit-omr-btn'), 
-            [{ text: `[학생 OMR 답안]\n${ans.join('\n')}` }], 
-            systemMsg, 
-            recordData
-        );
+        const sysMsg = `번호 [${workNum}], 작품명 [${workName}]에 대한 해설 구역을 해설지에서 찾아 채점하세요. 정답뿐 아니라 '왜 정답인지'와 '오답 선지는 왜 오답인지'를 해설지 원문 바탕으로 상세히 설명하세요.`;
+        window.StudyApp.processAIRequest(document.getElementById('submit-omr-btn'), [{ text: `[학생 OMR 답안]\n${ans.join('\n')}` }], sysMsg, { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, isDeleted: false }, workNum, workName);
       },
 
       submitEssay: async () => {
-        const weekEl = document.getElementById('week-select');
-        const workEl = document.getElementById('essay-work-name');
-        if (!weekEl || !workEl) return;
-        const week = weekEl.value;
-        const workName = workEl.value.trim();
-        
-        if(!week || week.includes("오류") || week.includes("없음")) return window.StudyApp.showToast("올바른 주차 정보가 없습니다. DB 경로를 확인하세요.", "error");
-        if(!workName) return window.StudyApp.showToast("작품명을 입력하세요.", "error");
-        
-        // 🌟 1. 해설지 검증 차단
-        if(!state.answerKeyText || state.answerKeyText.length < 10) {
-            return window.StudyApp.showToast("정답 해설지가 로드되지 않아 채점할 수 없습니다. 우측 상단의 뱃지 상태를 확인하세요.", "error");
-        }
-
+        const week = document.getElementById('week-select').value;
+        const workNum = document.getElementById('essay-work-num').value.trim();
+        const workName = document.getElementById('essay-work-name').value.trim();
+        if(!workName || !state.fullAnswerKeyText) return window.StudyApp.showToast("작품명 입력 및 해설지 로딩 대기 필요", "error");
         const ess = [];
         for(let i=1; i<=2; i++) {
-            const nEl = document.getElementById(`essay-num-${i}`);
-            const aEl = document.getElementById(`essay-ans-${i}`);
-            const n = nEl ? nEl.value.trim() : "";
-            const a = aEl ? aEl.value.trim() : "";
+            const n = document.getElementById(`essay-num-${i}`).value.trim();
+            const a = document.getElementById(`essay-ans-${i}`).value.trim();
             if(a) ess.push(`[${n || i}번 문항] ${a}`);
         }
-        if(!ess.length) return window.StudyApp.showToast("답안을 입력하세요.", "error");
-
-        const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, isDeleted: false };
-        
-        // 🌟 2. 멱살잡기 프롬프트 (환각 완벽 차단 및 양식 고정)
-        const systemMsg = `너는 매우 엄격하고 정확한 문학 서술형 채점관이다. 학생이 입력한 작품명은 [${workName}] 이다.
-
-[가장 중요한 채점 원칙 - 환각 금지]
-1. 제공된 [공식 정답 해설지 원문]에서 오직 [${workName}] 작품에 대한 서술형 해설만 찾아라.
-2. 해설지에 학생이 제출한 문항 번호나 관련 내용이 아예 존재하지 않는다면 "문항 없음 (채점 불가)"로 표기해라.
-3. 해설지에 명시된 핵심 키워드가 학생 답안에 포함되어 있는지 엄격하게 검사해라.
-
-반드시 다음 마크다운 양식을 엄격하게 지켜서 출력해라:
----
-### 📊 서술형 채점 결과
-* **[문항 번호]번:** [Pass/Fail 또는 점수 또는 문항없음]
-
-### 📝 상세 피드백
-* **작성 답안 요약:** [학생이 쓴 답안 핵심]
-* **모범 답안 키워드:** [해설지에 명시된 필수 키워드들, 없으면 '확인불가']
-* **피드백:** [키워드 포함 여부 및 보완할 점 2~3줄, 해설지에 없으면 '해설지에 해당 내용이 없습니다.']
-(모든 문항 반복)
-
-### 💡 총평
-[2줄 내외 평가]
----`;
-
-        window.StudyApp.processAIRequest(
-            document.getElementById('submit-essay-btn'), 
-            [{ text: `[학생 서술형 답안]\n\n${ess.join('\n\n')}` }], 
-            systemMsg, 
-            recordData
-        );
+        const sysMsg = `번호 [${workNum}], 작품명 [${workName}]의 서술형 기준을 찾아 채점하세요. 핵심 키워드 포함 여부를 해설지 바탕으로 엄격히 평가하고 상세 피드백을 제공하세요.`;
+        window.StudyApp.processAIRequest(document.getElementById('submit-essay-btn'), [{ text: `[학생 서술형]\n${ess.join('\n')}` }], sysMsg, { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, isDeleted: false }, workNum, workName);
       },
 
-      processAIRequest: async (btn, parts, sysMsg, recordData) => {
-        const area = document.getElementById('ai-response-area');
-        const cont = document.getElementById('ai-response-content');
-        if (!area || !cont || !btn) return;
-        
-        const originalBtnText = btn.innerHTML; 
+      processAIRequest: async (btn, parts, sysMsg, recordData, workNum, workName) => {
+        const originalText = btn.innerHTML;
         btn.disabled = true; 
-        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin-custom"></i> AI 분석 및 채점 중...`;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin-custom"></i> 분석 중...`;
         if(typeof lucide !== 'undefined') lucide.createIcons();
-        
-        area.classList.add('hidden');
-        window.StudyApp.showToast("AI가 분석을 시작했습니다. 잠시만 기다려주세요...", "info");
-        
         try {
-            // Tutor 모드일 때만 문제지 제공 (환각 방지를 위해 OMR/Essay 채점 시엔 문제지 PDF를 절대 주지 않음)
             if (state.mode === 'tutor' && state.problemPdfBlob) {
-                const problemText = await extractTextFromBlobPDF(state.problemPdfBlob);
-                if (problemText) parts.push({ text: `\n\n[참고 자료: 현재 화면의 문제지 원문]\n${problemText}` });
+                parts.push({ text: `\n[참고 문제지]\n${await extractTextFromBlobPDF(state.problemPdfBlob)}` });
             }
             
-            // 해설지는 무조건 제공 (submit 함수에서 사전에 차단하긴 했지만 안전장치)
-            if (state.answerKeyText) {
-                parts.push({ text: `\n\n[절대적 채점 기준: 공식 정답 해설지 원문]\n${state.answerKeyText}` });
+            if (state.fullAnswerKeyText) {
+                const targetText = sliceAnswerText(state.fullAnswerKeyText, workNum || "", workName || "");
+                parts.push({ text: `\n[절대적 채점 기준 해설지]\n${targetText}` });
             }
             
             const res = await window.StudyApp.callGemini(parts, sysMsg);
+            const area = document.getElementById('ai-response-area');
+            document.getElementById('ai-response-content').innerHTML = parseMarkdown(res);
+            area.classList.remove('hidden'); area.scrollIntoView({ behavior: 'smooth' });
             
             if(recordData) {
-                recordData.userName = await getUserName();
-                recordData.aiFeedback = res; 
-                
-                cont.innerHTML = parseMarkdown(res);
-                area.classList.remove('hidden'); 
-                area.scrollIntoView({ behavior: 'smooth' });
-                
+                recordData.userName = await getUserName(); recordData.aiFeedback = res;
                 if (state.editingDocId) {
-                    recordData.isEdited = true;
-                    recordData.editedAt = Date.now();
+                    recordData.isEdited = true; recordData.editedAt = Date.now();
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), recordData);
-                    window.StudyApp.showToast("채점 완료! 답안이 수정되었습니다.", "success");
                 } else {
                     recordData.timestamp = Date.now();
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
-                    window.StudyApp.showToast("채점 완료! 결과가 커뮤니티에도 공유되었습니다.", "success");
                 }
-                
-                state.editingDocId = null;
-                document.getElementById('editing-badge')?.classList.add('hidden');
-                
-            } else {
-                cont.innerHTML = parseMarkdown(res);
-                area.classList.remove('hidden'); 
-                area.scrollIntoView({ behavior: 'smooth' });
-                window.StudyApp.showToast("분석 완료", "success");
+                state.editingDocId = null; document.getElementById('editing-badge').classList.add('hidden');
+                window.StudyApp.showToast("채점 및 공유 완료!", "success");
             }
         } catch (e) { 
-            window.StudyApp.showToast(`[AI 통신 에러] ${e.message}`, "error"); 
-            console.error("AI 에러 상세:", e);
-        } finally { 
-            btn.innerHTML = originalBtnText;
-            btn.disabled = false; 
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-        }
+            window.StudyApp.showToast(`AI 에러: ${e.message}`, "error"); 
+        } finally { btn.innerHTML = originalText; btn.disabled = false; if(typeof lucide !== 'undefined') lucide.createIcons(); }
       },
 
       callGemini: async (parts, system) => {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-        
-        const payload = { 
-            contents: [{ parts }],
-            systemInstruction: { parts: [{ text: system }] }
-        };
-
-        const res = await fetch(url, { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(payload) 
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, { 
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ contents: [{ parts }], systemInstruction: { parts: [{ text: system }] } }) 
         });
-        
         const data = await res.json();
-        
-        if (!res.ok) {
-            const errMsg = data.error?.message || `서버 에러: ${res.status}`;
-            throw new Error(errMsg);
-        }
-        
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답이 없습니다.";
+        if (!res.ok) throw new Error(data.error?.message || "AI 통신 실패");
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || "응답 없음";
       },
 
       editSubmission: (docId, type) => {
           const record = state.allSubmissions.find(s => s.id === docId);
-          if(!record || record.isDeleted) return;
-          
-          state.editingDocId = docId;
-          document.getElementById('editing-badge')?.classList.remove('hidden');
-          
-          if(type === 'OMR') {
-              window.StudyApp.setMode('omr');
-              document.getElementById('week-select').value = record.week;
-              document.getElementById('omr-work-name').value = record.workName;
-              for(let i=1; i<=10; i++) {
-                  const input = document.getElementById(`omr-${i}`);
-                  if(input) input.value = '';
-              }
-              
-              (record.userAnswers || []).forEach(ans => {
-                  const match = ans.match(/Q(\d+):\s*(.*)/);
-                  if(match) {
-                      const input = document.getElementById(`omr-${match[1]}`);
-                      if(input) input.value = match[2];
-                  }
-              });
-              window.StudyApp.showToast("수정 모드: 답안을 수정하세요.");
-          } else if (type === 'Essay') {
-              window.StudyApp.setMode('essay');
-              document.getElementById('week-select').value = record.week;
-              document.getElementById('essay-work-name').value = record.workName;
-              for(let i=1; i<=2; i++) {
-                  const numInput = document.getElementById(`essay-num-${i}`);
-                  const ansInput = document.getElementById(`essay-ans-${i}`);
-                  if(numInput) numInput.value = '';
-                  if(ansInput) ansInput.value = '';
-              }
-              
-              (record.userAnswers || []).forEach((ans, idx) => {
-                  const match = ans.match(/\[(.*?)번\]\s*(.*)/) || ans.match(/\[(.*?)번 문항\]\s*(.*)/);
-                  if(match && idx < 2) {
-                      const numInput = document.getElementById(`essay-num-${idx+1}`);
-                      const ansInput = document.getElementById(`essay-ans-${idx+1}`);
-                      if(numInput) numInput.value = match[1];
-                      if(ansInput) ansInput.value = match[2];
-                  }
-              });
-              window.StudyApp.showToast("수정 모드: 답안을 수정하세요.");
-          }
-          if(typeof lucide !== 'undefined') lucide.createIcons();
+          if(!record) return;
+          state.editingDocId = docId; document.getElementById('editing-badge').classList.remove('hidden');
+          window.StudyApp.setMode(type.toLowerCase() === 'omr' ? 'omr' : 'essay');
+          window.StudyApp.showToast("수정 모드로 전환되었습니다.");
       },
 
       deleteSubmission: (docId) => {
           const modal = document.getElementById('delete-modal');
-          const confirmBtn = document.getElementById('confirm-delete-btn');
-          if(!modal || !confirmBtn) return;
-          
           modal.classList.remove('hidden');
-          confirmBtn.onclick = async () => {
+          document.getElementById('confirm-delete-btn').onclick = async () => {
               modal.classList.add('hidden');
-              try {
-                  const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'submissions', docId);
-                  await deleteDoc(docRef);
-                  window.StudyApp.showToast("데이터가 완전히 삭제되었습니다.", "success");
-              } catch(e) {
-                  window.StudyApp.showToast("삭제 실패: 권한 부족 또는 통신 에러", "error");
-              }
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', docId));
+              window.StudyApp.showToast("삭제 완료");
           };
       },
 
       renderCommunityRecords: () => {
+          const w = document.getElementById('comm-week-filter').value;
+          const work = document.getElementById('comm-work-filter').value;
           const container = document.getElementById('community-container');
-          const wFilterEl = document.getElementById('comm-week-filter');
-          const workFilterEl = document.getElementById('comm-work-filter');
-          if(!container || !wFilterEl || !workFilterEl) return;
-          
-          const wFilter = wFilterEl.value;
-          const workFilter = workFilterEl.value;
-          
-          if(!wFilter || !workFilter) {
-              container.innerHTML = `<div class="text-center py-16 text-[10px] text-slate-400 font-bold uppercase tracking-widest">조회할 주차와 작품을 선택해주세요.</div>`;
-              return;
-          }
-          
-          const workSubs = state.allSubmissions.filter(s => s.week === wFilter && s.workName === workFilter);
-          
-          if(workSubs.length === 0) {
-              container.innerHTML = `<div class="text-center py-16 text-[10px] text-slate-400 font-bold uppercase tracking-widest">제출된 기록이 없습니다.</div>`;
-              return;
-          }
-
-          container.innerHTML = workSubs.map((r, i) => {
-              const isMine = r.userId === state.user.uid;
-              const isEdited = r.isEdited;
-              
-              let actionBtns = `<div class="flex items-center space-x-2 ml-auto mr-3">`;
-              if(isMine) {
-                  actionBtns += `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-black text-brand-500 hover:text-brand-700 bg-brand-50 dark:bg-brand-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="edit" class="w-3 h-3 mr-1"></i>수정</button>`;
-              }
-              actionBtns += `<button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-black text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-2.5 py-1 rounded transition-colors flex items-center"><i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>삭제</button>`;
-              actionBtns += `</div>`;
-
-              return `
-              <div class="bg-white dark:bg-slate-900 border ${isMine ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2 transition-all">
-                  <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3.5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between">
+          if(!w || !work) { container.innerHTML = `<p class="text-center py-10 text-[10px] text-slate-400">조회할 주차와 작품을 선택하세요.</p>`; return; }
+          const subs = state.allSubmissions.filter(s => s.week === w && s.workName === work);
+          container.innerHTML = subs.map(r => `
+              <div class="bg-white dark:bg-slate-900 border ${r.userId === state.user.uid ? 'border-brand-400' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2">
+                  <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3.5 cursor-pointer flex items-center justify-between">
                       <div class="flex items-center space-x-2">
-                          <span class="text-[11px] font-black ${isMine ? 'text-brand-600 dark:text-brand-400' : 'text-slate-700 dark:text-slate-300'}">
-                              ${isMine ? '🌟 나의 답안' : r.userName}
-                              ${isEdited ? '<span class="text-amber-500 text-[8px] font-bold ml-1 tracking-tighter">[수정됨]</span>' : ''}
-                          </span>
+                          <span class="text-[11px] font-black">${r.userId === state.user.uid ? '🌟 나의 답안' : r.userName}</span>
                           <span class="text-[9px] font-bold text-slate-400 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase">${r.type}</span>
                       </div>
-                      ${actionBtns}
-                      <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                      <div class="flex space-x-1">
+                          ${r.userId === state.user.uid ? `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-bold text-brand-500 bg-brand-50 px-2 py-1 rounded">수정</button>` : ''}
+                          <button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">삭제</button>
+                      </div>
                   </div>
-                  <div class="hidden border-t border-slate-100 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-950/50 space-y-4">
-                      <div>
-                          <div class="text-[9px] font-black text-slate-400 uppercase mb-1">제출 답안</div>
-                          <div class="text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed pl-2 border-l-2 border-brand-200 dark:border-brand-800">${(r.userAnswers || []).join('\n')}</div>
-                      </div>
-                      ${r.aiFeedback ? `
-                      <div class="p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm mt-3">
-                          <div class="flex items-center mb-2">
-                              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-500 mr-1.5"></i>
-                              <span class="text-[9px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest">AI Feedback</span>
-                          </div>
-                          <div class="text-[11px] leading-relaxed dark:text-slate-300 markdown-body">${parseMarkdown(r.aiFeedback)}</div>
-                      </div>
-                      ` : ''}
+                  <div class="hidden border-t p-4 bg-slate-50/30 dark:bg-slate-800/30 space-y-3">
+                      <p class="text-[11px] font-bold whitespace-pre-wrap">${r.userAnswers.join('\n')}</p>
+                      <div class="p-3 bg-white dark:bg-slate-800 rounded-lg border text-[11px] markdown-body">${parseMarkdown(r.aiFeedback)}</div>
                   </div>
               </div>
-          `}).join('');
+          `).join('');
           if(typeof lucide !== 'undefined') lucide.createIcons();
       }
     };
 
-    /* ==========================================
-       3. 서버 통신 (GitHub & Firestore)
-       ========================================== */
     async function scanGitHub() {
         const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.folder}?ref=${GITHUB_CONFIG.branch}`;
         try {
             const res = await fetch(url);
-            if (!res.ok) throw new Error();
+            if (!res.ok) {
+                if(res.status === 403) throw new Error("API 호출 한도 초과 (약 1시간 후 재시도 가능)");
+                throw new Error("저장소 주소 또는 권한 확인 필요");
+            }
             const data = await res.json();
-            state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf') && f.name !== GITHUB_CONFIG.answerKeyFileName);
-            state.filteredFiles = [...state.allFiles];
-            renderFileList();
+            state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf') && !f.name.includes('정답'));
+            state.filteredFiles = [...state.allFiles]; renderFileList();
         } catch (e) {
-            const list = document.getElementById('material-list');
-            if (list) list.innerHTML = `<p class="text-[10px] text-red-500 p-10 text-center font-bold">GITHUB SYNC ERROR</p>`;
+            document.getElementById('material-list').innerHTML = `<p class="text-[10px] text-red-500 p-6 text-center font-bold break-words">${e.message}</p>`;
         }
     }
 
-    // 🌟 정답해설지 명확한 상태 UI 처리 (성공/실패 뱃지)
+    function renderFileList() {
+        const container = document.getElementById('material-list');
+        container.innerHTML = state.filteredFiles.map(f => `
+            <button onclick="window.StudyApp.loadMaterial('${f.name}', '${f.download_url}')" id="btn-${f.name.replace(/\s+/g, '')}" class="file-btn w-full flex items-center p-2.5 rounded-xl border border-slate-100 bg-white dark:bg-slate-900 text-left transition-all">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-2 text-slate-300"></i>
+                <div class="truncate font-bold text-[10px] uppercase">${f.name}</div>
+            </button>
+        `).join('');
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
     async function loadGlobalAnswerKey() {
         const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folder}/${GITHUB_CONFIG.answerKeyFileName}`;
         const badge = document.getElementById('answer-key-badge');
@@ -957,89 +667,40 @@
             const res = await fetch(url);
             if(res.ok) {
                 const blob = await res.blob();
-                state.answerKeyText = await extractTextFromBlobPDF(blob); 
-                
-                if (badge && state.answerKeyText.length > 50) {
+                state.fullAnswerKeyText = await extractTextFromBlobPDF(blob);
+                if (state.fullAnswerKeyText.length > 100) {
                     badge.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> AI Key Loaded`;
-                    badge.className = "hidden sm:flex items-center bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 px-2 py-1 rounded text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest";
-                } else {
-                    throw new Error("Text Extraction Failed");
-                }
-            } else {
-                throw new Error("File Not Found");
-            }
-        } catch(e) { 
-            console.warn("Answer key load failed", e);
-            state.answerKeyText = ""; 
-            if (badge) {
-                badge.innerHTML = `<i data-lucide="x-circle" class="w-3 h-3 mr-1"></i> Key Missing`;
-                badge.className = "hidden sm:flex items-center bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 px-2 py-1 rounded text-[9px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest";
-            }
+                    badge.className = "hidden sm:flex items-center bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1 rounded text-[9px] font-black uppercase";
+                } else throw new Error();
+            } else throw new Error();
+        } catch(e) {
+            badge.innerHTML = `<i data-lucide="x-circle" class="w-3 h-3 mr-1"></i> Key Load Failed`;
+            badge.className = "hidden sm:flex items-center bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded text-[9px] font-black uppercase";
         }
         if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function fetchStudySchedule() {
-        const scheduleDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule');
-        
-        onSnapshot(scheduleDocRef, (docSnap) => {
+        onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
             state.docWeeks = [];
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.weeks && data.weeks.length > 0) {
-                    data.weeks.forEach(w => {
-                        const val = (typeof w === 'object' && w !== null) ? (w.weekNum || w.week || w.title) : w;
-                        if(val) {
-                            const str = String(val).trim();
-                            state.docWeeks.push(str.includes('주차') ? str : str + '주차');
-                        }
-                    });
-                }
-            }
+            if (snap.exists()) snap.data().weeks.forEach(w => state.docWeeks.push(String(w).includes('주차') ? w : w + '주차'));
             updateGlobalWeeks();
-        }, (e) => {
-            console.error("Schedule load error:", e);
         });
     }
 
     function fetchPublicSubmissions() {
-        const submissionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'submissions');
-        onSnapshot(query(submissionsRef), (snapshot) => {
-            const subs = [];
-            snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
+        onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'submissions')), (snap) => {
+            const subs = []; snap.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
             subs.sort((a, b) => b.timestamp - a.timestamp);
-            state.allSubmissions = subs;
-            updateGlobalWeeks();
-            // 🌟 삭제 등 DB 업데이트 시 현재 탭 갱신 (새로고침 없이)
-            if(state.mode === 'community') window.StudyApp.updateCommunityWorks();
+            state.allSubmissions = subs; updateGlobalWeeks();
         });
     }
 
-    /* ==========================================
-       4. 앱 실행 (Life Cycle)
-       ========================================== */
-    const initializeAuth = async () => {
-        try {
-            await signInAnonymously(auth);
-        } catch (error) {
-            console.error("Anonymous auth fallback failed:", error);
-        }
-    };
-
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            state.user = user;
-            window.StudyApp.initUI(); 
-            scanGitHub();
-            loadGlobalAnswerKey(); 
-            fetchStudySchedule();
-            fetchPublicSubmissions();
-            window.StudyApp.setMode('omr');
-        } else {
-            initializeAuth();
-        }
+        if (user) { 
+            state.user = user; window.StudyApp.initUI(); scanGitHub(); loadGlobalAnswerKey(); fetchStudySchedule(); fetchPublicSubmissions(); window.StudyApp.setMode('omr'); 
+        } else signInAnonymously(auth);
     });
-
   </script>
 </body>
 </html>
