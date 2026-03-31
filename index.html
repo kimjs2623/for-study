@@ -12,12 +12,13 @@
       theme: { extend: { fontFamily: { sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'] } } }
     }
   </script>
-  
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade-in-down { animation: fadeInDown 0.4s ease-out forwards; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -106,10 +107,30 @@
             <input type="password" id="edit-profile-pw" placeholder="변경할 경우에만 입력" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
           </div>
           <button onclick="app.updateProfile()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-colors">저장하기</button>
-          
           <div class="pt-5 border-t border-slate-100 dark:border-slate-700 mt-2">
             <button onclick="app.withdrawAccount()" class="w-full py-2.5 border border-red-200 text-red-500 hover:bg-red-50 font-bold rounded-xl text-sm transition-colors dark:border-red-900/50 dark:hover:bg-red-900/20">스터디 탈퇴 (데이터 삭제)</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🌟 새롭게 추가된 Day Picker(진도 캘린더) 모달 -->
+    <div id="day-picker-modal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 modal-overlay hidden">
+      <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-black flex items-center text-slate-800 dark:text-white"><i data-lucide="calendar-check" class="w-5 h-5 mr-2 text-indigo-500"></i> 진도(Day) 선택</h2>
+            <p id="day-picker-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">진행할 Day를 터치해서 여러 개 고르세요.</p>
+          </div>
+          <button onclick="app.closeDayPicker()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <div class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-slate-900">
+          <div id="day-picker-grid" class="grid grid-cols-7 gap-1.5">
+            <!-- JS 렌더링 -->
+          </div>
+        </div>
+        <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <button onclick="app.confirmDaySelection()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-sm transition-colors">선택 완료</button>
         </div>
       </div>
     </div>
@@ -132,10 +153,12 @@
 
     <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
       
-      <!-- 상단: 일정 & 개인별 투두 -->
+      <!-- 상단: 🌟 개편된 주차별 진도맵 & 개인별 투두 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
-          <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col"></div>
+          <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col">
+            <!-- JS로 진도맵 & 일정 동적 렌더링 -->
+          </div>
         </div>
         <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
           <div id="todos-container"></div>
@@ -173,7 +196,7 @@
               <i data-lucide="upload" class="w-4 h-4 mr-2"></i> 파일 업로드 (최대 2MB)
             </label>
           </div>
-          <div id="drive-files-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[250px]"></div>
+          <div id="drive-files-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[250px] custom-scrollbar"></div>
         </div>
       </div>
     </main>
@@ -184,14 +207,24 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // 🌟 이미지 기반 진도(Day) 매핑 데이터 세팅 (총 49일)
+    const DAY_MAP = [
+      "01-04", "05-07", "08-10", "11-13", "14-16", "17-19", "20-22",
+      "23-25", "26-29", "30-32", "33-39", "40-43", "44-47", "48-50",
+      "58-66", "67-75", "76-80", "81-83", "84-85", "86-91", "92-95",
+      "96-97", "98-99", "100-101", "102-104", "105-108", "109-116", "117-124",
+      "125-130", "131-139", "140-145", "146-148", "149-155", "156-164", "165-169",
+      "170-171", "172-173", "174-175", "176-177", "178-182", "183-185", "186-188",
+      "189-192", "193-195", "196-198", "199-201", "202-204", "205-206", "207-208"
+    ];
+
     // Global State
     const state = {
       isDarkMode: false, user: null, appAccount: null, allMembers: [],
-      scheduleData: { weeks: [
-        { id: 1, weekNum: 1, meetDate: '10/24 (수)', area: '고전시가 (상춘곡)', range: 'p.12~35' }
-      ]},
+      scheduleData: { weeks: [] },
       isEditingSchedule: false, editScheduleForm: [],
-      todos: {}, activeTodoTab: '', isAddingTodo: false, newTodo: { category: '공통', desc: '' },
+      pickerEditingIdx: null, tempSelectedDays: [], // 진도 캘린더용 상태
+      todos: {}, activeTodoTab: '', isAddingTodo: false, newTodo: { desc: '' },
       finesData: { records: [] }, isAddingFine: false, newFine: { memberName: '', reason: '지각', amount: 1000 },
       driveFiles: [], authMode: 'login'
     };
@@ -207,7 +240,9 @@
       todosContainer: document.getElementById('todos-container'), finesContainer: document.getElementById('fines-container'),
       driveContainer: document.getElementById('drive-files-container'), toast: document.getElementById('toast-container'),
       profileModal: document.getElementById('profile-modal'), editProfileName: document.getElementById('edit-profile-name'),
-      editProfilePw: document.getElementById('edit-profile-pw')
+      editProfilePw: document.getElementById('edit-profile-pw'),
+      dayPickerModal: document.getElementById('day-picker-modal'), dayPickerGrid: document.getElementById('day-picker-grid'),
+      dayPickerSubtitle: document.getElementById('day-picker-subtitle')
     };
 
     function showToast(message, type = 'info') {
@@ -327,12 +362,63 @@
       },
       deleteDriveFile: async (id) => { if(confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sharedDrive', id)); },
 
-      // Schedule Methods
-      toggleEditSchedule: () => { state.isEditingSchedule = !state.isEditingSchedule; if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData.weeks || [])); renderSchedule(); },
-      addScheduleWeek: () => { state.editScheduleForm.push({ id: Date.now(), weekNum: state.editScheduleForm.length + 1, meetDate: '', area: '', range: '' }); renderSchedule(); },
-      removeScheduleWeek: (idx) => { state.editScheduleForm.splice(idx, 1); state.editScheduleForm.forEach((w, i) => w.weekNum = i + 1); renderSchedule(); },
+      // 🌟 Schedule & Day Picker Methods
+      toggleEditSchedule: () => { 
+          state.isEditingSchedule = !state.isEditingSchedule; 
+          if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData.weeks || [])); 
+          renderSchedule(); 
+      },
+      addScheduleWeek: () => { 
+          state.editScheduleForm.push({ id: Date.now(), weekNum: state.editScheduleForm.length + 1, meetDate: '', area: '', days: [], isCompleted: false }); 
+          renderSchedule(); 
+      },
+      removeScheduleWeek: (idx) => { 
+          state.editScheduleForm.splice(idx, 1); 
+          state.editScheduleForm.forEach((w, i) => w.weekNum = i + 1); 
+          renderSchedule(); 
+      },
       updateScheduleField: (idx, field, val) => { state.editScheduleForm[idx][field] = val; },
-      saveSchedule: async () => { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), { weeks: state.editScheduleForm }); state.isEditingSchedule = false; showToast('저장되었습니다.', 'success'); },
+      
+      // 모달 열기
+      openDayPicker: (idx) => {
+          state.pickerEditingIdx = idx;
+          state.tempSelectedDays = [...(state.editScheduleForm[idx].days || [])];
+          els.dayPickerSubtitle.textContent = `${state.editScheduleForm[idx].weekNum}주차에 진행할 Day를 골라주세요.`;
+          els.dayPickerModal.classList.remove('hidden');
+          renderDayPickerGrid();
+      },
+      // 모달 닫기
+      closeDayPicker: () => { els.dayPickerModal.classList.add('hidden'); state.pickerEditingIdx = null; },
+      // 날짜(Day) 토글
+      toggleDaySelection: (dayNum) => {
+          if(state.tempSelectedDays.includes(dayNum)) {
+              state.tempSelectedDays = state.tempSelectedDays.filter(d => d !== dayNum);
+          } else {
+              state.tempSelectedDays.push(dayNum);
+          }
+          renderDayPickerGrid();
+      },
+      // 선택 완료 (주차 데이터에 저장)
+      confirmDaySelection: () => {
+          if(state.pickerEditingIdx !== null) {
+              state.tempSelectedDays.sort((a,b) => a - b);
+              state.editScheduleForm[state.pickerEditingIdx].days = [...state.tempSelectedDays];
+              renderSchedule();
+          }
+          app.closeDayPicker();
+      },
+      // 완료 처리 토글
+      toggleWeekCompletion: async (idx) => {
+          const weeks = [...(state.scheduleData.weeks || [])];
+          weeks[idx].isCompleted = !weeks[idx].isCompleted;
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), { weeks });
+          showToast(weeks[idx].isCompleted ? '✅ 진도가 완료 처리되었습니다!' : '진도 완료가 취소되었습니다.');
+      },
+      saveSchedule: async () => { 
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), { weeks: state.editScheduleForm }); 
+          state.isEditingSchedule = false; 
+          showToast('주차별 일정이 저장되었습니다.', 'success'); 
+      },
 
       // Todo Methods
       setActiveTodoTab: (name) => { state.activeTodoTab = name; state.isAddingTodo = false; renderTodos(); },
@@ -389,15 +475,120 @@
             state.appAccount = { appAccountId: member.id, name: member.name }; updateView();
           } else { throw new Error('아이디/비번 불일치'); }
         }
-      } catch(err) { 
-        document.getElementById('auth-error').textContent = err.message; 
-        document.getElementById('auth-error').classList.remove('hidden'); 
-      } finally { 
-        btn.disabled = false; 
-      }
+      } catch(err) { document.getElementById('auth-error').textContent = err.message; document.getElementById('auth-error').classList.remove('hidden'); }
+      finally { btn.disabled = false; }
     });
 
-    // Render functions
+    // 🌟 특정 Day의 상태 파악 헬퍼
+    function getDayStatus(dayNum) {
+        const weeks = state.isEditingSchedule ? state.editScheduleForm : (state.scheduleData.weeks || []);
+        for(let wk of weeks) {
+            if(wk.days && wk.days.includes(dayNum)) {
+                return { status: wk.isCompleted ? 'completed' : 'planned', weekNum: wk.weekNum };
+            }
+        }
+        return { status: 'none' };
+    }
+
+    // 🌟 요약 텍스트 생성 (예: Day 1~3 (01~10번))
+    function getRangeText(daysArray) {
+        if(!daysArray || daysArray.length === 0) return '진도 범위를 선택해주세요.';
+        const first = daysArray[0];
+        const last = daysArray[daysArray.length - 1];
+        const minWorks = DAY_MAP[first-1].split('-')[0];
+        const maxWorks = DAY_MAP[last-1].split('-')[1] || DAY_MAP[last-1];
+        if(first === last) return `Day ${first} (${minWorks}~${maxWorks}번)`;
+        return `Day ${first} ~ ${last} (${minWorks}~${maxWorks}번)`;
+    }
+
+    // 🌟 모달 안의 달력(Grid) 그리기
+    function renderDayPickerGrid() {
+        let html = '';
+        DAY_MAP.forEach((range, i) => {
+            const day = i + 1;
+            const isSelected = state.tempSelectedDays.includes(day);
+            const status = getDayStatus(day); // 다른 주차에 할당되었는지 확인
+            
+            let classes = "bg-white dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-400 cursor-pointer";
+            if(isSelected) {
+                classes = "bg-indigo-600 border-indigo-600 text-white shadow-md transform scale-105 transition-transform z-10";
+            } else if(status.status !== 'none' && state.pickerEditingIdx !== null && state.editScheduleForm[state.pickerEditingIdx].weekNum !== status.weekNum) {
+                // 다른 주차에서 이미 선택된 Day
+                classes = "bg-slate-100 dark:bg-slate-900 text-slate-300 border-dashed cursor-not-allowed opacity-50";
+            }
+
+            html += `
+            <div onclick="${classes.includes('cursor-not-allowed') ? '' : `app.toggleDaySelection(${day})`}" 
+                 class="flex flex-col items-center py-2.5 rounded-xl border ${classes} transition-all select-none">
+                <span class="text-[11px] font-black tracking-tighter">D${day < 10 ? '0'+day : day}</span>
+                <span class="text-[9px] font-medium opacity-80 mt-0.5">${range}</span>
+            </div>`;
+        });
+        els.dayPickerGrid.innerHTML = html;
+    }
+
+    // 🌟 메인 일정 렌더링 (마스터 진도맵 + 주차 리스트)
+    function renderSchedule() {
+      let html = `<div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold flex items-center"><i data-lucide="map" class="w-5 h-5 mr-2 text-indigo-500"></i> 스터디 진도맵</h2>
+        <button onclick="app.toggleEditSchedule()" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-5 h-5" onclick="${state.isEditingSchedule?'app.saveSchedule()':''}"></i></button></div>`;
+
+      // 1. 마스터 진도맵 (49 Grid)
+      html += `<div class="grid grid-cols-7 gap-1 bg-slate-100 dark:bg-slate-900 p-2.5 rounded-2xl mb-6 border border-slate-200 dark:border-slate-800 shadow-inner">`;
+      DAY_MAP.forEach((range, i) => {
+          const day = i + 1;
+          const status = getDayStatus(day);
+          let classes = "bg-white dark:bg-slate-800 text-slate-300 border-slate-200 dark:border-slate-700"; 
+          if(status.status === 'completed') classes = "bg-emerald-500 text-white shadow-sm border-emerald-600";
+          else if (status.status === 'planned') classes = "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700 font-bold";
+          
+          html += `<div class="flex flex-col items-center py-1.5 rounded-lg border ${classes}">
+              <span class="text-[9px] tracking-tighter ${status.status==='completed'?'font-black':'font-bold'}">D${day < 10 ? '0'+day : day}</span>
+              <span class="text-[7px] opacity-90">${range}</span>
+          </div>`;
+      });
+      html += `</div>`;
+
+      // 2. 주차별 일정 리스트
+      html += `<div class="space-y-3">`;
+      if(state.isEditingSchedule) {
+        state.editScheduleForm.forEach((wk, idx) => {
+          html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 relative mb-3">
+            <div class="flex justify-between items-center mb-3">
+              <span class="font-black text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-1 rounded-md">${wk.weekNum}주차</span>
+              <button onclick="app.removeScheduleWeek(${idx})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+            <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${idx},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+            <input value="${wk.area}" placeholder="영역명 기입 (예: 고전시가)" onchange="app.updateScheduleField(${idx},'area',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500" />
+            
+            <button onclick="app.openDayPicker(${idx})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
+               <span><i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> ${getRangeText(wk.days)}</span>
+               <span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px]">진도 선택</span>
+            </button>
+          </div>`;
+        });
+        html += `<button onclick="app.addScheduleWeek()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors rounded-xl text-sm font-bold flex items-center justify-center text-slate-600 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-500"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> ${state.editScheduleForm.length + 1}주차 추가</button>`;
+      } else {
+        const weeks = state.scheduleData.weeks || [];
+        if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다. 우측 상단 수정 버튼을 눌러보세요.</div>`;
+        weeks.forEach((wk, idx) => {
+          html += `<div class="flex flex-col p-4 ${wk.isCompleted ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 opacity-80' : 'bg-white dark:bg-slate-800 border-indigo-100 dark:border-indigo-800/30 shadow-sm'} rounded-xl mb-3 border relative transition-all">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                 <span class="font-black ${wk.isCompleted ? 'text-slate-500 bg-slate-200' : 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-900/50'} px-2 py-0.5 rounded-md text-[10px] uppercase mr-1">${wk.weekNum}주차</span>
+                 <span class="text-xs font-bold text-slate-500 dark:text-slate-400"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${wk.meetDate || '미정'}</span>
+              </div>
+              <button onclick="app.toggleWeekCompletion(${idx})" class="flex items-center text-[10px] font-black px-2 py-1 rounded border transition-colors ${wk.isCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}">
+                 ${wk.isCompleted ? '<i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> 진도 완료' : '<i data-lucide="circle" class="w-3 h-3 mr-1"></i> 마킹하기'}
+              </button>
+            </div>
+            <div class="font-black text-slate-800 dark:text-slate-200 text-sm mt-1 mb-1">${wk.area || '영역 미지정'}</div>
+            <div class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30 w-fit">📍 ${getRangeText(wk.days)}</div>
+          </div>`;
+        });
+      }
+      els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
+    }
+
     function renderDriveFiles() {
       if(!els.driveContainer) return;
       if(state.driveFiles.length === 0) { els.driveContainer.innerHTML = `<div class="py-8 text-slate-400 text-center text-sm">파일이 없습니다.</div>`; return; }
@@ -414,57 +605,23 @@
         </div>`).join(''); lucide.createIcons();
     }
 
-    function renderSchedule() {
-      let html = `<div class="flex items-center justify-between mb-6"><h2 class="text-lg font-bold flex items-center"><i data-lucide="calendar" class="w-5 h-5 mr-2 text-indigo-500"></i> 주차별 일정</h2>
-        <button onclick="app.toggleEditSchedule()" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-5 h-5" onclick="${state.isEditingSchedule?'app.saveSchedule()':''}"></i></button></div><div class="space-y-3">`;
-      if(state.isEditingSchedule) {
-        state.editScheduleForm.forEach((wk, idx) => {
-          html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl border border-slate-200 dark:border-slate-600 relative mb-3">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-bold text-sm text-indigo-600 dark:text-indigo-400">${wk.weekNum}주차</span>
-              <button onclick="app.removeScheduleWeek(${idx})" class="text-red-400 hover:text-red-600"><i data-lucide="x" class="w-4 h-4"></i></button>
-            </div>
-            <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${idx},'meetDate',this.value)" class="w-full text-sm p-2 rounded-lg border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500" />
-            <div class="flex gap-2">
-              <input value="${wk.area}" placeholder="영역 (예: 고전시가)" onchange="app.updateScheduleField(${idx},'area',this.value)" class="flex-1 text-sm p-2 rounded-lg border dark:bg-slate-600 dark:text-white dark:border-slate-500 outline-none focus:ring-2 focus:ring-indigo-500" />
-              <input value="${wk.range}" placeholder="페이지 (예: p.12~30)" onchange="app.updateScheduleField(${idx},'range',this.value)" class="flex-1 text-sm p-2 rounded-lg border dark:bg-slate-600 dark:text-white dark:border-slate-500 outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-          </div>`;
-        });
-        html += `<button onclick="app.addScheduleWeek()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors rounded-xl text-sm font-bold flex items-center justify-center text-slate-600 dark:text-slate-300"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> ${state.editScheduleForm.length + 1}주차 추가</button>`;
-      } else {
-        const weeks = state.scheduleData.weeks || [];
-        if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다.</div>`;
-        weeks.forEach(wk => {
-          html += `<div class="flex flex-col p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl mb-3 border border-indigo-100 dark:border-indigo-800/30">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-black text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-0.5 rounded-md text-xs">${wk.weekNum}주차</span>
-              <span class="text-xs font-bold text-slate-500 dark:text-slate-400"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${wk.meetDate || '미정'}</span>
-            </div>
-            <div class="font-bold text-slate-800 dark:text-slate-200 text-sm mb-1">${wk.area || '영역 미지정'}</div>
-            <div class="text-xs text-slate-600 dark:text-slate-400 font-medium">풀이 범위: ${wk.range || '범위 미지정'}</div>
-          </div>`;
-        });
-      }
-      els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
-    }
-
     function renderTodos() {
       if(!state.appAccount) return;
       const members = state.allMembers.length > 0 ? state.allMembers.map(m=>m.name) : [state.appAccount.name];
-      let html = `<div class="flex space-x-2 overflow-x-auto hide-scrollbar mb-4">`;
+      let html = `<div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold flex items-center"><i data-lucide="check-square" class="w-5 h-5 mr-2 text-emerald-500"></i> 스터디 목표</h2></div>`;
+      html += `<div class="flex space-x-2 overflow-x-auto hide-scrollbar mb-4">`;
       members.forEach(name => { html += `<button onclick="app.setActiveTodoTab('${name}')" class="px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${state.activeTodoTab === name ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}">${name}</button>`; });
-      html += `</div><div class="space-y-2 max-h-[200px] overflow-y-auto pr-1">`;
+      html += `</div><div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">`;
       const tasks = state.todos[state.activeTodoTab] || [];
       tasks.forEach(t => {
-        html += `<div onclick="app.toggleTodoTask(${t.id})" class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer hover:border-indigo-300 transition-colors ${t.done?'opacity-50':''}">
+        html += `<div onclick="app.toggleTodoTask(${t.id})" class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer hover:border-indigo-300 transition-colors ${t.done?'opacity-50 bg-slate-50':''}">
           <span class="text-sm dark:text-slate-200 ${t.done?'line-through text-slate-400':''}">${t.desc}</span>
           ${state.activeTodoTab === state.appAccount.name ? `<button onclick="app.deleteTodoTask(${t.id}, event)" class="p-1 text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
         </div>`;
       });
       if(state.activeTodoTab === state.appAccount.name) {
         if(state.isAddingTodo) html += `<form onsubmit="app.submitNewTodo(event)" class="mt-2"><input onchange="app.updateNewTodoDesc(this.value)" class="w-full p-3 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder="할 일을 입력하고 Enter를 누르세요..." autofocus /></form>`;
-        else html += `<button onclick="app.setAddingTodo(true)" class="w-full mt-2 py-2 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">+ 할 일 추가</button>`;
+        else html += `<button onclick="app.setAddingTodo(true)" class="w-full mt-2 py-2 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">+ 할 일 추가</button>`;
       }
       els.todosContainer.innerHTML = html + '</div>'; lucide.createIcons();
     }
@@ -490,7 +647,7 @@
         </form>`;
       }
 
-      html += `<div class="space-y-2 max-h-[160px] overflow-y-auto pr-1">`;
+      html += `<div class="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">`;
       if(records.length===0) html += `<div class="text-center text-slate-400 text-sm py-4">벌금 내역이 없습니다.</div>`;
       records.forEach(r => {
         html += `<div class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700 text-sm">
