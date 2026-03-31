@@ -114,7 +114,7 @@
       </div>
     </div>
 
-    <!-- 🌟 새롭게 추가된 Day Picker(진도 캘린더) 모달 -->
+    <!-- Day Picker(진도 캘린더) 모달 -->
     <div id="day-picker-modal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 modal-overlay hidden">
       <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
         <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
@@ -153,19 +153,21 @@
 
     <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
       
-      <!-- 상단: 🌟 개편된 주차별 진도맵 & 개인별 투두 -->
+      <!-- 상단: 🌟 개편된 과목별 진도맵 & 채팅 커뮤니티 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
-          <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col">
+          <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col max-h-[600px]">
             <!-- JS로 진도맵 & 일정 동적 렌더링 -->
           </div>
         </div>
-        <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-          <div id="todos-container"></div>
+        <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[500px] lg:h-[600px]">
+          <div id="chat-container" class="flex flex-col h-full">
+            <!-- JS로 실시간 채팅 렌더링 -->
+          </div>
         </div>
       </div>
       
-      <!-- 중앙: 고전시가 라운지 & 벌금 관리 -->
+      <!-- 중앙: 과목별 라운지 입장 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white">
           <h2 class="text-2xl font-bold mb-6 flex items-center justify-center">
@@ -175,19 +177,19 @@
             라운지 입장하기 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
           </a>
         </div>
-        <div id="fines-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700"></div>
+        <div class="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-8 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white">
+          <h2 class="text-2xl font-bold mb-6 flex items-center justify-center">
+            <i data-lucide="feather" class="w-6 h-6 mr-2 text-blue-200"></i> 현대시
+          </h2>
+          <a href="./02/index.html" class="inline-flex items-center justify-center px-8 py-3.5 bg-white text-blue-700 font-black rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto">
+            라운지 입장하기 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+          </a>
+        </div>
       </div>
 
-      <!-- 하단: 룰 & 공유 드라이브 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-          <h2 class="text-lg font-bold flex items-center mb-4 text-rose-600 dark:text-rose-400"><i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i> 스터디 벌금 규칙</h2>
-          <ul class="space-y-3">
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">발제문 지각 (전날 24시)</span><span class="text-sm font-bold text-rose-500">2,000원</span></li>
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">스터디 지각 (10분 당)</span><span class="text-sm font-bold text-rose-500">1,000원</span></li>
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">과제 미수행</span><span class="text-sm font-bold text-rose-500">5,000원</span></li>
-          </ul>
-        </div>
+      <!-- 하단: 벌금 관리 & 공유 드라이브 & 룰 -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
+        <div id="fines-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full"></div>
         <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col">
           <h2 class="text-lg font-bold flex items-center mb-4 text-blue-600 dark:text-blue-400"><i data-lucide="folder-open" class="w-5 h-5 mr-2"></i> 공유 드라이브</h2>
           <div class="mb-4">
@@ -197,6 +199,14 @@
             </label>
           </div>
           <div id="drive-files-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[250px] custom-scrollbar"></div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full">
+          <h2 class="text-lg font-bold flex items-center mb-4 text-rose-600 dark:text-rose-400"><i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i> 스터디 벌금 규칙</h2>
+          <ul class="space-y-3">
+            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">발제문 지각 (전날 24시)</span><span class="text-sm font-bold text-rose-500">2,000원</span></li>
+            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">스터디 지각 (10분 당)</span><span class="text-sm font-bold text-rose-500">1,000원</span></li>
+            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">과제 미수행</span><span class="text-sm font-bold text-rose-500">5,000원</span></li>
+          </ul>
         </div>
       </div>
     </main>
@@ -221,10 +231,16 @@
     // Global State
     const state = {
       isDarkMode: false, user: null, appAccount: null, allMembers: [],
-      scheduleData: { weeks: [] },
+      
+      // 🌟 멀티 과목 일정 데이터
+      currentScheduleTab: '고전시가',
+      scheduleData: { '고전시가': { weeks: [] }, '현대시': { weeks: [] } },
       isEditingSchedule: false, editScheduleForm: [],
-      pickerEditingIdx: null, tempSelectedDays: [], // 진도 캘린더용 상태
-      todos: {}, activeTodoTab: '', isAddingTodo: false, newTodo: { desc: '' },
+      pickerEditingIdx: null, tempSelectedDays: [], 
+      
+      // 🌟 실시간 채팅 데이터
+      chatMessages: [],
+
       finesData: { records: [] }, isAddingFine: false, newFine: { memberName: '', reason: '지각', amount: 1000 },
       driveFiles: [], authMode: 'login'
     };
@@ -237,12 +253,12 @@
       authSubmitIcon: document.getElementById('auth-submit-icon'), tabLogin: document.getElementById('tab-login'),
       tabSignup: document.getElementById('tab-signup'), dDayDisplay: document.getElementById('d-day-display'),
       navUsername: document.getElementById('nav-username'), scheduleContainer: document.getElementById('schedule-container'),
-      todosContainer: document.getElementById('todos-container'), finesContainer: document.getElementById('fines-container'),
-      driveContainer: document.getElementById('drive-files-container'), toast: document.getElementById('toast-container'),
-      profileModal: document.getElementById('profile-modal'), editProfileName: document.getElementById('edit-profile-name'),
-      editProfilePw: document.getElementById('edit-profile-pw'),
+      finesContainer: document.getElementById('fines-container'), driveContainer: document.getElementById('drive-files-container'), 
+      toast: document.getElementById('toast-container'), profileModal: document.getElementById('profile-modal'), 
+      editProfileName: document.getElementById('edit-profile-name'), editProfilePw: document.getElementById('edit-profile-pw'),
       dayPickerModal: document.getElementById('day-picker-modal'), dayPickerGrid: document.getElementById('day-picker-grid'),
-      dayPickerSubtitle: document.getElementById('day-picker-subtitle')
+      dayPickerSubtitle: document.getElementById('day-picker-subtitle'),
+      chatContainer: document.getElementById('chat-container')
     };
 
     function showToast(message, type = 'info') {
@@ -282,21 +298,40 @@
 
     function setupListeners(uid) {
       onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data'), (snap) => {
-        if (snap.exists() && snap.data().appAccountId) { state.appAccount = snap.data(); if(!state.activeTodoTab) state.activeTodoTab = state.appAccount.name; } 
+        if (snap.exists() && snap.data().appAccountId) { state.appAccount = snap.data(); } 
         else { state.appAccount = null; } updateView();
       });
       onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), (snap) => {
         state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if(state.appAccount && !state.activeTodoTab) state.activeTodoTab = state.appAccount.name;
-        renderTodos(); renderFines();
+        renderFines();
       });
       onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'sharedDrive'), (snap) => {
         state.driveFiles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp); renderDriveFiles();
       });
+      // 🌟 멀티 과목 일정 불러오기
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
-        if (snap.exists() && snap.data().weeks) state.scheduleData = snap.data(); else state.scheduleData = { weeks: [] }; renderSchedule();
+        if (snap.exists()) {
+            const data = snap.data();
+            if(data.weeks && !data['고전시가']) {
+                state.scheduleData = { '고전시가': { weeks: data.weeks }, '현대시': { weeks: [] } };
+            } else {
+                state.scheduleData = {
+                    '고전시가': data['고전시가'] || { weeks: [] },
+                    '현대시': data['현대시'] || { weeks: [] }
+                };
+            }
+        } else {
+            state.scheduleData = { '고전시가': { weeks: [] }, '현대시': { weeks: [] } };
+        }
+        renderSchedule();
       });
-      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), (snap) => { if (snap.exists()) state.todos = snap.data(); renderTodos(); });
+      // 🌟 채팅 메시지 불러오기
+      onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), (snap) => {
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        msgs.sort((a,b) => a.timestamp - b.timestamp);
+        state.chatMessages = msgs;
+        renderChat();
+      });
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), (snap) => { if (snap.exists()) state.finesData = snap.data(); renderFines(); });
     }
 
@@ -305,7 +340,7 @@
       if (state.user && !state.appAccount) { els.auth.classList.remove('hidden'); els.dashboard.classList.add('hidden'); } 
       else if (state.user && state.appAccount) {
         els.auth.classList.add('hidden'); els.dashboard.classList.remove('hidden'); els.navUsername.textContent = state.appAccount.name;
-        renderSchedule(); renderTodos(); renderFines(); renderDriveFiles(); lucide.createIcons();
+        renderSchedule(); renderChat(); renderFines(); renderDriveFiles(); lucide.createIcons();
       }
     }
 
@@ -319,7 +354,6 @@
       },
       logout: async () => { await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: null, name: null }); state.appAccount = null; updateView(); },
       
-      // Profile Methods
       openProfileModal: () => { els.editProfileName.value = state.appAccount.name; els.editProfilePw.value = ''; els.profileModal.classList.remove('hidden'); lucide.createIcons(); },
       closeProfileModal: () => { els.profileModal.classList.add('hidden'); },
       updateProfile: async () => {
@@ -341,7 +375,6 @@
         } catch(e) { showToast('탈퇴 실패', 'error'); }
       },
 
-      // Drive Methods
       handleDriveUpload: (input) => {
         const file = input.files[0]; if(!file) return;
         if(file.size > 1024 * 1024 * 2) return showToast('2MB 이하만 가능합니다.', 'error');
@@ -363,13 +396,26 @@
       deleteDriveFile: async (id) => { if(confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sharedDrive', id)); },
 
       // 🌟 Schedule & Day Picker Methods
+      switchScheduleTab: (dir) => {
+          const tabs = ['고전시가', '현대시'];
+          let idx = tabs.indexOf(state.currentScheduleTab);
+          if (dir === 'next') idx = (idx + 1) % tabs.length;
+          else idx = (idx - 1 + tabs.length) % tabs.length;
+          state.currentScheduleTab = tabs[idx];
+          if (state.isEditingSchedule) {
+              state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData[tabs[idx]]?.weeks || []));
+          }
+          renderSchedule();
+      },
       toggleEditSchedule: () => { 
           state.isEditingSchedule = !state.isEditingSchedule; 
-          if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData.weeks || [])); 
+          const subj = state.currentScheduleTab;
+          if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData[subj]?.weeks || [])); 
           renderSchedule(); 
       },
       addScheduleWeek: () => { 
-          state.editScheduleForm.push({ id: Date.now(), weekNum: state.editScheduleForm.length + 1, meetDate: '', area: '', days: [], isCompleted: false }); 
+          const subj = state.currentScheduleTab;
+          state.editScheduleForm.push({ id: Date.now(), weekNum: state.editScheduleForm.length + 1, meetDate: '', area: subj, days: [], isCompleted: false }); 
           renderSchedule(); 
       },
       removeScheduleWeek: (idx) => { 
@@ -379,17 +425,14 @@
       },
       updateScheduleField: (idx, field, val) => { state.editScheduleForm[idx][field] = val; },
       
-      // 모달 열기
       openDayPicker: (idx) => {
           state.pickerEditingIdx = idx;
           state.tempSelectedDays = [...(state.editScheduleForm[idx].days || [])];
-          els.dayPickerSubtitle.textContent = `${state.editScheduleForm[idx].weekNum}주차에 진행할 Day를 골라주세요.`;
+          els.dayPickerSubtitle.textContent = `[${state.currentScheduleTab}] ${state.editScheduleForm[idx].weekNum}주차에 진행할 Day를 골라주세요.`;
           els.dayPickerModal.classList.remove('hidden');
           renderDayPickerGrid();
       },
-      // 모달 닫기
       closeDayPicker: () => { els.dayPickerModal.classList.add('hidden'); state.pickerEditingIdx = null; },
-      // 날짜(Day) 토글
       toggleDaySelection: (dayNum) => {
           if(state.tempSelectedDays.includes(dayNum)) {
               state.tempSelectedDays = state.tempSelectedDays.filter(d => d !== dayNum);
@@ -398,7 +441,6 @@
           }
           renderDayPickerGrid();
       },
-      // 선택 완료 (주차 데이터에 저장)
       confirmDaySelection: () => {
           if(state.pickerEditingIdx !== null) {
               state.tempSelectedDays.sort((a,b) => a - b);
@@ -407,38 +449,42 @@
           }
           app.closeDayPicker();
       },
-      // 완료 처리 토글
       toggleWeekCompletion: async (idx) => {
-          const weeks = [...(state.scheduleData.weeks || [])];
+          const subj = state.currentScheduleTab;
+          const updatedData = { ...state.scheduleData };
+          if(!updatedData[subj]) updatedData[subj] = { weeks: [] };
+          const weeks = [...(updatedData[subj].weeks || [])];
           weeks[idx].isCompleted = !weeks[idx].isCompleted;
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), { weeks });
+          updatedData[subj].weeks = weeks;
+
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), updatedData);
           showToast(weeks[idx].isCompleted ? '✅ 진도가 완료 처리되었습니다!' : '진도 완료가 취소되었습니다.');
       },
       saveSchedule: async () => { 
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), { weeks: state.editScheduleForm }); 
+          const subj = state.currentScheduleTab;
+          const updatedData = { ...state.scheduleData };
+          if(!updatedData[subj]) updatedData[subj] = { weeks: [] };
+          updatedData[subj].weeks = state.editScheduleForm;
+
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), updatedData);
           state.isEditingSchedule = false; 
-          showToast('주차별 일정이 저장되었습니다.', 'success'); 
+          showToast(`[${subj}] 주차별 일정이 저장되었습니다.`, 'success'); 
       },
 
-      // Todo Methods
-      setActiveTodoTab: (name) => { state.activeTodoTab = name; state.isAddingTodo = false; renderTodos(); },
-      toggleTodoTask: async (taskId) => {
-        if(state.activeTodoTab !== state.appAccount.name) return;
-        const updated = state.todos[state.activeTodoTab].map(t => t.id === taskId ? { ...t, done: !t.done } : t);
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: updated });
-      },
-      deleteTodoTask: async (taskId, event) => {
-        event.stopPropagation(); if(state.activeTodoTab !== state.appAccount.name) return;
-        const updated = state.todos[state.activeTodoTab].filter(t => t.id !== taskId);
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: updated });
-      },
-      setAddingTodo: (val) => { state.isAddingTodo = val; if(val) state.newTodo = { desc: '' }; renderTodos(); },
-      updateNewTodoDesc: (val) => { state.newTodo.desc = val; },
-      submitNewTodo: async (e) => {
-        e.preventDefault(); if(!state.newTodo.desc.trim()) return;
-        const tasks = state.todos[state.activeTodoTab] || [];
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: [...tasks, { id: Date.now(), ...state.newTodo, done: false }] });
-        state.isAddingTodo = false;
+      // 🌟 실시간 채팅 전송
+      submitChat: async (e) => {
+          e.preventDefault();
+          const input = document.getElementById('chat-input');
+          const text = input.value.trim();
+          if(!text) return;
+          input.value = '';
+          try {
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), {
+                  text, userName: state.appAccount.name, timestamp: Date.now()
+              });
+          } catch(err) {
+              showToast('메시지 전송 실패', 'error');
+          }
       },
 
       // Fines Methods
@@ -479,9 +525,9 @@
       finally { btn.disabled = false; }
     });
 
-    // 🌟 특정 Day의 상태 파악 헬퍼
     function getDayStatus(dayNum) {
-        const weeks = state.isEditingSchedule ? state.editScheduleForm : (state.scheduleData.weeks || []);
+        const subj = state.currentScheduleTab;
+        const weeks = state.isEditingSchedule ? state.editScheduleForm : (state.scheduleData[subj]?.weeks || []);
         for(let wk of weeks) {
             if(wk.days && wk.days.includes(dayNum)) {
                 return { status: wk.isCompleted ? 'completed' : 'planned', weekNum: wk.weekNum };
@@ -490,7 +536,6 @@
         return { status: 'none' };
     }
 
-    // 🌟 요약 텍스트 생성 (예: Day 1~3 (01~10번))
     function getRangeText(daysArray) {
         if(!daysArray || daysArray.length === 0) return '진도 범위를 선택해주세요.';
         const first = daysArray[0];
@@ -501,19 +546,17 @@
         return `Day ${first} ~ ${last} (${minWorks}~${maxWorks}번)`;
     }
 
-    // 🌟 모달 안의 달력(Grid) 그리기
     function renderDayPickerGrid() {
         let html = '';
         DAY_MAP.forEach((range, i) => {
             const day = i + 1;
             const isSelected = state.tempSelectedDays.includes(day);
-            const status = getDayStatus(day); // 다른 주차에 할당되었는지 확인
+            const status = getDayStatus(day); 
             
             let classes = "bg-white dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-400 cursor-pointer";
             if(isSelected) {
                 classes = "bg-indigo-600 border-indigo-600 text-white shadow-md transform scale-105 transition-transform z-10";
             } else if(status.status !== 'none' && state.pickerEditingIdx !== null && state.editScheduleForm[state.pickerEditingIdx].weekNum !== status.weekNum) {
-                // 다른 주차에서 이미 선택된 Day
                 classes = "bg-slate-100 dark:bg-slate-900 text-slate-300 border-dashed cursor-not-allowed opacity-50";
             }
 
@@ -527,13 +570,21 @@
         els.dayPickerGrid.innerHTML = html;
     }
 
-    // 🌟 메인 일정 렌더링 (마스터 진도맵 + 주차 리스트)
     function renderSchedule() {
-      let html = `<div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold flex items-center"><i data-lucide="map" class="w-5 h-5 mr-2 text-indigo-500"></i> 스터디 진도맵</h2>
-        <button onclick="app.toggleEditSchedule()" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-5 h-5" onclick="${state.isEditingSchedule?'app.saveSchedule()':''}"></i></button></div>`;
+      if(!els.scheduleContainer) return;
+      const subj = state.currentScheduleTab;
+      let html = `
+        <div class="flex items-center justify-between mb-4 shrink-0">
+          <div class="flex items-center space-x-1 bg-indigo-50 dark:bg-indigo-900/30 p-1 rounded-lg border border-indigo-100 dark:border-indigo-800/50">
+             <button onclick="app.switchScheduleTab('prev')" class="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-800 rounded transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+             <h2 class="text-sm font-black text-indigo-700 dark:text-indigo-300 px-2 w-20 text-center tracking-tight">${subj}</h2>
+             <button onclick="app.switchScheduleTab('next')" class="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-800 rounded transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          </div>
+          <button onclick="${state.isEditingSchedule?'app.saveSchedule()':'app.toggleEditSchedule()'}" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-4 h-4"></i></button>
+        </div>`;
 
-      // 1. 마스터 진도맵 (49 Grid)
-      html += `<div class="grid grid-cols-7 gap-1 bg-slate-100 dark:bg-slate-900 p-2.5 rounded-2xl mb-6 border border-slate-200 dark:border-slate-800 shadow-inner">`;
+      // 마스터 진도맵 (49 Grid)
+      html += `<div class="grid grid-cols-7 gap-1 bg-slate-100 dark:bg-slate-900 p-2.5 rounded-2xl mb-4 border border-slate-200 dark:border-slate-800 shadow-inner shrink-0">`;
       DAY_MAP.forEach((range, i) => {
           const day = i + 1;
           const status = getDayStatus(day);
@@ -548,17 +599,21 @@
       });
       html += `</div>`;
 
-      // 2. 주차별 일정 리스트
-      html += `<div class="space-y-3">`;
+      // 주차별 일정 리스트
+      html += `<div class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">`;
       if(state.isEditingSchedule) {
         state.editScheduleForm.forEach((wk, idx) => {
-          html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 relative mb-3">
+          html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 relative">
             <div class="flex justify-between items-center mb-3">
               <span class="font-black text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-1 rounded-md">${wk.weekNum}주차</span>
               <button onclick="app.removeScheduleWeek(${idx})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
             <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${idx},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
-            <input value="${wk.area}" placeholder="영역명 기입 (예: 고전시가)" onchange="app.updateScheduleField(${idx},'area',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500" />
+            
+            <select onchange="app.updateScheduleField(${idx},'area',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="고전시가" ${wk.area === '고전시가' ? 'selected' : ''}>고전시가</option>
+                <option value="현대시" ${wk.area === '현대시' ? 'selected' : ''}>현대시</option>
+            </select>
             
             <button onclick="app.openDayPicker(${idx})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
                <span><i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> ${getRangeText(wk.days)}</span>
@@ -568,10 +623,10 @@
         });
         html += `<button onclick="app.addScheduleWeek()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors rounded-xl text-sm font-bold flex items-center justify-center text-slate-600 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-500"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> ${state.editScheduleForm.length + 1}주차 추가</button>`;
       } else {
-        const weeks = state.scheduleData.weeks || [];
+        const weeks = state.scheduleData[subj]?.weeks || [];
         if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다. 우측 상단 수정 버튼을 눌러보세요.</div>`;
         weeks.forEach((wk, idx) => {
-          html += `<div class="flex flex-col p-4 ${wk.isCompleted ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 opacity-80' : 'bg-white dark:bg-slate-800 border-indigo-100 dark:border-indigo-800/30 shadow-sm'} rounded-xl mb-3 border relative transition-all">
+          html += `<div class="flex flex-col p-4 ${wk.isCompleted ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 opacity-80' : 'bg-white dark:bg-slate-800 border-indigo-100 dark:border-indigo-800/30 shadow-sm'} rounded-xl border relative transition-all">
             <div class="flex justify-between items-start mb-2">
               <div>
                  <span class="font-black ${wk.isCompleted ? 'text-slate-500 bg-slate-200' : 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-900/50'} px-2 py-0.5 rounded-md text-[10px] uppercase mr-1">${wk.weekNum}주차</span>
@@ -589,6 +644,64 @@
       els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
     }
 
+    // 🌟 실시간 채팅 커뮤니티 렌더링
+    function renderChat() {
+      if(!els.chatContainer) return;
+      let html = `
+        <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
+          <h2 class="text-lg font-bold flex items-center text-emerald-600 dark:text-emerald-400"><i data-lucide="message-square" class="w-5 h-5 mr-2"></i> 스터디 커뮤니티</h2>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50 dark:bg-slate-900">
+      `;
+      
+      if(state.chatMessages.length === 0) {
+        html += `<div class="flex h-full items-center justify-center text-slate-400 text-sm font-bold">첫 메시지를 남겨보세요!</div>`;
+      } else {
+        state.chatMessages.forEach(msg => {
+          const isMe = msg.userName === state.appAccount?.name;
+          const timeStr = new Date(msg.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+          
+          if(isMe) {
+            html += `
+              <div class="flex flex-col items-end">
+                <span class="text-[10px] text-slate-400 mb-0.5 mr-1">${msg.userName}</span>
+                <div class="flex items-end space-x-1.5">
+                  <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
+                  <div class="bg-indigo-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="flex flex-col items-start">
+                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5 ml-1">${msg.userName}</span>
+                <div class="flex items-end space-x-1.5">
+                  <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm shadow-sm border border-slate-200 dark:border-slate-700 max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
+                  <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
+                </div>
+              </div>
+            `;
+          }
+        });
+      }
+      
+      html += `
+        </div>
+        <div class="p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
+          <form onsubmit="app.submitChat(event)" class="flex items-center space-x-2">
+            <input type="text" id="chat-input" placeholder="스터디원들과 대화해보세요..." class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all" autocomplete="off" />
+            <button type="submit" class="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition-colors"><i data-lucide="send" class="w-5 h-5"></i></button>
+          </form>
+        </div>
+      `;
+      els.chatContainer.innerHTML = html;
+      lucide.createIcons();
+      
+      // 스크롤 맨 아래로 자동 이동
+      const msgDiv = document.getElementById('chat-messages');
+      if(msgDiv) msgDiv.scrollTop = msgDiv.scrollHeight;
+    }
+
     function renderDriveFiles() {
       if(!els.driveContainer) return;
       if(state.driveFiles.length === 0) { els.driveContainer.innerHTML = `<div class="py-8 text-slate-400 text-center text-sm">파일이 없습니다.</div>`; return; }
@@ -603,27 +716,6 @@
             <button onclick="app.deleteDriveFile('${f.id}')" class="p-1.5 text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>`).join(''); lucide.createIcons();
-    }
-
-    function renderTodos() {
-      if(!state.appAccount) return;
-      const members = state.allMembers.length > 0 ? state.allMembers.map(m=>m.name) : [state.appAccount.name];
-      let html = `<div class="flex items-center justify-between mb-4"><h2 class="text-lg font-bold flex items-center"><i data-lucide="check-square" class="w-5 h-5 mr-2 text-emerald-500"></i> 스터디 목표</h2></div>`;
-      html += `<div class="flex space-x-2 overflow-x-auto hide-scrollbar mb-4">`;
-      members.forEach(name => { html += `<button onclick="app.setActiveTodoTab('${name}')" class="px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${state.activeTodoTab === name ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}">${name}</button>`; });
-      html += `</div><div class="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">`;
-      const tasks = state.todos[state.activeTodoTab] || [];
-      tasks.forEach(t => {
-        html += `<div onclick="app.toggleTodoTask(${t.id})" class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer hover:border-indigo-300 transition-colors ${t.done?'opacity-50 bg-slate-50':''}">
-          <span class="text-sm dark:text-slate-200 ${t.done?'line-through text-slate-400':''}">${t.desc}</span>
-          ${state.activeTodoTab === state.appAccount.name ? `<button onclick="app.deleteTodoTask(${t.id}, event)" class="p-1 text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
-        </div>`;
-      });
-      if(state.activeTodoTab === state.appAccount.name) {
-        if(state.isAddingTodo) html += `<form onsubmit="app.submitNewTodo(event)" class="mt-2"><input onchange="app.updateNewTodoDesc(this.value)" class="w-full p-3 border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500" placeholder="할 일을 입력하고 Enter를 누르세요..." autofocus /></form>`;
-        else html += `<button onclick="app.setAddingTodo(true)" class="w-full mt-2 py-2 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">+ 할 일 추가</button>`;
-      }
-      els.todosContainer.innerHTML = html + '</div>'; lucide.createIcons();
     }
 
     function renderFines() {
