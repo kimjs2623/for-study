@@ -86,21 +86,6 @@
       </div>
   </div>
 
-  <!-- Q&A 새 작품 추가 모달 -->
-  <div id="prompt-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
-          <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
-              <i data-lucide="folder-plus" class="w-5 h-5 text-blue-500 mr-2"></i> Q&A 새 작품 등록
-          </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">질문을 생성할 새로운 작품의 이름을 입력하세요.</p>
-          <input type="text" id="prompt-input" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none bg-slate-50 dark:bg-slate-950 dark:text-white mb-6 focus:ring-2 focus:ring-blue-500 transition-all" placeholder="예: 관동별곡">
-          <div class="flex space-x-3">
-              <button onclick="document.getElementById('prompt-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors">취소</button>
-              <button onclick="window.StudyApp.confirmPromptNewQAWork()" class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm">추가하기</button>
-          </div>
-      </div>
-  </div>
-
   <!-- 🌟 답지/해설 확인 전문 PDF 모달 -->
   <div id="answer-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-2 sm:p-6">
       <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl relative flex flex-col fade-in border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -365,7 +350,7 @@
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    const apiKey = ""; 
+    const apiKey = ""; // 런타임 환경에서 자동으로 주입됩니다.
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
     const firebaseConfig = { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
     const appId = 'my-study-app'; 
@@ -374,20 +359,44 @@
     const auth = getAuth(appAuth);
     const db = getFirestore(appAuth);
 
-    // --- 🌟 과목명 및 DAY 매핑 설정 🌟 ---
-    const SUBJECT_NAME = "고전시가"; // "고전시가" 또는 "현대시"로 변경하여 사용
-    const DAY_MAP = {
-        1: [1, 3], 2: [4, 6], 3: [7, 10], 4: [11, 13], 5: [14, 16], 6: [17, 20]
-    }; // 필요에 따라 Day별 문제 시작/끝 번호를 실제 문제지에 맞게 수정하세요.
+    // --- 🌟 과목명 설정 🌟 ---
+    const SUBJECT_NAME = "고전시가";
+
+    // 1. 전달해주신 DAY_MAP 배열 적용 (15일차 누락본 추가됨)
+    const DAY_MAP = [
+      "01-04", "05-07", "08-10", "11-13", "14-16", "17-19", "20-22",
+      "23-25", "26-29", "30-32", "33-39", "40-43", "44-47", "48-50",
+      "51-57", "58-66", "67-75", "76-80", "81-83", "84-85", "86-91",
+      "92-95", "96-97", "98-99", "100-101", "102-104", "105-108", "109-116",
+      "117-124", "125-130", "131-139", "140-145", "146-148", "149-155", "156-164",
+      "165-169", "170-171", "172-173", "174-175", "176-177", "178-182", "183-185",
+      "186-188", "189-192", "193-195", "196-198", "199-201", "202-204", "205-208"
+    ];
+
+    // 2. 전달해주신 범위 계산 함수 적용
+    function getRangeText(daysArray) {
+        if(!daysArray || daysArray.length === 0) return '진도 범위를 선택해주세요.';
+        // 문자열로 저장되었을 경우를 대비해 숫자로 변환 후 오름차순 정렬
+        const sortedDays = [...daysArray].map(Number).sort((a, b) => a - b);
+        const first = sortedDays[0];
+        const last = sortedDays[sortedDays.length - 1];
+        
+        // 데이터 범위를 벗어났을 경우 방어 코드
+        if (!DAY_MAP[first-1] || !DAY_MAP[last-1]) return `Day ${first}~${last} (데이터 오류)`;
+
+        const minWorks = DAY_MAP[first-1].split('-')[0];
+        const maxWorks = DAY_MAP[last-1].split('-')[1] || DAY_MAP[last-1];
+        
+        if(first === last) return `Day ${first} (${minWorks}~${maxWorks}번)`;
+        return `Day ${first}~${last} (${minWorks}~${maxWorks}번)`;
+    }
 
     const state = { 
         user: null, allFiles: [], filteredFiles: [], problemPdfBlob: null,
         answerKeyPdfDoc: null, answerPageNum: 1, answerPdfScale: 1.5,
         isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, 
         pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false, docWeeks: [],
-        scheduleWeeks: [], // 🌟 DB 일정(weeks 배열) 저장용 상태
-        
-        // --- 🌟 Q&A 기능용 상태 ---
+        scheduleWeeks: [], 
         qaQuestions: [], qaAnswers: [], qaCurrentWork: ""
     };
 
@@ -449,7 +458,6 @@
 
       setMode: (mode) => {
         state.mode = mode;
-        // 기존 탭 + QA 탭 토글
         ['omr', 'essay', 'community', 'qa'].forEach(m => {
             const el = document.getElementById(`view-${m}`);
             if(el) el.classList.toggle('hidden', m !== mode);
@@ -460,7 +468,6 @@
             }
         });
         
-        // QA 모드일 때는 주차 선택기(week-selector-bar)를 숨겨 독립적인 작품 뷰 확보
         document.getElementById('week-selector-bar').classList.toggle('hidden', mode === 'qa');
 
         if(mode === 'community') window.StudyApp.renderCommunityRecords();
@@ -541,46 +548,21 @@
       zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.StudyApp.renderPage(state.pageNum); },
       zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.StudyApp.renderPage(state.pageNum); } },
 
-      // 🌟 주차 변경 시 Days 배열 파싱 및 UI 뱃지 업데이트
+      // 🌟 주차 변경 시 새로 추가한 getRangeText 함수 적용
       onWeekChange: () => {
           const weekVal = document.getElementById('week-select').value;
           const infoEl = document.getElementById('week-days-info');
           
           if (infoEl) {
-              // 선택된 주차 번호와 일치하는 schedule 데이터 찾기
               const weekObj = state.scheduleWeeks.find(w => {
                   const num = String(w.weekNum || w.week).replace(/[^0-9]/g, '');
                   return num === weekVal;
               });
               
               if (weekObj && weekObj.days && Array.isArray(weekObj.days) && weekObj.days.length > 0) {
-                  // days 배열을 숫자로 변환하여 오름차순 정렬
-                  const days = [...weekObj.days].map(Number).sort((a, b) => a - b);
-                  let daysText = '';
+                  const badgeText = getRangeText(weekObj.days);
                   
-                  if (days.length === 1) {
-                      daysText = `Day ${days[0]}`;
-                  } else {
-                      // 배열이 연속적인 숫자인지 확인
-                      const isContiguous = days.every((val, i, arr) => i === 0 || val === arr[i - 1] + 1);
-                      if (isContiguous) {
-                          daysText = `Day ${days[0]}~${days[days.length - 1]}`;
-                      } else {
-                          daysText = `Day ${days.join(', ')}`;
-                      }
-                  }
-                  
-                  // 🌟 DAY_MAP을 활용한 문제 번호 (01~10번) 표시 로직
-                  const startDay = days[0];
-                  const endDay = days[days.length - 1];
-                  let rangeText = "";
-                  if (DAY_MAP[startDay] && DAY_MAP[endDay]) {
-                      const startNum = String(DAY_MAP[startDay][0]).padStart(2, '0');
-                      const endNum = String(DAY_MAP[endDay][1]).padStart(2, '0');
-                      rangeText = ` (${startNum}~${endNum}번)`;
-                  }
-                  
-                  infoEl.innerHTML = `<i data-lucide="check-square" class="w-3 h-3 mr-1"></i> ${daysText}${rangeText}`;
+                  infoEl.innerHTML = `<i data-lucide="check-square" class="w-3 h-3 mr-1"></i> ${badgeText}`;
                   infoEl.classList.remove('hidden');
                   infoEl.classList.add('flex');
                   if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -595,14 +577,13 @@
       updateCommunityWorks: () => {
           const w = document.getElementById('comm-week-filter').value;
           const prevWork = document.getElementById('comm-work-filter').value;
-          const works = [...new Set(state.allSubmissions.filter(s => s.week === w && !s.isDeleted).map(s => s.workName))];
+          const works = [...new Set(state.allSubmissions.filter(s => String(s.week) === String(w) && !s.isDeleted).map(s => s.workName))];
           const el = document.getElementById('comm-work-filter');
           el.innerHTML = works.length ? `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('') : `<option value="">기록 없음</option>`;
           if (works.includes(prevWork)) el.value = prevWork;
           window.StudyApp.renderCommunityRecords();
       },
 
-      // 🌟 정답해설 전문 렌더링 함수
       renderAnswerPage: (num) => {
           if(!state.answerKeyPdfDoc) return;
           state.answerKeyPdfDoc.getPage(num).then((page) => {
@@ -641,7 +622,7 @@
               return window.StudyApp.showToast("정답 해설지 PDF가 아직 로드되지 않았습니다.", "error");
           }
 
-          const hasSubmitted = state.allSubmissions.some(s => s.userId === state.user.uid && s.week === week && s.workName === name && !s.isDeleted);
+          const hasSubmitted = state.allSubmissions.some(s => s.userId === state.user.uid && String(s.week) === String(week) && s.workName === name && !s.isDeleted);
           
           if (!hasSubmitted) {
               return window.StudyApp.showToast(`[${name}]의 답안을 먼저 제출해야 해설을 확인할 수 있습니다!`, "error");
@@ -755,6 +736,7 @@
 
       deleteSubmission: (docId) => {
           const modal = document.getElementById('delete-modal');
+          document.getElementById('delete-modal-desc').textContent = "해당 기록을 영구적으로 삭제하시겠습니까?";
           modal.classList.remove('hidden');
           document.getElementById('confirm-delete-btn').onclick = async () => {
               modal.classList.add('hidden');
@@ -768,7 +750,7 @@
           const work = document.getElementById('comm-work-filter').value;
           const container = document.getElementById('community-container');
           if(!w || !work) { container.innerHTML = `<p class="text-center py-10 text-[10px] text-slate-400">조회할 주차와 작품을 선택하세요.</p>`; return; }
-          const subs = state.allSubmissions.filter(s => s.week === w && s.workName === work);
+          const subs = state.allSubmissions.filter(s => String(s.week) === String(w) && s.workName === work);
           
           container.innerHTML = subs.map(r => `
               <div class="bg-white dark:bg-slate-900 border ${r.userId === state.user.uid ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2 transition-all">
@@ -790,10 +772,6 @@
           if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
-      // ==========================================
-      // 🌟 작품별 Q&A 심화 섹터 로직 🌟
-      // ==========================================
-
       updateQAWorksDropdown: () => {
           const qWorks = [...new Set(state.qaQuestions.map(q => q.workName))];
           const select = document.getElementById('qa-work-filter');
@@ -804,7 +782,6 @@
           
           select.innerHTML = html;
           
-          // 기존 선택값이 있다면 유지
           if (qWorks.includes(currentVal)) {
               select.value = currentVal;
           } else if (state.qaCurrentWork && qWorks.includes(state.qaCurrentWork)) {
@@ -886,7 +863,6 @@
               await Promise.all([...qPromises, ...aPromises]);
 
               state.qaCurrentWork = input;
-              // 리스너가 onSnapshot으로 데이터를 갱신하겠지만, UI 즉각 반영을 위해
               window.StudyApp.updateQAWorksDropdown();
               document.getElementById('qa-work-filter').value = input;
               window.StudyApp.showToast("작품명이 성공적으로 수정되었습니다.", "success");
@@ -1005,31 +981,27 @@
           }
 
           container.innerHTML = qs.map(q => {
-              // 해당 질문에 대한 모든 답변 가져오기
               const allAnswers = state.qaAnswers.filter(a => a.questionId === q.id);
-              // 현재 유저가 답변을 작성했는지 확인
               const myAnswer = allAnswers.find(a => a.userId === state.user.uid);
               
               let contentHtml = '';
 
               if (myAnswer) {
-                  // 1. 내 답변 및 스터디원들의 답변 목록 렌더링
                   let answersHtml = allAnswers.map(a => `
                       <div class="mt-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border ${a.userId === state.user.uid ? 'border-brand-300 dark:border-brand-700' : 'border-slate-100 dark:border-slate-800'} relative">
-                          <p class="text-[10px] text-slate-500 font-bold mb-1">${a.userId === state.user.uid ? '🌟 내 답변' : a.userName + '님의 답변'}</p>
+                          <p class="text-[10px] text-slate-500 font-bold mb-1">${a.userId === state.user.uid ? '🌟 내 답안' : a.userName + '님의 답안'}</p>
                           <p class="text-xs text-slate-800 dark:text-slate-300 whitespace-pre-wrap">${a.answerText}</p>
-                          ${a.userId === state.user.uid ? `<button onclick="window.StudyApp.deleteQAAnswer('${a.id}')" class="mt-2 text-[9px] font-bold text-red-400 hover:text-red-600 underline underline-offset-2 transition-colors">답변 삭제하고 다시 쓰기</button>` : ''}
+                          ${a.userId === state.user.uid ? `<button onclick="window.StudyApp.deleteQAAnswer('${a.id}')" class="mt-2 text-[9px] font-bold text-red-400 hover:text-red-600 underline underline-offset-2 transition-colors">답안 삭제하고 다시 쓰기</button>` : ''}
                       </div>
                   `).join('');
 
                   contentHtml += `
                       <div class="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
-                          <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 block">스터디원 답변 목록 (${allAnswers.length}명 제출)</span>
+                          <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 block">스터디원 답안 목록 (${allAnswers.length}명 제출)</span>
                           ${answersHtml}
                       </div>
                   `;
 
-                  // 2. AI 모범 답안 및 피드백 영역
                   if (q.aiFeedback) {
                       contentHtml += `
                           <div class="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl relative overflow-hidden">
@@ -1043,14 +1015,13 @@
                                       <p class="text-xs text-blue-900 dark:text-blue-200 leading-relaxed font-medium">${q.aiFeedback.modelAnswer}</p>
                                   </div>
                                   <div class="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
-                                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-1"><i data-lucide="message-square-text" class="w-3 h-3 inline mr-0.5"></i> 스터디원 답변 총평</p>
+                                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-1"><i data-lucide="message-square-text" class="w-3 h-3 inline mr-0.5"></i> 스터디원 답안 총평</p>
                                       <p class="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">${q.aiFeedback.generalFeedback}</p>
                                   </div>
                               </div>
                           </div>
                       `;
                   } else {
-                      // AI 피드백 요청 버튼
                       contentHtml += `
                           <div class="mt-4 text-center">
                               <button id="req-ai-btn-${q.id}" onclick="window.StudyApp.requestAIFeedback('${q.id}')" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-2.5 rounded-lg shadow-sm transition-all inline-flex items-center">
@@ -1061,10 +1032,9 @@
                   }
 
               } else {
-                  // 답변 입력 폼 (답변을 작성해야 다른 사람의 답변을 볼 수 있음)
                   contentHtml += `
                       <div class="mt-4 relative bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                          <p class="text-[10px] font-bold text-slate-500 mb-2 flex items-center"><i data-lucide="lock" class="w-3 h-3 mr-1"></i> 나의 답변을 등록해야 스터디원의 답변과 AI 피드백을 확인할 수 있습니다.</p>
+                          <p class="text-[10px] font-bold text-slate-500 mb-2 flex items-center"><i data-lucide="lock" class="w-3 h-3 mr-1"></i> 나의 답안을 등록해야 스터디원의 답안과 AI 피드백을 확인할 수 있습니다.</p>
                           <textarea id="qa-ans-${q.id}" class="w-full text-[11px] p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none resize-none focus:border-blue-400 transition-all custom-scrollbar" rows="3" placeholder="문제에 대한 나의 답안을 작성해 보세요..."></textarea>
                           <div class="flex justify-end mt-2">
                               <button id="qa-btn-${q.id}" onclick="window.StudyApp.submitQAAnswer('${q.id}')" class="bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white text-[10px] font-black px-4 py-2 rounded-lg shadow-sm transition-all flex items-center">
@@ -1106,7 +1076,7 @@
           const btn = document.getElementById(`qa-btn-${questionId}`);
           const answerText = textarea.value.trim();
 
-          if(!answerText) return window.StudyApp.showToast("답변을 입력해주세요.", "error");
+          if(!answerText) return window.StudyApp.showToast("답안을 입력해주세요.", "error");
 
           const originalHtml = btn.innerHTML;
           textarea.disabled = true;
@@ -1125,9 +1095,9 @@
                   timestamp: Date.now()
               });
               
-              window.StudyApp.showToast("답변이 성공적으로 등록되었습니다!", "success");
+              window.StudyApp.showToast("답안이 성공적으로 등록되었습니다!", "success");
           } catch(e) {
-              window.StudyApp.showToast("답변 등록 실패: " + e.message, "error");
+              window.StudyApp.showToast("답안 등록 실패: " + e.message, "error");
               textarea.disabled = false;
               btn.disabled = false;
               btn.innerHTML = originalHtml;
@@ -1138,9 +1108,9 @@
       deleteQAAnswer: async (answerId) => {
           try {
               await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qa_answers', answerId));
-              window.StudyApp.showToast("내 답변이 삭제되었습니다.");
+              window.StudyApp.showToast("내 답안이 삭제되었습니다.");
           } catch(e) {
-              window.StudyApp.showToast("답변 삭제 실패", "error");
+              window.StudyApp.showToast("답안 삭제 실패", "error");
           }
       },
 
@@ -1151,7 +1121,7 @@
 
           const originalHtml = btn.innerHTML;
           btn.disabled = true;
-          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin-custom"></i> AI 선생님이 답변들을 분석 중입니다...`;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin-custom"></i> AI 선생님이 답안들을 분석 중입니다...`;
           if(typeof lucide !== 'undefined') lucide.createIcons();
 
           const questionDoc = state.qaQuestions.find(q => q.id === questionId);
@@ -1163,17 +1133,17 @@
 작품명: ${state.qaCurrentWork}
 문제 내용: ${questionDoc.questionText}
 
-[학생들의 제출 답변]
+[학생들의 제출 답안]
 ${answersPrompt}
 
-당신은 다정하고 통찰력 있는 국어 선생님입니다. 위 문제에 대해 스터디원들이 제출한 답변들을 모두 읽어보고 다음 사항을 작성해주세요.
+당신은 다정하고 통찰력 있는 국어 선생님입니다. 위 문제에 대해 스터디원들이 제출한 답안들을 모두 읽어보고 다음 사항을 작성해주세요.
 1. 문제에 대한 완벽한 '모범 답안'
-2. 학생들이 제출한 답변들에 대한 '전체적인 총평 및 피드백' (어떤 학생의 접근이 좋았는지, 어떤 점을 공통적으로 보완하면 좋을지 등 구체적이고 다정하게 작성)
+2. 학생들이 제출한 답안들에 대한 '전체적인 총평 및 피드백' (어떤 학생의 접근이 좋았는지, 어떤 점을 공통적으로 보완하면 좋을지 등 구체적이고 다정하게 작성)
 
 반드시 아래 JSON 형식으로만 응답해주세요:
 {
   "modelAnswer": "(문제에 대한 명쾌한 모범 답안 및 해설. 3~4문장 분량)",
-  "generalFeedback": "(학생 답변들에 대한 다정한 총평. 3~4문장 분량)"
+  "generalFeedback": "(학생 답안들에 대한 다정한 총평. 3~4문장 분량)"
 }`;
 
           try {
@@ -1190,7 +1160,6 @@ ${answersPrompt}
               const data = await response.json();
               const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
 
-              // 질문 문서에 aiFeedback 객체 업데이트
               await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qa_questions', questionId), {
                   aiFeedback: {
                       modelAnswer: resultJson.modelAnswer,
@@ -1260,13 +1229,11 @@ ${answersPrompt}
             
             if (snap.exists()) {
                 const data = snap.data();
-                // 🌟 SUBJECT_NAME(고전시가) 데이터만 정확하게 빼오기
                 const subjectData = data[SUBJECT_NAME];
 
                 if(subjectData && subjectData.weeks && Array.isArray(subjectData.weeks)) {
                     state.scheduleWeeks = subjectData.weeks;
                     subjectData.weeks.forEach(w => {
-                        // weekNum을 가져와서 순수 숫자만 추출 (예: '1주차' -> '1')
                         let val = w.weekNum || w.week;
                         if(val !== undefined && val !== null) {
                             val = String(val).replace(/[^0-9]/g, '');
@@ -1287,7 +1254,6 @@ ${answersPrompt}
         });
     }
 
-    // 🌟 추가된 Q&A 관련 Firestore 리스너
     function fetchQAData() {
         onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions')), (snap) => {
             const qs = []; snap.forEach(doc => qs.push({ id: doc.id, ...doc.data() }));
@@ -1296,7 +1262,6 @@ ${answersPrompt}
             if(state.mode === 'qa') window.StudyApp.renderQAQuestions();
         });
 
-        // qa_evaluations 대신 qa_answers 사용 (스터디원 간의 답변 공유 목적)
         onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers')), (snap) => {
             const ans = []; snap.forEach(doc => ans.push({ id: doc.id, ...doc.data() }));
             state.qaAnswers = ans;
@@ -1312,7 +1277,7 @@ ${answersPrompt}
             loadGlobalAnswerKey(); 
             fetchStudySchedule(); 
             fetchPublicSubmissions(); 
-            fetchQAData(); // Q&A 데이터 호출 추가
+            fetchQAData(); 
             window.StudyApp.setMode('omr'); 
         } else signInAnonymously(auth);
     });
