@@ -153,7 +153,7 @@
 
     <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
       
-      <!-- 상단: 🌟 개편된 과목별 진도맵 & 채팅 커뮤니티 -->
+      <!-- 상단: 개편된 과목별 진도맵 & 채팅 커뮤니티 -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-1">
           <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col max-h-[600px]">
@@ -217,30 +217,24 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 🌟 이미지 기반 진도(Day) 매핑 데이터 세팅 (총 49일)
+    // 🌟 51-57(15일차) 누락본 수정 완료된 완벽한 49일치 데이터
     const DAY_MAP = [
       "01-04", "05-07", "08-10", "11-13", "14-16", "17-19", "20-22",
       "23-25", "26-29", "30-32", "33-39", "40-43", "44-47", "48-50",
-      "58-66", "67-75", "76-80", "81-83", "84-85", "86-91", "92-95",
-      "96-97", "98-99", "100-101", "102-104", "105-108", "109-116", "117-124",
-      "125-130", "131-139", "140-145", "146-148", "149-155", "156-164", "165-169",
-      "170-171", "172-173", "174-175", "176-177", "178-182", "183-185", "186-188",
-      "189-192", "193-195", "196-198", "199-201", "202-204", "205-206", "207-208"
+      "51-57", "58-66", "67-75", "76-80", "81-83", "84-85", "86-91",
+      "92-95", "96-97", "98-99", "100-101", "102-104", "105-108", "109-116",
+      "117-124", "125-130", "131-139", "140-145", "146-148", "149-155", "156-164",
+      "165-169", "170-171", "172-173", "174-175", "176-177", "178-182", "183-185",
+      "186-188", "189-192", "193-195", "196-198", "199-201", "202-204", "205-208"
     ];
 
-    // Global State
     const state = {
       isDarkMode: false, user: null, appAccount: null, allMembers: [],
-      
-      // 🌟 멀티 과목 일정 데이터
       currentScheduleTab: '고전시가',
       scheduleData: { '고전시가': { weeks: [] }, '현대시': { weeks: [] } },
       isEditingSchedule: false, editScheduleForm: [],
       pickerEditingIdx: null, tempSelectedDays: [], 
-      
-      // 🌟 실시간 채팅 데이터
       chatMessages: [],
-
       finesData: { records: [] }, isAddingFine: false, newFine: { memberName: '', reason: '지각', amount: 1000 },
       driveFiles: [], authMode: 'login'
     };
@@ -257,8 +251,7 @@
       toast: document.getElementById('toast-container'), profileModal: document.getElementById('profile-modal'), 
       editProfileName: document.getElementById('edit-profile-name'), editProfilePw: document.getElementById('edit-profile-pw'),
       dayPickerModal: document.getElementById('day-picker-modal'), dayPickerGrid: document.getElementById('day-picker-grid'),
-      dayPickerSubtitle: document.getElementById('day-picker-subtitle'),
-      chatContainer: document.getElementById('chat-container')
+      dayPickerSubtitle: document.getElementById('day-picker-subtitle'), chatContainer: document.getElementById('chat-container')
     };
 
     function showToast(message, type = 'info') {
@@ -287,7 +280,7 @@
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
         else await signInAnonymously(auth);
-      } catch (error) { showToast("인증 오류. 익명 로그인을 확인하세요.", "error"); }
+      } catch (error) { showToast("인증 오류", "error"); }
 
       onAuthStateChanged(auth, (user) => {
         state.user = user;
@@ -302,13 +295,11 @@
         else { state.appAccount = null; } updateView();
       });
       onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), (snap) => {
-        state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderFines();
+        state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderFines();
       });
       onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'sharedDrive'), (snap) => {
         state.driveFiles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp); renderDriveFiles();
       });
-      // 🌟 멀티 과목 일정 불러오기
       onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
         if (snap.exists()) {
             const data = snap.data();
@@ -325,7 +316,6 @@
         }
         renderSchedule();
       });
-      // 🌟 채팅 메시지 불러오기
       onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), (snap) => {
         const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         msgs.sort((a,b) => a.timestamp - b.timestamp);
@@ -395,7 +385,6 @@
       },
       deleteDriveFile: async (id) => { if(confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sharedDrive', id)); },
 
-      // 🌟 Schedule & Day Picker Methods
       switchScheduleTab: (dir) => {
           const tabs = ['고전시가', '현대시'];
           let idx = tabs.indexOf(state.currentScheduleTab);
@@ -471,7 +460,6 @@
           showToast(`[${subj}] 주차별 일정이 저장되었습니다.`, 'success'); 
       },
 
-      // 🌟 실시간 채팅 전송
       submitChat: async (e) => {
           e.preventDefault();
           const input = document.getElementById('chat-input');
@@ -482,12 +470,9 @@
               await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), {
                   text, userName: state.appAccount.name, timestamp: Date.now()
               });
-          } catch(err) {
-              showToast('메시지 전송 실패', 'error');
-          }
+          } catch(err) { showToast('메시지 전송 실패', 'error'); }
       },
 
-      // Fines Methods
       toggleAddingFine: () => { state.isAddingFine = !state.isAddingFine; if(state.isAddingFine) state.newFine = { memberName: '', reason: '', amount: 1000 }; renderFines(); },
       updateFineField: (field, val) => { state.newFine[field] = val; },
       submitFine: async (e) => {
@@ -536,14 +521,20 @@
         return { status: 'none' };
     }
 
+    // 🌟 안전하게 수정된 번호 파싱 로직
     function getRangeText(daysArray) {
         if(!daysArray || daysArray.length === 0) return '진도 범위를 선택해주세요.';
-        const first = daysArray[0];
-        const last = daysArray[daysArray.length - 1];
+        const sortedDays = [...daysArray].map(Number).sort((a, b) => a - b);
+        const first = sortedDays[0];
+        const last = sortedDays[sortedDays.length - 1];
+        
+        if (!DAY_MAP[first-1] || !DAY_MAP[last-1]) return `Day ${first}~${last} (데이터 오류)`;
+
         const minWorks = DAY_MAP[first-1].split('-')[0];
         const maxWorks = DAY_MAP[last-1].split('-')[1] || DAY_MAP[last-1];
+        
         if(first === last) return `Day ${first} (${minWorks}~${maxWorks}번)`;
-        return `Day ${first} ~ ${last} (${minWorks}~${maxWorks}번)`;
+        return `Day ${first}~${last} (${minWorks}~${maxWorks}번)`;
     }
 
     function renderDayPickerGrid() {
@@ -583,7 +574,6 @@
           <button onclick="${state.isEditingSchedule?'app.saveSchedule()':'app.toggleEditSchedule()'}" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-4 h-4"></i></button>
         </div>`;
 
-      // 마스터 진도맵 (49 Grid)
       html += `<div class="grid grid-cols-7 gap-1 bg-slate-100 dark:bg-slate-900 p-2.5 rounded-2xl mb-4 border border-slate-200 dark:border-slate-800 shadow-inner shrink-0">`;
       DAY_MAP.forEach((range, i) => {
           const day = i + 1;
@@ -599,7 +589,6 @@
       });
       html += `</div>`;
 
-      // 주차별 일정 리스트
       html += `<div class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">`;
       if(state.isEditingSchedule) {
         state.editScheduleForm.forEach((wk, idx) => {
@@ -644,7 +633,6 @@
       els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
     }
 
-    // 🌟 실시간 채팅 커뮤니티 렌더링
     function renderChat() {
       if(!els.chatContainer) return;
       let html = `
@@ -697,7 +685,6 @@
       els.chatContainer.innerHTML = html;
       lucide.createIcons();
       
-      // 스크롤 맨 아래로 자동 이동
       const msgDiv = document.getElementById('chat-messages');
       if(msgDiv) msgDiv.scrollTop = msgDiv.scrollHeight;
     }
