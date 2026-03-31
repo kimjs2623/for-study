@@ -63,10 +63,25 @@
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
               <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i> 기록 삭제
           </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mb-6">해당 기록을 영구적으로 삭제하시겠습니까?</p>
+          <p id="delete-modal-desc" class="text-xs text-slate-500 dark:text-slate-400 mb-6">해당 기록을 영구적으로 삭제하시겠습니까?</p>
           <div class="flex space-x-3">
               <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors">취소</button>
               <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors shadow-sm">영구 삭제</button>
+          </div>
+      </div>
+  </div>
+
+  <!-- Q&A 새 작품 추가 모달 -->
+  <div id="prompt-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
+          <h3 id="prompt-modal-title" class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
+              <i data-lucide="folder-plus" class="w-5 h-5 text-blue-500 mr-2"></i> 모의 출제 새 작품 등록
+          </h3>
+          <p id="prompt-modal-desc" class="text-xs text-slate-500 dark:text-slate-400 mb-4">문제를 출제할 새로운 작품의 이름을 입력하세요.</p>
+          <input type="text" id="prompt-input" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none bg-slate-50 dark:bg-slate-950 dark:text-white mb-6 focus:ring-2 focus:ring-blue-500 transition-all" placeholder="예: 관동별곡">
+          <div class="flex space-x-3">
+              <button onclick="document.getElementById('prompt-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors">취소</button>
+              <button id="prompt-confirm-btn" onclick="window.StudyApp.confirmPromptNewQAWork()" class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm">확인</button>
           </div>
       </div>
   </div>
@@ -137,7 +152,7 @@
                 <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Shared Records
             </button>
             <button onclick="window.StudyApp.setMode('qa')" id="tab-qa" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-blue-500 whitespace-nowrap flex items-center transition-colors">
-                <i data-lucide="message-square" class="w-3.5 h-3.5 mr-1"></i> 작품 Q&A
+                <i data-lucide="pen-tool" class="w-3.5 h-3.5 mr-1"></i> 모의 출제
             </button>
         </div>
       </div>
@@ -229,9 +244,11 @@
             <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0">
                 <div class="flex items-center space-x-2 flex-1">
                     <i data-lucide="calendar" class="w-4 h-4 text-brand-600"></i>
-                    <select id="week-select" onchange="window.StudyApp.updateCommunityWorks()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px] truncate">
+                    <select id="week-select" onchange="window.StudyApp.onWeekChange()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px] truncate">
                         <option value="">주차 선택</option>
                     </select>
+                    <!-- 🌟 새로 추가된 Days 표시 뱃지 -->
+                    <div id="week-days-info" class="hidden items-center text-[10px] font-black text-brand-600 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/50 border border-brand-200 dark:border-brand-700 px-2 py-1 rounded-md ml-1 tracking-widest uppercase transition-all shadow-sm"></div>
                 </div>
                 <div id="editing-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-black rounded uppercase animate-pulse flex items-center">
                     <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> 수정 모드
@@ -299,22 +316,30 @@
                     <!-- 작품 선택 위젯 -->
                     <div class="flex space-x-2 shrink-0">
                         <select id="qa-work-filter" onchange="window.StudyApp.setQAWork(this.value)" class="flex-1 bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-blue-500/20">
-                            <option value="">작품을 선택하세요 (Q&A)</option>
+                            <option value="">작품을 선택하세요 (모의 출제)</option>
                         </select>
-                        <button onclick="window.StudyApp.promptNewQAWork()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-[11px] font-black rounded-lg px-3 shadow-sm transition-all whitespace-nowrap flex items-center outline-none">
-                            <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> 새 작품
-                        </button>
+                        <div class="flex space-x-1 shrink-0">
+                            <button onclick="window.StudyApp.promptQAWork(false)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-[11px] font-black rounded-lg px-3 shadow-sm transition-all whitespace-nowrap flex items-center outline-none">
+                                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> 새 작품
+                            </button>
+                            <button id="qa-work-edit-btn" onclick="window.StudyApp.promptQAWork(true)" class="hidden bg-slate-50 hover:bg-slate-100 text-slate-600 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-black rounded-lg px-2 shadow-sm transition-all flex items-center outline-none" title="작품명 수정">
+                                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button id="qa-work-delete-btn" onclick="window.StudyApp.deleteQAWork()" class="hidden bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-[11px] font-black rounded-lg px-2 shadow-sm transition-all flex items-center outline-none" title="작품 삭제">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- 질문 리스트 영역 (선택 전에는 숨김) -->
                     <div id="qa-content-area" class="hidden flex-col space-y-4 flex-1 overflow-hidden mt-2">
                         <!-- 질문 생성 폼 -->
                         <div class="bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-xl p-3 shadow-sm shrink-0 focus-within:border-blue-400 transition-all group">
-                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 스스로 질문을 던져보세요..." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-14 custom-scrollbar dark:text-slate-200 group-focus-within:h-20 transition-all" maxlength="300"></textarea>
+                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 새로운 모의 문제를 출제해 보세요..." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-14 custom-scrollbar dark:text-slate-200 group-focus-within:h-20 transition-all" maxlength="300"></textarea>
                             <div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-2 mt-1">
-                                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center"><i data-lucide="message-square" class="w-3 h-3 mr-1"></i>새로운 심화 질문</span>
+                                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center"><i data-lucide="pen-tool" class="w-3 h-3 mr-1"></i>새로운 창작 문제</span>
                                 <button onclick="window.StudyApp.submitQAQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center">
-                                    <i data-lucide="send" class="w-3 h-3 mr-1"></i> 질문 등록
+                                    <i data-lucide="send" class="w-3 h-3 mr-1"></i> 문제 등록
                                 </button>
                             </div>
                         </div>
@@ -326,7 +351,7 @@
                     <!-- 작품 미선택 상태 -->
                     <div id="qa-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-400 opacity-70">
                         <i data-lucide="folder-search" class="w-10 h-10 mb-3 text-blue-300"></i>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-center">작품을 선택하거나 새 작품을 등록하여<br>스스로 질문하고 AI에게 피드백을 받아보세요.</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-center">작품을 선택하거나 새 작품을 등록하여<br>스스로 문제를 출제하고 AI에게 피드백을 받아보세요.</p>
                     </div>
                 </div>
 
@@ -338,11 +363,9 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    const apiKey = ""; // 런타임 환경에서 자동으로 주입됩니다. (Gemini AI 채점용)
-
-    // --- 환경 설정 및 보안 조립 ---
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    const apiKey = ""; 
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
     const firebaseConfig = { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
     const appId = 'my-study-app'; 
@@ -356,6 +379,7 @@
         answerKeyPdfDoc: null, answerPageNum: 1, answerPdfScale: 1.5,
         isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, 
         pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false, docWeeks: [],
+        scheduleWeeks: [], // 🌟 DB 일정(weeks 배열) 저장용 상태
         
         // --- 🌟 Q&A 기능용 상태 ---
         qaQuestions: [], qaAnswers: [], qaCurrentWork: ""
@@ -374,16 +398,26 @@
     function updateGlobalWeeks() {
         const existingWeeks = state.allSubmissions.filter(s => !s.isDeleted).map(s => String(s.week));
         state.weeks = [...new Set([...state.docWeeks, ...existingWeeks])].filter(w => w && w !== 'undefined' && w !== 'null' && w !== "" && String(w) !== "[object Object]");
-        state.weeks.sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
+        
+        // 🌟 주차 번호(숫자)를 기준으로 오름차순 정렬
+        state.weeks.sort((a, b) => {
+            const numA = parseInt(String(a).replace(/[^0-9]/g, '')) || 0;
+            const numB = parseInt(String(b).replace(/[^0-9]/g, '')) || 0;
+            return numA - numB;
+        });
 
         ['week-select', 'comm-week-filter'].forEach(id => {
             const el = document.getElementById(id);
             if(!el) return;
             const prev = el.value;
-            el.innerHTML = `<option value="">주차 선택</option>` + state.weeks.map(w => `<option value="${w}">${w}</option>`).join('');
+            // 🌟 value에는 순수 weekNum이 들어가고, 텍스트로는 'X주차' 형태로 표시
+            el.innerHTML = `<option value="">주차 선택</option>` + state.weeks.map(w => {
+                const display = String(w).includes('주차') ? w : w + '주차';
+                return `<option value="${w}">${display}</option>`;
+            }).join('');
             if(state.weeks.includes(prev)) el.value = prev;
         });
-        window.StudyApp.updateCommunityWorks();
+        window.StudyApp.onWeekChange();
     }
 
     window.StudyApp = {
@@ -505,6 +539,42 @@
       nextPage: () => { if (state.pageNum < state.pdfDoc.numPages) { state.pageNum++; window.StudyApp.renderPage(state.pageNum); } },
       zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.StudyApp.renderPage(state.pageNum); },
       zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.StudyApp.renderPage(state.pageNum); } },
+
+      // 🌟 주차 변경 시 Days 배열 파싱 및 UI 뱃지 업데이트
+      onWeekChange: () => {
+          const weekVal = document.getElementById('week-select').value;
+          const infoEl = document.getElementById('week-days-info');
+          
+          if (infoEl) {
+              const weekObj = state.scheduleWeeks.find(w => String(w.weekNum) === String(weekVal) || String(w.week) === String(weekVal));
+              
+              if (weekObj && weekObj.days && Array.isArray(weekObj.days) && weekObj.days.length > 0) {
+                  const days = weekObj.days.sort((a, b) => a - b);
+                  let daysText = '';
+                  
+                  if (days.length === 1) {
+                      daysText = `Day ${days[0]}`;
+                  } else {
+                      // 배열이 연속적인 숫자인지 확인 (예: 1, 2, 3 -> Day 1~3)
+                      const isContiguous = days.every((val, i, arr) => i === 0 || val === arr[i - 1] + 1);
+                      if (isContiguous) {
+                          daysText = `Day ${days[0]}~${days[days.length - 1]}`;
+                      } else {
+                          daysText = `Day ${days.join(', ')}`;
+                      }
+                  }
+                  
+                  infoEl.innerHTML = `<i data-lucide="check-square" class="w-3 h-3 mr-1"></i> ${daysText}`;
+                  infoEl.classList.remove('hidden');
+                  infoEl.classList.add('flex');
+                  if(typeof lucide !== 'undefined') lucide.createIcons();
+              } else {
+                  infoEl.classList.add('hidden');
+                  infoEl.classList.remove('flex');
+              }
+          }
+          window.StudyApp.updateCommunityWorks();
+      },
 
       updateCommunityWorks: () => {
           const w = document.getElementById('comm-week-filter').value;
@@ -713,7 +783,7 @@
           const select = document.getElementById('qa-work-filter');
           const currentVal = select.value;
           
-          let html = '<option value="">작품을 선택하세요 (Q&A)</option>';
+          let html = '<option value="">작품을 선택하세요 (모의 출제)</option>';
           qWorks.forEach(w => { html += `<option value="${w}">${w}</option>`; });
           
           select.innerHTML = html;
@@ -738,10 +808,28 @@
           }
       },
 
-      promptNewQAWork: () => {
+      promptQAWork: (isEdit = false) => {
+          const titleEl = document.getElementById('prompt-modal-title');
+          const descEl = document.getElementById('prompt-modal-desc');
+          const inputEl = document.getElementById('prompt-input');
+          const btnEl = document.getElementById('prompt-confirm-btn');
+
+          if (isEdit) {
+              if (!state.qaCurrentWork) return window.StudyApp.showToast("선택된 작품이 없습니다.", "error");
+              titleEl.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-blue-500 mr-2"></i> 작품명 수정`;
+              descEl.textContent = "수정할 작품의 이름을 입력하세요.";
+              inputEl.value = state.qaCurrentWork;
+              btnEl.onclick = () => window.StudyApp.confirmEditQAWork();
+          } else {
+              titleEl.innerHTML = `<i data-lucide="folder-plus" class="w-5 h-5 text-blue-500 mr-2"></i> 모의 출제 새 작품 등록`;
+              descEl.textContent = "문제를 출제할 새로운 작품의 이름을 입력하세요.";
+              inputEl.value = "";
+              btnEl.onclick = () => window.StudyApp.confirmPromptNewQAWork();
+          }
+          
           document.getElementById('prompt-modal').classList.remove('hidden');
-          document.getElementById('prompt-input').value = '';
-          document.getElementById('prompt-input').focus();
+          inputEl.focus();
+          if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
       confirmPromptNewQAWork: () => {
@@ -756,20 +844,95 @@
           window.StudyApp.setQAWork(input);
       },
 
+      confirmEditQAWork: async () => {
+          const input = document.getElementById('prompt-input').value.trim();
+          if(!input) return window.StudyApp.showToast("작품명을 입력해주세요.", "error");
+          if(input === state.qaCurrentWork) {
+              document.getElementById('prompt-modal').classList.add('hidden');
+              return;
+          }
+
+          const oldName = state.qaCurrentWork;
+          document.getElementById('prompt-modal').classList.add('hidden');
+          window.StudyApp.showToast("작품명을 수정 중입니다...", "info");
+
+          try {
+              const qQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), where('workName', '==', oldName));
+              const qSnap = await getDocs(qQuery);
+              const qPromises = [];
+              qSnap.forEach(d => qPromises.push(updateDoc(d.ref, { workName: input })));
+
+              const aQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers'), where('workName', '==', oldName));
+              const aSnap = await getDocs(aQuery);
+              const aPromises = [];
+              aSnap.forEach(d => aPromises.push(updateDoc(d.ref, { workName: input })));
+
+              await Promise.all([...qPromises, ...aPromises]);
+
+              state.qaCurrentWork = input;
+              // 리스너가 onSnapshot으로 데이터를 갱신하겠지만, UI 즉각 반영을 위해
+              window.StudyApp.updateQAWorksDropdown();
+              document.getElementById('qa-work-filter').value = input;
+              window.StudyApp.showToast("작품명이 성공적으로 수정되었습니다.", "success");
+          } catch(e) {
+              window.StudyApp.showToast("작품명 수정 실패: " + e.message, "error");
+          }
+      },
+
+      deleteQAWork: () => {
+          if(!state.qaCurrentWork) return;
+          const modal = document.getElementById('delete-modal');
+          document.getElementById('delete-modal-desc').innerHTML = `<span class="font-bold text-red-500">[${state.qaCurrentWork}]</span> 작품과 관련된 <br>모든 문제 및 답변이 영구 삭제됩니다.`;
+          modal.classList.remove('hidden');
+
+          document.getElementById('confirm-delete-btn').onclick = async () => {
+              modal.classList.add('hidden');
+              window.StudyApp.showToast("작품을 삭제 중입니다...", "info");
+              try {
+                  const oldName = state.qaCurrentWork;
+
+                  const qQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), where('workName', '==', oldName));
+                  const qSnap = await getDocs(qQuery);
+                  const qPromises = [];
+                  qSnap.forEach(d => qPromises.push(deleteDoc(d.ref)));
+
+                  const aQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers'), where('workName', '==', oldName));
+                  const aSnap = await getDocs(aQuery);
+                  const aPromises = [];
+                  aSnap.forEach(d => aPromises.push(deleteDoc(d.ref)));
+
+                  await Promise.all([...qPromises, ...aPromises]);
+
+                  state.qaCurrentWork = "";
+                  window.StudyApp.updateQAWorksDropdown();
+                  window.StudyApp.setQAWork("");
+                  window.StudyApp.showToast("작품이 삭제되었습니다.", "success");
+              } catch(e) {
+                  window.StudyApp.showToast("작품 삭제 실패: " + e.message, "error");
+              }
+          };
+      },
+
       setQAWork: (workName) => {
           state.qaCurrentWork = workName;
           const area = document.getElementById('qa-content-area');
           const empty = document.getElementById('qa-empty-state');
+          const editBtn = document.getElementById('qa-work-edit-btn');
+          const deleteBtn = document.getElementById('qa-work-delete-btn');
           
           if(workName) {
               area.classList.remove('hidden');
               area.classList.add('flex');
               empty.classList.add('hidden');
+              editBtn.classList.remove('hidden');
+              deleteBtn.classList.remove('hidden');
               window.StudyApp.renderQAQuestions();
           } else {
               area.classList.add('hidden');
               area.classList.remove('flex');
               empty.classList.remove('hidden');
+              editBtn.classList.add('hidden');
+              deleteBtn.classList.add('hidden');
           }
       },
 
@@ -779,7 +942,7 @@
           const text = textInput.value.trim();
           
           if(!state.qaCurrentWork) return window.StudyApp.showToast("먼저 작품을 선택해주세요.", "error");
-          if(!text) return window.StudyApp.showToast("질문 내용을 입력해주세요.", "error");
+          if(!text) return window.StudyApp.showToast("문제 내용을 입력해주세요.", "error");
 
           try {
               const userName = await getUserName();
@@ -792,10 +955,26 @@
               });
               
               textInput.value = '';
-              window.StudyApp.showToast("새로운 질문이 등록되었습니다.", "success");
+              window.StudyApp.showToast("새로운 문제가 등록되었습니다.", "success");
           } catch(e) {
-              window.StudyApp.showToast("질문 등록 실패: " + e.message, "error");
+              window.StudyApp.showToast("문제 등록 실패: " + e.message, "error");
           }
+      },
+
+      deleteQAQuestion: (questionId) => {
+          const modal = document.getElementById('delete-modal');
+          document.getElementById('delete-modal-desc').textContent = "해당 문제를 영구적으로 삭제하시겠습니까?";
+          modal.classList.remove('hidden');
+          
+          document.getElementById('confirm-delete-btn').onclick = async () => {
+              modal.classList.add('hidden');
+              try {
+                  await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qa_questions', questionId));
+                  window.StudyApp.showToast("문제가 삭제되었습니다.");
+              } catch(e) {
+                  window.StudyApp.showToast("문제 삭제 실패: " + e.message, "error");
+              }
+          };
       },
 
       renderQAQuestions: () => {
@@ -805,7 +984,7 @@
           const qs = state.qaQuestions.filter(q => q.workName === state.qaCurrentWork);
           
           if(qs.length === 0) {
-              container.innerHTML = `<div class="text-center py-6 text-[10px] text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">아직 등록된 질문이 없습니다.<br>첫 번째 질문을 만들어보세요!</div>`;
+              container.innerHTML = `<div class="text-center py-6 text-[10px] text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">아직 출제된 문제가 없습니다.<br>첫 번째 문제를 출제해 보세요!</div>`;
               return;
           }
 
@@ -870,10 +1049,10 @@
                   contentHtml += `
                       <div class="mt-4 relative bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                           <p class="text-[10px] font-bold text-slate-500 mb-2 flex items-center"><i data-lucide="lock" class="w-3 h-3 mr-1"></i> 나의 답변을 등록해야 스터디원의 답변과 AI 피드백을 확인할 수 있습니다.</p>
-                          <textarea id="qa-ans-${q.id}" class="w-full text-[11px] p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none resize-none focus:border-blue-400 transition-all custom-scrollbar" rows="3" placeholder="질문에 대한 나의 생각을 작성해 보세요..."></textarea>
+                          <textarea id="qa-ans-${q.id}" class="w-full text-[11px] p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none resize-none focus:border-blue-400 transition-all custom-scrollbar" rows="3" placeholder="문제에 대한 나의 답안을 작성해 보세요..."></textarea>
                           <div class="flex justify-end mt-2">
                               <button id="qa-btn-${q.id}" onclick="window.StudyApp.submitQAAnswer('${q.id}')" class="bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white text-[10px] font-black px-4 py-2 rounded-lg shadow-sm transition-all flex items-center">
-                                  <i data-lucide="pen-tool" class="w-3 h-3 mr-1.5"></i> 내 답변 등록하기
+                                  <i data-lucide="pen-tool" class="w-3 h-3 mr-1.5"></i> 내 답안 등록하기
                               </button>
                           </div>
                       </div>
@@ -882,15 +1061,20 @@
 
               return `
                   <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                      <div class="flex items-start space-x-3">
-                          <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 p-2 rounded-lg mt-0.5 shrink-0"><i data-lucide="help-circle" class="w-4 h-4"></i></div>
-                          <div class="flex-1 min-w-0 pt-0.5">
-                              <p class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug">${q.questionText}</p>
-                              <div class="flex items-center mt-2 space-x-2">
-                                  <span class="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-bold">출제: ${q.authorName}</span>
-                                  <span class="text-[9px] text-slate-400 font-bold">참여: ${allAnswers.length}명</span>
+                      <div class="flex items-start justify-between space-x-3">
+                          <div class="flex items-start space-x-3 flex-1 min-w-0">
+                              <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 p-2 rounded-lg mt-0.5 shrink-0"><i data-lucide="help-circle" class="w-4 h-4"></i></div>
+                              <div class="flex-1 min-w-0 pt-0.5">
+                                  <p class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug">${q.questionText}</p>
+                                  <div class="flex items-center mt-2 space-x-2">
+                                      <span class="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-bold">출제: ${q.authorName}</span>
+                                      <span class="text-[9px] text-slate-400 font-bold">참여: ${allAnswers.length}명</span>
+                                  </div>
                               </div>
                           </div>
+                          <button onclick="window.StudyApp.deleteQAQuestion('${q.id}')" class="shrink-0 p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="문제 삭제">
+                              <i data-lucide="trash-2" class="w-4 h-4"></i>
+                          </button>
                       </div>
                       ${contentHtml}
                   </div>
@@ -961,18 +1145,18 @@
 
           const promptText = `
 작품명: ${state.qaCurrentWork}
-질문 내용: ${questionDoc.questionText}
+문제 내용: ${questionDoc.questionText}
 
 [학생들의 제출 답변]
 ${answersPrompt}
 
-당신은 다정하고 통찰력 있는 국어 선생님입니다. 위 질문에 대해 스터디원들이 제출한 답변들을 모두 읽어보고 다음 사항을 작성해주세요.
-1. 질문에 대한 완벽한 '모범 답안'
+당신은 다정하고 통찰력 있는 국어 선생님입니다. 위 문제에 대해 스터디원들이 제출한 답변들을 모두 읽어보고 다음 사항을 작성해주세요.
+1. 문제에 대한 완벽한 '모범 답안'
 2. 학생들이 제출한 답변들에 대한 '전체적인 총평 및 피드백' (어떤 학생의 접근이 좋았는지, 어떤 점을 공통적으로 보완하면 좋을지 등 구체적이고 다정하게 작성)
 
 반드시 아래 JSON 형식으로만 응답해주세요:
 {
-  "modelAnswer": "(질문에 대한 명쾌한 모범 답안 및 해설. 3~4문장 분량)",
+  "modelAnswer": "(문제에 대한 명쾌한 모범 답안 및 해설. 3~4문장 분량)",
   "generalFeedback": "(학생 답변들에 대한 다정한 총평. 3~4문장 분량)"
 }`;
 
@@ -1056,14 +1240,17 @@ ${answersPrompt}
     function fetchStudySchedule() {
         onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
             state.docWeeks = [];
+            state.scheduleWeeks = []; // 🌟 원본 데이터 저장
+            
             if (snap.exists()) {
                 const weeks = snap.data().weeks;
                 if(weeks && Array.isArray(weeks)) {
+                    state.scheduleWeeks = weeks;
                     weeks.forEach(w => {
-                        const val = (typeof w === 'object' && w !== null) ? (w.week || w.weekNum || w.title) : w;
+                        // 🌟 weekNum을 최우선으로 가져오도록 처리
+                        const val = w.weekNum || w.week || w.title;
                         if(val && String(val) !== "[object Object]") {
-                          const formatted = String(val).includes('주차') ? val : val + '주차';
-                          state.docWeeks.push(formatted);
+                          state.docWeeks.push(String(val));
                         }
                     });
                 }
