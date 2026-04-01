@@ -1495,6 +1495,14 @@ ${answersPrompt}
         });
     }
 
+    function fetchMockAnswers() {
+        onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'mock_answers')), (snap) => {
+            const ans = []; snap.forEach(doc => ans.push({ id: doc.id, ...doc.data() }));
+            state.mockAnswers = ans.sort((a, b) => b.timestamp - a.timestamp);
+            if(state.mode === 'mock') window.StudyApp.renderMockExams();
+        });
+    }
+
     onAuthStateChanged(auth, (user) => {
         if (user) { 
             state.user = user; 
@@ -1505,6 +1513,7 @@ ${answersPrompt}
             fetchPublicSubmissions(); 
             fetchQAData(); 
             fetchMockExams(); // 모의기출 데이터 로드 호출
+            fetchMockAnswers(); // 모의기출 답안 데이터 로드 호출
             window.StudyApp.setMode('omr'); 
         } else signInAnonymously(auth);
     });
