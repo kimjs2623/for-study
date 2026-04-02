@@ -1406,7 +1406,7 @@ ${answersPrompt}
 다음은 국어 임용고시 대비 스터디에서 이번 주차에 다룬 작품들입니다: [${works.join(', ')}].
 
 이 작품들을 바탕으로 실제 국어 임용고시(전공 국어 서술형) 수준의 실전 모의고사 1세트를 출제해주세요.
-반드시 인터넷 검색 도구(google_search)를 활용하여 이 작품들이 과거 임용고시에 어떻게 출제되었는지 분석하고, 최근 출제 트렌드에 맞게 문제를 구성해주세요.
+이 작품들이 과거 임용고시에 어떻게 출제되었는지 분석하고, 최근 출제 트렌드에 맞게 문제를 구성해주세요.
 
 아래 2개의 항목을 분리하여 완벽한 마크다운(Markdown) 포맷의 JSON 데이터로 응답해주세요.
 1. "examText" : **[지문]**(작품의 주요 부분이나 외부 연계 작품 제시)과 **[문제]**(임용고시 형식의 서술형 1~2문제) 부분.
@@ -1425,7 +1425,6 @@ ${answersPrompt}
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       contents: [{ parts: [{ text: promptText }] }],
-                      tools: [{ google_search: {} }],
                       generationConfig: { responseMimeType: "application/json" }
                   })
               });
