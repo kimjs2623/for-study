@@ -430,11 +430,21 @@
 
     async function getUserName() {
         if(!state.user) return "익명";
+        
+        // 🌟 1. 파이어베이스 인증 객체에 이름이 있는 경우 최우선 사용 (랜딩페이지 구글/이메일 로그인 연동)
+        if (state.user.displayName) return state.user.displayName;
+
+        // 🌟 2. 랜딩페이지에서 로컬 스토리지에 이름을 임시 저장해뒀을 경우 대비
+        const localName = localStorage.getItem('userName') || localStorage.getItem('nickname');
+        if (localName) return localName;
+
+        // 🌟 3. 파이어베이스 DB 프로필 문서 확인
         try {
             const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
             const profileSnap = await getDoc(profileRef);
-            if(profileSnap.exists()) return profileSnap.data().name || "스터디원";
+            if(profileSnap.exists() && profileSnap.data().name) return profileSnap.data().name;
         } catch(e) {}
+        
         return "스터디원";
     }
 
@@ -750,8 +760,14 @@
             const userName = await getUserName();
             const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, userName, isDeleted: false, timestamp: Date.now() };
             
+            // 🌟 중복 제출 방지: 현재 사용자가 같은 주차/작품에 이미 제출한 기록이 있는지 확인
+            const existing = state.allSubmissions.find(s => s.userId === state.user.uid && String(s.week) === String(week) && s.workName === workName && s.type === "OMR");
+
             if (state.editingDocId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), { ...recordData, isEdited: true, editedAt: Date.now() });
+            } else if (existing) {
+                // 이미 기록이 있다면 새로 추가하지 않고 기존 기록을 덮어쓰기(업데이트) 합니다.
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', existing.id), { ...recordData, isEdited: true, editedAt: Date.now() });
             } else {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
             }
@@ -796,8 +812,14 @@
             const userName = await getUserName();
             const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, userName, isDeleted: false, timestamp: Date.now() };
             
+            // 🌟 중복 제출 방지: 현재 사용자가 같은 주차/작품에 이미 제출한 기록이 있는지 확인
+            const existing = state.allSubmissions.find(s => s.userId === state.user.uid && String(s.week) === String(week) && s.workName === workName && s.type === "Essay");
+
             if (state.editingDocId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), { ...recordData, isEdited: true, editedAt: Date.now() });
+            } else if (existing) {
+                // 이미 기록이 있다면 새로 추가하지 않고 기존 기록을 덮어쓰기(업데이트) 합니다.
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', existing.id), { ...recordData, isEdited: true, editedAt: Date.now() });
             } else {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
             }
@@ -847,7 +869,7 @@
               <div class="bg-white dark:bg-slate-900 border ${r.userId === state.user.uid ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2 transition-all">
                   <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3.5 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30">
                       <div class="flex items-center space-x-2">
-                          <span class="text-[11px] font-black">${r.userId === state.user.uid ? '🌟 나의 답안' : r.userName}</span>
+                          <span class="text-[11px] font-black">${r.userId === state.user.uid ? '🌟 나의 답안 (' + (r.userName || '익명') + ')' : (r.userName || '익명')}</span>
                           <span class="text-[9px] font-bold text-slate-400 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase">${r.type}</span>
                       </div>
                       <div class="flex space-x-1">
@@ -1080,7 +1102,7 @@
               if (myAnswer) {
                   let answersHtml = allAnswers.map(a => `
                       <div class="mt-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border ${a.userId === state.user.uid ? 'border-brand-300 dark:border-brand-700' : 'border-slate-100 dark:border-slate-800'} relative">
-                          <p class="text-[10px] text-slate-500 font-bold mb-1">${a.userId === state.user.uid ? '🌟 내 답안' : a.userName + '님의 답안'}</p>
+                          <p class="text-[10px] text-slate-500 font-bold mb-1">${a.userId === state.user.uid ? '🌟 내 답안 (' + (a.userName || '익명') + ')' : (a.userName || '익명') + '님의 답안'}</p>
                           <p class="text-xs text-slate-800 dark:text-slate-300 whitespace-pre-wrap">${a.answerText}</p>
                           ${a.userId === state.user.uid ? `<button onclick="window.StudyApp.deleteQAAnswer('${a.id}')" class="mt-2 text-[9px] font-bold text-red-400 hover:text-red-600 underline underline-offset-2 transition-colors">답안 삭제하고 다시 쓰기</button>` : ''}
                       </div>
@@ -1325,7 +1347,7 @@ ${answersPrompt}
                   let othersHtml = allAnswers.map(a => `
                       <div class="mt-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border ${a.userId === state.user.uid ? 'border-emerald-300 dark:border-emerald-700' : 'border-slate-100 dark:border-slate-800'}">
                           <div class="flex items-center justify-between mb-1">
-                              <span class="text-[10px] text-slate-500 font-bold">${a.userId === state.user.uid ? '🌟 내 답안' : a.userName + '님의 답안'}</span>
+                              <span class="text-[10px] text-slate-500 font-bold">${a.userId === state.user.uid ? '🌟 내 답안 (' + (a.userName || '익명') + ')' : (a.userName || '익명') + '님의 답안'}</span>
                               <span class="text-[10px] font-black text-emerald-600">AI 점수: ${a.score}점</span>
                           </div>
                           <p class="text-xs text-slate-800 dark:text-slate-300 whitespace-pre-wrap mb-2">${a.answerText}</p>
