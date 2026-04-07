@@ -62,7 +62,6 @@
     .dark .prose strong { color: #34d399; }
     .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
     
-    /* 실제 시험지 같은 가시성을 위한 CSS */
     .exam-paper { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 0.5rem; box-shadow: inset 0 0 0 1px #f1f5f9, 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #1e293b; }
     .dark .exam-paper { background-color: #0f172a; border-color: #334155; box-shadow: inset 0 0 0 1px #1e293b, 0 4px 6px -1px rgba(0, 0, 0, 0.5); color: #cbd5e1; }
     .prose blockquote { border: 2px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc; padding: 1.5rem; font-style: normal; margin: 1.5rem 0; color: #334155; }
@@ -70,7 +69,6 @@
     .prose h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 2rem; }
     .dark .prose h3 { color: #f8fafc; border-color: #334155; }
     
-    /* 페이지 입력창 스피너 제거 */
     input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
   </style>
@@ -79,7 +77,6 @@
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- 삭제 확인 모달 -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -93,7 +90,6 @@
       </div>
   </div>
 
-  <!-- Q&A 새 작품 추가 모달 (번호 입력 포함) -->
   <div id="prompt-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 id="prompt-modal-title" class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -111,7 +107,6 @@
       </div>
   </div>
 
-  <!-- 정답해설 확인 모달 -->
   <div id="answer-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-2 sm:p-6">
       <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl relative flex flex-col fade-in border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
@@ -225,22 +220,32 @@
                     </button>
                 </div>
             </div>
-            <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center space-x-4 z-50 shadow-sm shrink-0">
-                <div class="flex items-center space-x-2">
+            
+            <!-- 🌟 PDF 컨트롤 바 (작품 검색 기능 탑재) -->
+            <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-between z-50 shadow-sm shrink-0">
+                <div class="flex items-center space-x-1 sm:space-x-2">
                     <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                    <!-- 🌟 페이지 번호 직접 입력창 -->
                     <div class="flex items-center text-[11px] font-black">
                         <input type="number" id="page_num_input" onchange="window.StudyApp.jumpToPage(this.value)" min="1" class="w-10 text-center bg-transparent border-b border-slate-300 dark:border-slate-600 outline-none focus:border-brand-500 transition-colors mr-1">
                         <span>/ <span id="page_count">-</span></span>
                     </div>
                     <button onclick="window.StudyApp.nextPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                 </div>
-                <div class="w-px h-4 bg-slate-200 dark:bg-slate-700"></div>
-                <div class="flex items-center space-x-2">
+                
+                <!-- 🌟 PDF 뷰어 내에 작품 검색 바 추가 -->
+                <div class="flex items-center relative mx-2">
+                    <input type="text" id="pdf-search-work" onkeypress="if(event.key==='Enter') window.StudyApp.findAndGoToWork('pdf-search-work')" placeholder="작품명 검색..." class="text-[10px] sm:text-xs w-28 sm:w-48 pl-3 pr-8 py-1.5 border border-brand-200 dark:border-brand-800/50 bg-brand-50/30 dark:bg-slate-800 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-bold">
+                    <button onclick="window.StudyApp.findAndGoToWork('pdf-search-work')" class="absolute right-1 top-1 bottom-1 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-slate-700 px-1.5 rounded transition-colors flex items-center justify-center">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center space-x-1 sm:space-x-2">
                     <button onclick="window.StudyApp.zoomOut()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
                     <button onclick="window.StudyApp.zoomIn()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
                 </div>
             </div>
+            
             <div class="flex-1 flex justify-center relative overflow-auto bg-slate-200 dark:bg-slate-950 custom-scrollbar">
                 <div id="pdf-canvas-container" class="hidden w-full h-full relative p-4 flex justify-center min-h-full items-start">
                     <canvas id="pdf-canvas"></canvas>
@@ -283,11 +288,7 @@
                         </div>
                         <div class="col-span-3 relative">
                             <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
-                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 pr-16 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
-                            <!-- 🌟 자동 본문 찾기 버튼 -->
-                            <button onclick="window.StudyApp.findAndGoToWork('omr-work-name')" class="absolute right-1.5 top-6 bottom-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-black px-2 rounded-md transition-colors flex items-center shadow-sm">
-                                📖 찾기
-                            </button>
+                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
                         </div>
                     </div>
                     <div id="omr-grid-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 shadow-sm"></div>
@@ -305,11 +306,7 @@
                         </div>
                         <div class="col-span-3 relative">
                             <label class="block text-[9px] font-black text-purple-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
-                            <input type="text" id="essay-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 pr-16 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
-                            <!-- 🌟 자동 본문 찾기 버튼 -->
-                            <button onclick="window.StudyApp.findAndGoToWork('essay-work-name')" class="absolute right-1.5 top-6 bottom-1.5 bg-purple-100 text-purple-700 hover:bg-purple-200 text-[10px] font-black px-2 rounded-md transition-colors flex items-center shadow-sm">
-                                📖 찾기
-                            </button>
+                            <input type="text" id="essay-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
                         </div>
                     </div>
                     <div id="essay-grid-container" class="space-y-4"></div>
@@ -381,7 +378,7 @@
                     </div>
                 </div>
                 
-                <!-- 🌟 모의 기출 섹터 🌟 -->
+                <!-- 모의 기출 섹터 -->
                 <div id="view-mock" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
                     <div class="flex space-x-2 shrink-0">
                         <select id="mock-week-filter" onchange="window.StudyApp.updateMockView()" class="flex-1 bg-white dark:bg-slate-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-emerald-500/20">
@@ -411,7 +408,6 @@
     import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    // API 키 분할 조립
     const p1 = "AIzaSy";
     const p2 = "DXOp5V";
     const p3 = "IQatsh";
@@ -441,72 +437,124 @@
       "186-188", "189-192", "193-195", "196-198", "199-201", "202-204", "205-208"
     ];
 
-    // 🌟 작품 이름 -> 파일명 및 페이지(오프셋 계산용) 매핑 데이터 (자동 탐색용)
-    // 참고: 선생님의 실제 깃허브 PDF 파일명으로 "file" 값을 수정해 주시면 완벽합니다.
+    // 🌟 작품명 검색을 위한 데이터베이스 (올려주신 목차 반영 완료)
     const WORK_INDEX = {
-        "공무도하가": { file: "01_고대가요.pdf", bookPage: 28 },
-        "구지가": { file: "01_고대가요.pdf", bookPage: 30 },
-        "황조가": { file: "01_고대가요.pdf", bookPage: 32 },
-        "해가": { file: "01_고대가요.pdf", bookPage: 34 },
-        "정읍사": { file: "01_고대가요.pdf", bookPage: 36 },
-        "서동요": { file: "02_향가.pdf", bookPage: 38 },
-        "모죽지랑가": { file: "02_향가.pdf", bookPage: 40 },
-        "헌화가": { file: "02_향가.pdf", bookPage: 42 },
-        "제망매가": { file: "02_향가.pdf", bookPage: 44 },
-        "찬기파랑가": { file: "02_향가.pdf", bookPage: 46 },
-        "도솔가": { file: "02_향가.pdf", bookPage: 48 },
-        "처용가": { file: "02_향가.pdf", bookPage: 50 },
-        "원왕생가": { file: "02_향가.pdf", bookPage: 52 },
-        "안민가": { file: "02_향가.pdf", bookPage: 53 },
-        "여수장우중문시": { file: "03_한시.pdf", bookPage: 54 },
-        "야청도의성": { file: "03_한시.pdf", bookPage: 56 },
-        "촉규화": { file: "03_한시.pdf", bookPage: 58 },
-        "추야우중": { file: "03_한시.pdf", bookPage: 60 },
-        "제가야산독서당": { file: "03_한시.pdf", bookPage: 62 },
-        "가시리": { file: "04_고려가요.pdf", bookPage: 70 },
-        "동동": { file: "04_고려가요.pdf", bookPage: 72 },
-        "서경별곡": { file: "04_고려가요.pdf", bookPage: 76 },
-        "정과정": { file: "04_고려가요.pdf", bookPage: 78 },
-        "정석가": { file: "04_고려가요.pdf", bookPage: 80 },
-        "사모곡": { file: "04_고려가요.pdf", bookPage: 82 },
-        "청산별곡": { file: "04_고려가요.pdf", bookPage: 84 },
-        "만전춘별사": { file: "04_고려가요.pdf", bookPage: 86 },
-        "쌍화점": { file: "04_고려가요.pdf", bookPage: 87 },
-        "삼상저가": { file: "04_고려가요.pdf", bookPage: 87 },
-        "한림별곡": { file: "05_경기체가.pdf", bookPage: 88 },
-        "관동별곡(안축)": { file: "05_경기체가.pdf", bookPage: 91 },
-        "백설이 자자진 골에": { file: "06_시조.pdf", bookPage: 92 },
-        "이화에 월백하고": { file: "06_시조.pdf", bookPage: 92 },
-        "송인": { file: "07_한시.pdf", bookPage: 98 },
-        "용비어천가": { file: "08_악장.pdf", bookPage: 112 },
-        "상춘곡": { file: "11_가사.pdf", bookPage: 156 },
-        "관동별곡": { file: "11_가사.pdf", bookPage: 166 },
-        "사미인곡": { file: "11_가사.pdf", bookPage: 172 },
-        "속미인곡": { file: "11_가사.pdf", bookPage: 176 },
-        "어부사시사": { file: "13_시조_후기.pdf", bookPage: 230 },
-        "누항사": { file: "14_가사_후기.pdf", bookPage: 246 },
-        "일동장유가": { file: "14_가사_후기.pdf", bookPage: 250 },
-        "아리랑": { file: "15_민요.pdf", bookPage: 272 },
-        "시집살이 노래": { file: "15_민요.pdf", bookPage: 274 },
-        "보리타작": { file: "16_한시_후기.pdf", bookPage: 288 },
-        // 필요에 따라 작품명과 책 페이지를 계속 추가하시면 됩니다.
+        "공무도하가": { file: "01. 고대가요_1-5.pdf", bookPage: 28 },
+        "구지가": { file: "01. 고대가요_1-5.pdf", bookPage: 30 },
+        "황조가": { file: "01. 고대가요_1-5.pdf", bookPage: 32 },
+        "해가": { file: "01. 고대가요_1-5.pdf", bookPage: 34 },
+        "정읍사": { file: "01. 고대가요_1-5.pdf", bookPage: 36 },
+        "서동요": { file: "02. 향가_6-12.pdf", bookPage: 38 },
+        "모죽지랑가": { file: "02. 향가_6-12.pdf", bookPage: 40 },
+        "헌화가": { file: "02. 향가_6-12.pdf", bookPage: 42 },
+        "제망매가": { file: "02. 향가_6-12.pdf", bookPage: 44 },
+        "찬기파랑가": { file: "02. 향가_6-12.pdf", bookPage: 46 },
+        "도솔가": { file: "02. 향가_6-12.pdf", bookPage: 48 },
+        "처용가": { file: "02. 향가_6-12.pdf", bookPage: 50 },
+        "원왕생가": { file: "02. 향가_6-12.pdf", bookPage: 52 },
+        "안민가": { file: "02. 향가_6-12.pdf", bookPage: 53 },
+        "여수장우중문시": { file: "03. 한시_15-19.pdf", bookPage: 54 },
+        "야청도의성": { file: "03. 한시_15-19.pdf", bookPage: 56 },
+        "촉규화": { file: "03. 한시_15-19.pdf", bookPage: 58 },
+        "추야우중": { file: "03. 한시_15-19.pdf", bookPage: 60 },
+        "제가야산독서당": { file: "03. 한시_15-19.pdf", bookPage: 62 },
+        "가시리": { file: "04. 고려가요_20-29.pdf", bookPage: 70 },
+        "동동": { file: "04. 고려가요_20-29.pdf", bookPage: 72 },
+        "서경별곡": { file: "04. 고려가요_20-29.pdf", bookPage: 76 },
+        "정과정": { file: "04. 고려가요_20-29.pdf", bookPage: 78 },
+        "정석가": { file: "04. 고려가요_20-29.pdf", bookPage: 80 },
+        "사모곡": { file: "04. 고려가요_20-29.pdf", bookPage: 82 },
+        "청산별곡": { file: "04. 고려가요_20-29.pdf", bookPage: 84 },
+        "만전춘별사": { file: "04. 고려가요_20-29.pdf", bookPage: 86 },
+        "쌍화점": { file: "04. 고려가요_20-29.pdf", bookPage: 87 },
+        "삼상저가": { file: "04. 고려가요_20-29.pdf", bookPage: 87 },
+        "한림별곡": { file: "05. 경기체가_30-32.pdf", bookPage: 88 },
+        "관동별곡(안축)": { file: "05. 경기체가_30-32.pdf", bookPage: 91 },
+        "백설이 잦아진 골에": { file: "06. 고려 시조_33-41.pdf", bookPage: 92 },
+        "춘산에 눈 녹인 바람": { file: "06. 고려 시조_33-41.pdf", bookPage: 92 },
+        "이화에 월백하고": { file: "06. 고려 시조_33-41.pdf", bookPage: 92 },
+        "이런들 엇더하며": { file: "06. 고려 시조_33-41.pdf", bookPage: 94 },
+        "이 몸이 주거 주거": { file: "06. 고려 시조_33-41.pdf", bookPage: 94 },
+        "송인": { file: "07. 고려 한시_42-47.pdf", bookPage: 98 },
+        "설중방우인불우": { file: "07. 고려 한시_42-47.pdf", bookPage: 100 },
+        "사리화": { file: "07. 고려 한시_42-47.pdf", bookPage: 102 },
+        "동명왕편": { file: "07. 고려 한시_42-47.pdf", bookPage: 104 },
+        "용비어천가": { file: "08. 악장_48-50.pdf", bookPage: 112 },
+        "신도가": { file: "08. 악장_48-50.pdf", bookPage: 118 },
+        "월인천강지곡": { file: "08. 악장_48-50.pdf", bookPage: 119 },
+        "강촌": { file: "09. 언해_51-57.pdf", bookPage: 120 },
+        "등악양루": { file: "09. 언해_51-57.pdf", bookPage: 122 },
+        "강남봉이구년": { file: "09. 언해_51-57.pdf", bookPage: 122 },
+        "오백 년 도읍지를": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 126 },
+        "흥망이 유수하니": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 126 },
+        "선인교 나린 물이": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 126 },
+        "수양산 바라보며": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 128 },
+        "가마귀 눈비 마자": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 130 },
+        "방 안에 혓는 촛불": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 132 },
+        "추강에 밤이 드니": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 134 },
+        "묏버들 갈해 것거": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 136 },
+        "동짓달 기나긴 밤을": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 136 },
+        "어져 내 일이야": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 138 },
+        "청초 우거진 골에": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 138 },
+        "어부사": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 142 },
+        "강호사시가": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 144 },
+        "도산십이곡": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 146 },
+        "고산구곡가": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 148 },
+        "상춘곡": { file: "11. 가사_95-101.pdf", bookPage: 156 },
+        "만분가": { file: "11. 가사_95-101.pdf", bookPage: 158 },
+        "면앙정가": { file: "11. 가사_95-101.pdf", bookPage: 162 },
+        "관동별곡": { file: "11. 가사_95-101.pdf", bookPage: 166 },
+        "사미인곡": { file: "11. 가사_95-101.pdf", bookPage: 172 },
+        "속미인곡": { file: "11. 가사_95-101.pdf", bookPage: 176 },
+        "규원가": { file: "11. 가사_95-101.pdf", bookPage: 180 },
+        "만보": { file: "12. 조선 전기 한시_102-104.pdf", bookPage: 184 },
+        "국화야 너는 어이": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 196 },
+        "백구야 말 물어보자": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 202 },
+        "만흥": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 224 },
+        "견회요": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 226 },
+        "오우가": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 228 },
+        "어부사시사": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 230 },
+        "매화사": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 232 },
+        "선상탄": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 242 },
+        "누항사": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 246 },
+        "일동장유가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 250 },
+        "만언사": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 254 },
+        "연행가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 258 },
+        "춘면곡": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 260 },
+        "유산가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 262 },
+        "덴동어미 화전가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 264 },
+        "농가월령가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 270 },
+        "아리랑": { file: "15. 민요_183-192.pdf", bookPage: 272 },
+        "시집살이 노래": { file: "15. 민요_183-192.pdf", bookPage: 274 },
+        "잠노래": { file: "15. 민요_183-192.pdf", bookPage: 276 },
+        "요양의 달": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 286 },
+        "보리타작": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 288 },
+        "자술": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 292 },
+        "화왕가": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 294 },
+        "절명시": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 300 },
+        "오디세이아": { file: "17. 세계 문학_209-226.pdf", bookPage: 308 }
     };
 
-    // 파일별 시작 페이지 매핑 (오프셋 계산용) - 예시: 01_고대가요.pdf는 교재 28p부터 시작함.
-    const FILE_START_PAGE = {
-        "01_고대가요.pdf": 28,
-        "02_향가.pdf": 38,
-        "03_한시.pdf": 54,
-        "04_고려가요.pdf": 70,
-        "05_경기체가.pdf": 88,
-        "06_시조.pdf": 92,
-        "07_한시.pdf": 98,
-        "08_악장.pdf": 112,
-        "11_가사.pdf": 156,
-        "13_시조_후기.pdf": 196, // 임의값
-        "14_가사_후기.pdf": 242, // 임의값
-        "15_민요.pdf": 272,
-        "16_한시_후기.pdf": 286
+    // 🌟 [수정됨] 파일별 기준점 매핑 (오프셋 자동 계산용)
+    // 사용법: 각 PDF 파일을 열고 아무 페이지나 하나 고른 뒤, [실제 PDF 뷰어의 페이지 번호]와 [책에 인쇄된 페이지 번호]를 적어주세요.
+    const FILE_OFFSET_MAP = {
+        "01. 고대가요_1-5.pdf": { pdfPage: 1, bookPage: 24 }, // 예: PDF 1페이지가 실제 책의 28쪽일 경우
+        "02. 향가_6-12.pdf": { pdfPage: 1, bookPage: 38 },
+        "03. 한시_15-19.pdf": { pdfPage: 1, bookPage: 54 },
+        "04. 고려가요_20-29.pdf": { pdfPage: 1, bookPage: 64 },
+        "05. 경기체가_30-32.pdf": { pdfPage: 1, bookPage: 88 },
+        "06. 고려 시조_33-41.pdf": { pdfPage: 1, bookPage: 92 },
+        "07. 고려 한시_42-47.pdf": { pdfPage: 1, bookPage: 98 },
+        "08. 악장_48-50.pdf": { pdfPage: 1, bookPage: 106 },
+        "09. 언해_51-57.pdf": { pdfPage: 1, bookPage: 120 },
+        "10. 조선 전기 시조_58-94.pdf": { pdfPage: 1, bookPage: 126 },
+        "11. 가사_95-101.pdf": { pdfPage: 1, bookPage: 156 },
+        "12. 조선 전기 한시_102-104.pdf": { pdfPage: 1, bookPage: 184 },
+        "13. 조선 후기 시조_109-169.pdf": { pdfPage: 1, bookPage: 190 },
+        "14. 조선 후기 가사_170-178.pdf": { pdfPage: 1, bookPage: 242 },
+        "15. 민요_183-192.pdf": { pdfPage: 1, bookPage: 272 },
+        "16. 조선 후기 한시_193-208.pdf": { pdfPage: 1, bookPage: 286 },
+        "17. 세계 문학_209-226.pdf": { pdfPage: 1, bookPage: 306 }
     };
 
     function getRangeText(daysArray) {
@@ -529,10 +577,9 @@
         answerKeyPdfDoc: null, answerPageNum: 1, answerPdfScale: 1.5,
         isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, 
         pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false, docWeeks: [],
-        scheduleWeeks: [], 
-        qaQuestions: [], qaAnswers: [], qaCurrentWork: "",
+        scheduleWeeks: [], qaQuestions: [], qaAnswers: [], qaCurrentWork: "",
         mockExams: [], mockAnswers: [], sidebarOpen: true,
-        renderTask: null // 🌟 현재 렌더링 작업 추적용 변수 추가
+        renderTask: null // 🌟 렌더링 꼬임 방지용 작업 객체
     };
 
     async function getUserName() {
@@ -684,7 +731,7 @@
         if(state.pdfDoc) window.StudyApp.renderPage(state.pageNum);
       },
 
-      // 🌟 스트리밍 방식 적용: Blob 다운로드 대기 없이 URL로 즉시 로딩 시작
+      // 🌟 [최적화 완료] URL을 통한 스트리밍 직접 연결. (타겟 페이지 지정 가능)
       loadMaterial: async (name, url, targetPage = 1) => {
         if (state.isFetching) return;
         state.isFetching = true;
@@ -698,7 +745,7 @@
         if (state.sidebarOpen) window.StudyApp.toggleSidebar();
 
         try {
-          // Blob 없이 URL을 직접 넘기면 백그라운드에서 스트리밍으로 필요한 부분만 받아옵니다!
+          // pdfjsLib.getDocument() 에 URL을 직접 넣어 스트리밍 호출
           const loadingTask = pdfjsLib.getDocument(url);
           state.pdfDoc = await loadingTask.promise;
           
@@ -714,14 +761,16 @@
         finally { state.isFetching = false; }
       },
 
-      // 🌟 렌더링 캔슬 & 비우기 적용으로 초고속 렌더링
+      // 🌟 [최적화 완료] 취소 로직 도입으로 렌더링 꼬임 방지 및 체감 속도 향상
       renderPage: (num) => {
+        if(!state.pdfDoc) return;
+        
         state.pdfDoc.getPage(num).then((page) => {
           const canvas = document.getElementById('pdf-canvas');
           const ctx = canvas.getContext('2d');
           const container = document.getElementById('pdf-canvas-container');
           
-          // 이전에 그리던 게 있다면 강제 취소! (페이지 꼬임 방지)
+          // 이전에 돌고 있던 렌더링 작업이 있다면 캔슬!
           if (state.renderTask) {
               state.renderTask.cancel();
           }
@@ -740,30 +789,33 @@
 
           const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
           
-          // 새 페이지를 그리기 전에 캔버스를 하얗게 한 번 밀어버립니다. (체감 속도 증가)
+          // 그리기 전에 캔버스를 깨끗하게 비워서 화면 겹침 방지
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           
           const renderContext = { canvasContext: ctx, transform: transform, viewport: viewport };
 
-          // 렌더링 작업을 변수에 저장
+          // 작업을 변수에 등록하여 추적
           state.renderTask = page.render(renderContext);
 
           state.renderTask.promise.then(() => {
               canvas.classList.remove('hidden');
-              state.renderTask = null; // 렌더링 끝나면 비우기
+              state.renderTask = null; // 끝나면 초기화
           }).catch((err) => {
-              if (err.name !== 'RenderingCancelledException') console.error(err);
+              if (err.name !== 'RenderingCancelledException') {
+                  console.error('렌더링 에러:', err);
+              }
           });
           
-          document.getElementById('page_num_input').value = num; // 입력창 동기화
+          // 입력창 업데이트
+          document.getElementById('page_num_input').value = num;
         });
       },
 
-      // 페이지 직접 점프 기능
+      // 직접 페이지 이동 함수
       jumpToPage: (val) => {
           let num = parseInt(val, 10);
           if (isNaN(num) || num < 1) num = 1;
-          if (num > state.pdfDoc.numPages) num = state.pdfDoc.numPages;
+          if (state.pdfDoc && num > state.pdfDoc.numPages) num = state.pdfDoc.numPages;
           if (state.pageNum !== num) {
               state.pageNum = num;
               window.StudyApp.renderPage(state.pageNum);
@@ -773,54 +825,60 @@
       },
 
       prevPage: () => { if (state.pageNum > 1) { state.pageNum--; window.StudyApp.renderPage(state.pageNum); } },
-      nextPage: () => { if (state.pageNum < state.pdfDoc.numPages) { state.pageNum++; window.StudyApp.renderPage(state.pageNum); } },
+      nextPage: () => { if (state.pdfDoc && state.pageNum < state.pdfDoc.numPages) { state.pageNum++; window.StudyApp.renderPage(state.pageNum); } },
       zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.StudyApp.renderPage(state.pageNum); },
       zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.StudyApp.renderPage(state.pageNum); } },
 
-      // 🌟 본문 탐색 (Magic!)
+      // 🌟 [신규] 작품명으로 PDF 검색 및 자동 이동 엔진
       findAndGoToWorkByString: (workString) => {
           if (!workString) return;
-          // 번호 포함된 경우(ex. "001. 관동별곡") 파싱하여 순수 이름만 추출
+          // 번호가 있다면 "001. 관동별곡"에서 "관동별곡"만 추출
           const cleanName = workString.replace(/^\d+\.\s*/, '').trim();
           
           let target = WORK_INDEX[cleanName];
           if (!target) {
-              // 완전히 일치하지 않으면 포함하는 단어로 검색 시도
+              // 정확히 일치하지 않으면 포함하는 이름 찾기
               const key = Object.keys(WORK_INDEX).find(k => k.includes(cleanName) || cleanName.includes(k));
               if (key) target = WORK_INDEX[key];
           }
 
           if (!target) {
-              return window.StudyApp.showToast(`목차에 [${cleanName}] 작품이 없습니다. 파일명이나 작품명을 확인해주세요.`, "error");
+              return window.StudyApp.showToast(`목차에 [${cleanName}] 작품이 없습니다. 작품명을 확인해주세요.`, "error");
           }
 
-          // 오프셋 계산 (실제 PDF의 몇 번째 페이지인지)
-          const startPage = FILE_START_PAGE[target.file] || 1; 
-          let calculatedPdfPage = target.bookPage - startPage + 1;
+          // 🌟 [수정됨] 기준점(Reference Point)을 이용한 정확한 오프셋 계산
+          let calculatedPdfPage = 1;
+          const offsetData = FILE_OFFSET_MAP[target.file];
+          
+          if (offsetData) {
+              // 목표 PDF 페이지 = 타겟 작품의 교재 페이지 - 기준점 교재 페이지 + 기준점 PDF 페이지
+              calculatedPdfPage = target.bookPage - offsetData.bookPage + offsetData.pdfPage;
+          }
           if (calculatedPdfPage < 1) calculatedPdfPage = 1; // 안전 장치
 
           const currentFileName = document.getElementById('viewer-filename').textContent;
           const targetFileNameClean = target.file.replace('.pdf', '');
 
           if (currentFileName === targetFileNameClean && state.pdfDoc) {
-              // 이미 열려있는 파일이면 바로 점프!
+              // 이미 해당 파일이 열려있다면 즉시 해당 페이지로 점프
               window.StudyApp.jumpToPage(calculatedPdfPage);
-              window.StudyApp.showToast(`[${cleanName}] 본문으로 이동했습니다.`);
+              window.StudyApp.showToast(`[${cleanName}] 본문으로 이동했습니다.`, "success");
           } else {
-              // 안 열려있으면 파일 찾아서 깃허브에서 가져오고 점프!
+              // 파일이 안 열려있다면 깃허브에서 찾아 열고 페이지 점프
               const fileObj = state.allFiles.find(f => f.name === target.file);
               if (fileObj) {
                   window.StudyApp.showToast(`[${target.file}] 파일을 열고 본문으로 이동합니다...`, "info");
                   window.StudyApp.loadMaterial(fileObj.name, fileObj.download_url, calculatedPdfPage);
               } else {
-                  window.StudyApp.showToast(`[${target.file}] 파일이 라이브러리에 없습니다. 관리자에게 문의하세요.`, "error");
+                  window.StudyApp.showToast(`[${target.file}] 파일을 라이브러리에서 찾을 수 없습니다.`, "error");
               }
           }
       },
 
+      // PDF 뷰어의 돋보기 버튼용 래퍼 함수
       findAndGoToWork: (inputId) => {
           const workName = document.getElementById(inputId).value.trim();
-          if(!workName) return window.StudyApp.showToast("작품명을 먼저 입력해주세요.", "error");
+          if(!workName) return window.StudyApp.showToast("작품명을 입력하고 검색을 눌러주세요.", "error");
           window.StudyApp.findAndGoToWorkByString(workName);
       },
 
