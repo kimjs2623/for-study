@@ -221,9 +221,19 @@
                 </div>
             </div>
             
-            <!-- 🌟 PDF 컨트롤 바 (작품 검색 기능 탑재) -->
-            <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-between z-50 shadow-sm shrink-0">
-                <div class="flex items-center space-x-1 sm:space-x-2">
+            <!-- 🌟 PDF 컨트롤 바 -->
+            <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-between z-50 shadow-sm shrink-0 relative min-h-[44px]">
+                
+                <!-- 🌟 PDF 뷰어 내 작품 검색 바 (왼쪽 유지) -->
+                <div class="flex items-center relative mr-2 z-10">
+                    <input type="text" id="pdf-search-work" onkeypress="if(event.key==='Enter') window.StudyApp.findAndGoToWork('pdf-search-work')" placeholder="작품명 검색..." class="text-[10px] sm:text-xs w-28 sm:w-48 pl-3 pr-8 py-1.5 border border-brand-200 dark:border-brand-800/50 bg-brand-50/30 dark:bg-slate-800 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-bold">
+                    <button onclick="window.StudyApp.findAndGoToWork('pdf-search-work')" class="absolute right-1 top-1 bottom-1 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-slate-700 px-1.5 rounded transition-colors flex items-center justify-center">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <!-- 🌟 페이지 이동 및 입력창 (절대 위치를 사용한 완벽한 정중앙 배치) -->
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center space-x-1 sm:space-x-2 z-0">
                     <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                     <div class="flex items-center text-[11px] font-black">
                         <input type="number" id="page_num_input" onchange="window.StudyApp.jumpToPage(this.value)" min="1" class="w-10 text-center bg-transparent border-b border-slate-300 dark:border-slate-600 outline-none focus:border-brand-500 transition-colors mr-1">
@@ -231,16 +241,9 @@
                     </div>
                     <button onclick="window.StudyApp.nextPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                 </div>
-                
-                <!-- 🌟 PDF 뷰어 내에 작품 검색 바 추가 -->
-                <div class="flex items-center relative mx-2">
-                    <input type="text" id="pdf-search-work" onkeypress="if(event.key==='Enter') window.StudyApp.findAndGoToWork('pdf-search-work')" placeholder="작품명 검색..." class="text-[10px] sm:text-xs w-28 sm:w-48 pl-3 pr-8 py-1.5 border border-brand-200 dark:border-brand-800/50 bg-brand-50/30 dark:bg-slate-800 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-bold">
-                    <button onclick="window.StudyApp.findAndGoToWork('pdf-search-work')" class="absolute right-1 top-1 bottom-1 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-slate-700 px-1.5 rounded transition-colors flex items-center justify-center">
-                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
-                    </button>
-                </div>
 
-                <div class="flex items-center space-x-1 sm:space-x-2">
+                <!-- 🌟 확대/축소 버튼 (오른쪽 유지) -->
+                <div class="flex items-center space-x-1 sm:space-x-2 z-10">
                     <button onclick="window.StudyApp.zoomOut()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
                     <button onclick="window.StudyApp.zoomIn()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
                 </div>
