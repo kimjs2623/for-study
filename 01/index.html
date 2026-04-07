@@ -7,10 +7,12 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
+  <!-- PDF 렌더링 엔진 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   </script>
+  <!-- Markdown 렌더링 엔진 -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <script>
@@ -105,6 +107,7 @@
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
+  <!-- 삭제 확인 모달 -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -118,6 +121,7 @@
       </div>
   </div>
 
+  <!-- Q&A 새 작품 추가 모달 (번호 입력 포함) -->
   <div id="prompt-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 id="prompt-modal-title" class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -135,6 +139,7 @@
       </div>
   </div>
 
+  <!-- 정답해설 확인 모달 -->
   <div id="answer-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-2 sm:p-6">
       <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl relative flex flex-col fade-in border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
@@ -201,6 +206,7 @@
   </nav>
 
   <main class="max-w-[1800px] mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
+    <!-- 라이브러리 사이드바 -->
     <aside id="library-sidebar" class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10 transition-all duration-300">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
         <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
@@ -226,6 +232,7 @@
       </div>
     </aside>
 
+    <!-- PDF 뷰어 영역 -->
     <section id="pdf-section" class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40 transition-all duration-300">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
@@ -269,6 +276,7 @@
         </div>
     </section>
 
+    <!-- 작업창 영역 -->
     <section id="right-panel" class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10 transition-all duration-300">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
@@ -287,6 +295,7 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
 
+                <!-- OMR -->
                 <div id="view-omr" class="space-y-5 fade-in">
                     <div class="grid grid-cols-4 gap-2">
                         <div class="col-span-1">
@@ -304,6 +313,7 @@
                     </button>
                 </div>
 
+                <!-- Essay -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
                     <div class="grid grid-cols-4 gap-2">
                         <div class="col-span-1">
@@ -321,6 +331,7 @@
                     </button>
                 </div>
 
+                <!-- Shared Records -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
                     <div class="flex space-x-2 shrink-0">
                         <select id="comm-week-filter" onchange="window.StudyApp.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all">
@@ -337,10 +348,14 @@
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2 transition-all"></div>
                 </div>
 
+                <!-- Q&A (모의 출제) 섹터 -->
                 <div id="view-qa" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
                     <div class="flex space-x-2 shrink-0">
+                        <select id="qa-week-filter" onchange="window.StudyApp.updateQAWorksDropdown()" class="w-24 bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase transition-all focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">주차</option>
+                        </select>
                         <select id="qa-work-filter" onchange="window.StudyApp.setQAWork(this.value)" class="flex-1 bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-blue-500/20">
-                            <option value="">작품을 선택하세요 (모의 출제)</option>
+                            <option value="">작품 선택</option>
                         </select>
                         <div class="flex space-x-1 shrink-0">
                             <button onclick="window.StudyApp.promptQAWork(false)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-[11px] font-black rounded-lg px-3 shadow-sm transition-all whitespace-nowrap flex items-center outline-none">
@@ -370,10 +385,11 @@
                     
                     <div id="qa-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-400 opacity-70">
                         <i data-lucide="folder-search" class="w-10 h-10 mb-3 text-blue-300"></i>
-                        <p class="text-[10px] font-black uppercase tracking-widest text-center">작품을 선택하거나 새 작품을 등록하여<br>스스로 문제를 출제하고 AI에게 피드백을 받아보세요.</p>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-center leading-relaxed">주차와 작품을 선택하거나 새 작품을 등록하여<br>스스로 문제를 출제하고 AI에게 피드백을 받아보세요.</p>
                     </div>
                 </div>
                 
+                <!-- 🌟 모의 기출 섹터 🌟 -->
                 <div id="view-mock" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
                     <div class="flex space-x-2 shrink-0">
                         <select id="mock-week-filter" onchange="window.StudyApp.updateMockView()" class="flex-1 bg-white dark:bg-slate-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-emerald-500/20">
@@ -479,7 +495,7 @@
         state.weeks = [...new Set([...state.docWeeks])].filter(w => w && w !== 'undefined');
         state.weeks.sort((a, b) => parseInt(a) - parseInt(b));
 
-        ['week-select', 'comm-week-filter', 'mock-week-filter'].forEach(id => {
+        ['week-select', 'comm-week-filter', 'mock-week-filter', 'qa-week-filter'].forEach(id => {
             const el = document.getElementById(id);
             if(!el) return;
             const prev = el.value;
@@ -907,13 +923,19 @@
           if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
+      // 🌟 주차 필터가 추가된 Q&A 목록 업데이트 로직
       updateQAWorksDropdown: () => {
-          const qWorks = [...new Set(state.qaQuestions.map(q => q.workName))].sort();
+          const w = document.getElementById('qa-week-filter')?.value;
+          // 선택된 주차에 해당하는 문제들만 필터링 (주차가 없으면 빈 배열)
+          let filteredQs = w ? state.qaQuestions.filter(q => String(q.week) === String(w)) : [];
+          const qWorks = [...new Set(filteredQs.map(q => q.workName))].sort();
+          
           const select = document.getElementById('qa-work-filter');
+          if(!select) return;
           const currentVal = select.value;
           
-          let html = '<option value="">작품을 선택하세요 (모의 출제)</option>';
-          qWorks.forEach(w => { html += `<option value="${w}">${w}</option>`; });
+          let html = '<option value="">작품 선택</option>';
+          qWorks.forEach(work => { html += `<option value="${work}">${work}</option>`; });
           
           select.innerHTML = html;
           
@@ -921,6 +943,9 @@
               select.value = currentVal;
           } else if (state.qaCurrentWork && qWorks.includes(state.qaCurrentWork)) {
               select.value = state.qaCurrentWork;
+          } else {
+              select.value = "";
+              window.StudyApp.setQAWork(""); // 주차가 바뀌어 현재 작품이 없으면 초기화
           }
       },
 
@@ -937,6 +962,9 @@
       },
 
       promptQAWork: (isEdit = false) => {
+          const w = document.getElementById('qa-week-filter').value;
+          if (!isEdit && !w) return window.StudyApp.showToast("주차를 먼저 선택해주세요.", "error");
+
           const titleEl = document.getElementById('prompt-modal-title');
           const descEl = document.getElementById('prompt-modal-desc');
           const numEl = document.getElementById('prompt-num-input');
@@ -1084,13 +1112,17 @@
           if(!state.user) return;
           const textInput = document.getElementById('qa-new-q-text');
           const text = textInput.value.trim();
+          const w = document.getElementById('qa-week-filter').value;
           
+          if(!w) return window.StudyApp.showToast("주차를 먼저 선택해주세요.", "error");
           if(!state.qaCurrentWork) return window.StudyApp.showToast("먼저 작품을 선택해주세요.", "error");
           if(!text) return window.StudyApp.showToast("문제 내용을 입력해주세요.", "error");
 
           try {
               const userName = await getUserName();
+              // 🌟 DB 저장 시 주차(week) 정보 함께 저장
               await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), {
+                  week: w,
                   workName: state.qaCurrentWork,
                   questionText: text,
                   authorId: state.user.uid,
@@ -1124,8 +1156,9 @@
       renderQAQuestions: () => {
           if(state.mode !== 'qa' || !state.qaCurrentWork) return;
           const container = document.getElementById('qa-list-container');
+          const w = document.getElementById('qa-week-filter').value;
           
-          // 초기화 방지: 현재 입력 중이던 값 백업
+          // 🌟 초기화 방지: 현재 입력 중이던 값과 커서 위치 백업
           const currentInputs = {};
           const textareas = container.querySelectorAll('textarea');
           textareas.forEach(ta => currentInputs[ta.id] = ta.value);
@@ -1136,7 +1169,7 @@
               cursorEnd = document.activeElement.selectionEnd;
           }
           
-          const qs = state.qaQuestions.filter(q => q.workName === state.qaCurrentWork);
+          const qs = state.qaQuestions.filter(q => String(q.week) === String(w) && q.workName === state.qaCurrentWork);
           
           if(qs.length === 0) {
               container.innerHTML = `<div class="text-center py-6 text-[10px] text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">아직 출제된 문제가 없습니다.<br>첫 번째 문제를 출제해 보세요!</div>`;
@@ -1166,6 +1199,7 @@
                   `;
 
                   if (q.aiFeedback) {
+                      // 🌟 마크다운을 통해 AI 피드백을 가독성 있게 렌더링
                       contentHtml += `
                           <div class="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl relative overflow-hidden">
                               <div class="flex items-center gap-2 mb-3">
@@ -1232,7 +1266,7 @@
 
           if(typeof lucide !== 'undefined') lucide.createIcons();
 
-          // 초기화 방지: 화면 재렌더링 후 백업했던 값 즉시 복원
+          // 🌟 초기화 방지: 화면 재렌더링 후 백업했던 값과 포커스 즉시 복원
           setTimeout(() => {
               for (const [id, val] of Object.entries(currentInputs)) {
                   const el = document.getElementById(id);
@@ -1299,7 +1333,7 @@
 
           const originalHtml = btn.innerHTML;
           btn.disabled = true;
-          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin-custom"></i> AI 선생님이 답안들을 분석 중입니다...`;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin-custom"></i> AI 선생님이 분석 중입니다...`;
           if(typeof lucide !== 'undefined') lucide.createIcons();
 
           const questionDoc = state.qaQuestions.find(q => q.id === questionId);
