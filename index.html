@@ -118,12 +118,13 @@
       </div>
     </div>
 
+    <!-- 진도 선택 모달 (일정표 & 출제 범위 공동 사용) -->
     <div id="day-picker-modal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 modal-overlay hidden">
       <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
         <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
           <div>
-            <h2 class="text-lg font-black flex items-center text-slate-800 dark:text-white"><i data-lucide="calendar-check" class="w-5 h-5 mr-2 text-indigo-500"></i> 진도(Day) 선택</h2>
-            <p id="day-picker-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">진행할 Day를 터치해서 여러 개 고르세요.</p>
+            <h2 class="text-lg font-black flex items-center text-slate-800 dark:text-white"><i data-lucide="calendar-check" class="w-5 h-5 mr-2 text-indigo-500"></i> 진도(Day) 다중 선택</h2>
+            <p id="day-picker-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">진행할 Day를 여러 개 터치할 수 있습니다.</p>
           </div>
           <button onclick="app.closeDayPicker()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
         </div>
@@ -209,7 +210,7 @@
     import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // 🚨 [필독] 관리자 아이디를 여기에 적어주세요! (예: kimjs2623)
+    // 🚨 [필독] 관리자 아이디를 여기에 적어주세요!
     const ADMIN_ID = "kimjs2623"; 
 
     // 🌟 완벽한 49일치 데이터
@@ -228,12 +229,14 @@
       currentScheduleTab: '고전시가',
       scheduleData: { '고전시가': { weeks: [] }, '현대시': { weeks: [] } },
       isEditingSchedule: false, editScheduleForm: [],
-      pickerEditingIdx: null, tempSelectedDays: [], 
+      
+      pickerMode: 'schedule', // 'schedule' or 'todo'
+      pickerEditingId: null, 
+      tempSelectedDays: [], 
       chatMessages: [],
       
-      // 🌟 트래커 데이터
       todos: {}, activeTodoTab: '', isAddingTodo: false, 
-      newTodo: { type: 'assign', day: 1, desc: '' },
+      newTodo: { type: 'assign', days: [], desc: '' },
 
       finesData: { records: [] }, isAddingFine: false, newFine: { memberName: '', reason: '지각', amount: 1000 },
       driveFiles: [], authMode: 'login'
@@ -423,21 +426,34 @@
           state.editScheduleForm.push({ id: Date.now(), weekNum: state.editScheduleForm.length + 1, meetDate: '', area: subj, days: [], isCompleted: false }); 
           renderSchedule(); 
       },
-      removeScheduleWeek: (idx) => { 
-          state.editScheduleForm.splice(idx, 1); 
-          state.editScheduleForm.forEach((w, i) => w.weekNum = i + 1); 
+      removeScheduleWeek: (id) => { 
+          state.editScheduleForm = state.editScheduleForm.filter(w => w.id !== id);
+          state.editScheduleForm.sort((a,b) => a.weekNum - b.weekNum).forEach((w, i) => w.weekNum = i + 1); 
           renderSchedule(); 
       },
-      updateScheduleField: (idx, field, val) => { state.editScheduleForm[idx][field] = val; },
+      updateScheduleField: (id, field, val) => { 
+          const wk = state.editScheduleForm.find(w => w.id === id);
+          if(wk) wk[field] = val; 
+      },
       
-      openDayPicker: (idx) => {
-          state.pickerEditingIdx = idx;
-          state.tempSelectedDays = [...(state.editScheduleForm[idx].days || [])];
-          els.dayPickerSubtitle.textContent = `[${state.currentScheduleTab}] ${state.editScheduleForm[idx].weekNum}주차에 진행할 Day를 골라주세요.`;
+      openDayPickerForTodo: () => {
+          state.pickerMode = 'todo';
+          state.pickerEditingId = null;
+          state.tempSelectedDays = [...(state.newTodo.days || [])];
+          els.dayPickerSubtitle.textContent = `출제 범위로 할당할 Day를 터치해서 모두 고르세요.`;
           els.dayPickerModal.classList.remove('hidden');
           renderDayPickerGrid();
       },
-      closeDayPicker: () => { els.dayPickerModal.classList.add('hidden'); state.pickerEditingIdx = null; },
+      openDayPicker: (id) => {
+          state.pickerMode = 'schedule';
+          state.pickerEditingId = id;
+          const wk = state.editScheduleForm.find(w => w.id === id);
+          state.tempSelectedDays = [...(wk.days || [])];
+          els.dayPickerSubtitle.textContent = `[${state.currentScheduleTab}] ${wk.weekNum}주차에 진행할 Day를 골라주세요.`;
+          els.dayPickerModal.classList.remove('hidden');
+          renderDayPickerGrid();
+      },
+      closeDayPicker: () => { els.dayPickerModal.classList.add('hidden'); state.pickerEditingId = null; },
       toggleDaySelection: (dayNum) => {
           if(state.tempSelectedDays.includes(dayNum)) {
               state.tempSelectedDays = state.tempSelectedDays.filter(d => d !== dayNum);
@@ -447,32 +463,40 @@
           renderDayPickerGrid();
       },
       confirmDaySelection: () => {
-          if(state.pickerEditingIdx !== null) {
-              state.tempSelectedDays.sort((a,b) => a - b);
-              state.editScheduleForm[state.pickerEditingIdx].days = [...state.tempSelectedDays];
+          state.tempSelectedDays.sort((a,b) => a - b);
+          if(state.pickerMode === 'schedule' && state.pickerEditingId !== null) {
+              const wk = state.editScheduleForm.find(w => w.id === state.pickerEditingId);
+              if(wk) wk.days = [...state.tempSelectedDays];
               renderSchedule();
+          } else if (state.pickerMode === 'todo') {
+              state.newTodo.days = [...state.tempSelectedDays];
+              renderTodos();
           }
           app.closeDayPicker();
       },
-      toggleWeekCompletion: async (idx) => {
+      toggleWeekCompletion: async (id) => {
           const subj = state.currentScheduleTab;
           const updatedData = { ...state.scheduleData };
           if(!updatedData[subj]) updatedData[subj] = { weeks: [] };
           const weeks = [...(updatedData[subj].weeks || [])];
-          weeks[idx].isCompleted = !weeks[idx].isCompleted;
-          updatedData[subj].weeks = weeks;
-
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), updatedData);
-          showToast(weeks[idx].isCompleted ? '✅ 진도가 완료 처리되었습니다!' : '진도 완료가 취소되었습니다.');
+          const wk = weeks.find(w => w.id === id);
+          if(wk) {
+              wk.isCompleted = !wk.isCompleted;
+              updatedData[subj].weeks = weeks;
+              await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), updatedData);
+              showToast(wk.isCompleted ? '✅ 진도가 완료 처리되었습니다!' : '진도 완료가 취소되었습니다.');
+          }
       },
       saveSchedule: async () => { 
           const subj = state.currentScheduleTab;
           const updatedData = { ...state.scheduleData };
           if(!updatedData[subj]) updatedData[subj] = { weeks: [] };
+          state.editScheduleForm.sort((a,b) => a.weekNum - b.weekNum);
           updatedData[subj].weeks = state.editScheduleForm;
 
           await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), updatedData);
           state.isEditingSchedule = false; 
+          renderSchedule(); 
           showToast(`[${subj}] 주차별 일정이 저장되었습니다.`, 'success'); 
       },
 
@@ -490,19 +514,18 @@
       },
       setAddingTodo: (val) => { 
           state.isAddingTodo = val; 
-          if(val) state.newTodo = { type: 'assign', day: 1, desc: '' }; 
+          if(val) state.newTodo = { type: 'assign', days: [], desc: '' }; 
           renderTodos(); 
       },
       updateTodoType: (type) => { state.newTodo.type = type; renderTodos(); },
-      updateTodoDay: (day) => { state.newTodo.day = Number(day); },
       updateTodoDesc: (desc) => { state.newTodo.desc = desc; },
       submitNewTodo: async () => {
         if(state.newTodo.type === 'study' && !state.newTodo.desc.trim()) return showToast('학습 내용을 입력하세요.', 'error');
         
         let finalDesc = '';
         if(state.newTodo.type === 'assign') {
-            const d = state.newTodo.day;
-            const text = getRangeText([d]);
+            if(!state.newTodo.days || state.newTodo.days.length === 0) return showToast('출제할 범위를 선택해주세요.', 'error');
+            const text = getRangeText(state.newTodo.days);
             finalDesc = `[출제] ${text} 문제 생성`;
         } else {
             finalDesc = `[학습] ${state.newTodo.desc}`;
@@ -622,8 +645,11 @@
             let classes = "bg-white dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-400 cursor-pointer";
             if(isSelected) {
                 classes = "bg-indigo-600 border-indigo-600 text-white shadow-md transform scale-105 transition-transform z-10";
-            } else if(status.status !== 'none' && state.pickerEditingIdx !== null && state.editScheduleForm[state.pickerEditingIdx].weekNum !== status.weekNum) {
-                classes = "bg-slate-100 dark:bg-slate-900 text-slate-300 border-dashed cursor-not-allowed opacity-50";
+            } else if(state.pickerMode === 'schedule' && status.status !== 'none') {
+                const currentEditingWeekNum = state.editScheduleForm.find(w => w.id === state.pickerEditingId)?.weekNum;
+                if (currentEditingWeekNum !== status.weekNum) {
+                    classes = "bg-slate-100 dark:bg-slate-900 text-slate-300 border-dashed cursor-not-allowed opacity-50";
+                }
             }
 
             html += `
@@ -666,20 +692,21 @@
 
       html += `<div class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">`;
       if(state.isEditingSchedule) {
-        state.editScheduleForm.forEach((wk, idx) => {
+        const sortedEditWeeks = [...state.editScheduleForm].sort((a,b) => b.weekNum - a.weekNum);
+        sortedEditWeeks.forEach((wk) => {
           html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 relative">
             <div class="flex justify-between items-center mb-3">
               <span class="font-black text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-1 rounded-md">${wk.weekNum}주차</span>
-              <button onclick="app.removeScheduleWeek(${idx})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              <button onclick="app.removeScheduleWeek(${wk.id})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-            <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${idx},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+            <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${wk.id},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
             
-            <select onchange="app.updateScheduleField(${idx},'area',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500">
+            <select onchange="app.updateScheduleField(${wk.id},'area',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="고전시가" ${wk.area === '고전시가' ? 'selected' : ''}>고전시가</option>
                 <option value="현대시" ${wk.area === '현대시' ? 'selected' : ''}>현대시</option>
             </select>
             
-            <button onclick="app.openDayPicker(${idx})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
+            <button onclick="app.openDayPicker(${wk.id})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
                <span><i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> ${getRangeText(wk.days)}</span>
                <span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px]">진도 선택</span>
             </button>
@@ -689,14 +716,15 @@
       } else {
         const weeks = state.scheduleData[subj]?.weeks || [];
         if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다. 우측 상단 수정 버튼을 눌러보세요.</div>`;
-        weeks.forEach((wk, idx) => {
+        const sortedWeeks = [...weeks].sort((a,b) => b.weekNum - a.weekNum);
+        sortedWeeks.forEach((wk) => {
           html += `<div class="flex flex-col p-4 ${wk.isCompleted ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 opacity-80' : 'bg-white dark:bg-slate-800 border-indigo-100 dark:border-indigo-800/30 shadow-sm'} rounded-xl border relative transition-all">
             <div class="flex justify-between items-start mb-2">
               <div>
                  <span class="font-black ${wk.isCompleted ? 'text-slate-500 bg-slate-200' : 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-900/50'} px-2 py-0.5 rounded-md text-[10px] uppercase mr-1">${wk.weekNum}주차</span>
                  <span class="text-xs font-bold text-slate-500 dark:text-slate-400"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${wk.meetDate || '미정'}</span>
               </div>
-              <button onclick="app.toggleWeekCompletion(${idx})" class="flex items-center text-[10px] font-black px-2 py-1 rounded border transition-colors ${wk.isCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}">
+              <button onclick="app.toggleWeekCompletion(${wk.id})" class="flex items-center text-[10px] font-black px-2 py-1 rounded border transition-colors ${wk.isCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}">
                  ${wk.isCompleted ? '<i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> 진도 완료' : '<i data-lucide="circle" class="w-3 h-3 mr-1"></i> 마킹하기'}
               </button>
             </div>
@@ -750,17 +778,17 @@
 
       if(isMyTab || isAdmin) {
         if(state.isAddingTodo) {
-            let options = '';
-            for(let i=1; i<=49; i++) options += `<option value="${i}">Day ${i} (${DAY_MAP[i-1]})</option>`;
-            
             html += `<div class="mt-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
               <select onchange="app.updateTodoType(this.value)" class="w-full p-2 mb-2 rounded-lg border text-xs font-bold bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none">
-                 <option value="assign" ${state.newTodo.type==='assign'?'selected':''}>📌 출제 범위 할당 (Day 선택)</option>
+                 <option value="assign" ${state.newTodo.type==='assign'?'selected':''}>📌 출제 범위 할당 (Day 다중 선택)</option>
                  <option value="study" ${state.newTodo.type==='study'?'selected':''}>✏️ 개인 학습 목표 (직접 입력)</option>
               </select>
               ${state.newTodo.type === 'assign' ? 
-                 `<select onchange="app.updateTodoDay(this.value)" class="w-full p-2 rounded-lg border text-xs bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none mb-2">${options}</select>` : 
-                 `<input type="text" onchange="app.updateTodoDesc(this.value)" placeholder="학습할 내용을 적어주세요..." class="w-full p-2 rounded-lg border text-xs bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none mb-2" autofocus />`
+                 `<button onclick="app.openDayPickerForTodo()" class="w-full p-2.5 rounded-lg border text-xs bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none mb-2 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 font-bold flex justify-between items-center transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/30">
+                    <span><i data-lucide="calendar-range" class="w-4 h-4 inline pb-0.5 mr-1"></i> ${getRangeText(state.newTodo.days)}</span>
+                    <span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px]">범위 선택</span>
+                  </button>` : 
+                 `<input type="text" onchange="app.updateTodoDesc(this.value)" placeholder="학습할 내용을 적어주세요..." class="w-full p-2 rounded-lg border text-xs bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none mb-2 font-bold" autofocus />`
               }
               <div class="flex gap-2">
                  <button onclick="app.setAddingTodo(false)" class="flex-1 py-2 bg-slate-200 dark:bg-slate-600 rounded-lg text-xs font-bold">취소</button>
@@ -774,7 +802,6 @@
       els.todosContainer.innerHTML = html; lucide.createIcons();
     }
 
-    // 🌟 채팅 렌더링 함수 완벽 복원
     function renderChat() {
       if(!els.chatContainer) return;
       let html = `
