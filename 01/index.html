@@ -7,12 +7,10 @@
   
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- PDF 렌더링 엔진 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   </script>
-  <!-- Markdown 렌더링 엔진 -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <script>
@@ -61,13 +59,52 @@
     .prose strong { font-weight: 900; color: #047857; }
     .dark .prose strong { color: #34d399; }
     .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+    
+    /* 실제 시험지 같은 가시성을 위한 CSS */
+    .exam-paper {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: inset 0 0 0 1px #f1f5f9, 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        color: #1e293b;
+    }
+    .dark .exam-paper {
+        background-color: #0f172a;
+        border-color: #334155;
+        box-shadow: inset 0 0 0 1px #1e293b, 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        color: #cbd5e1;
+    }
+    .prose blockquote {
+        border: 2px solid #cbd5e1;
+        border-radius: 8px;
+        background-color: #f8fafc;
+        padding: 1.5rem;
+        font-style: normal;
+        margin: 1.5rem 0;
+        color: #334155;
+    }
+    .dark .prose blockquote {
+        border-color: #475569;
+        background-color: #1e293b;
+        color: #e2e8f0;
+    }
+    .prose h3 {
+        color: #0f172a;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 0.5rem;
+        margin-top: 2rem;
+    }
+    .dark .prose h3 {
+        color: #f8fafc;
+        border-color: #334155;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen relative">
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- 삭제 확인 모달 -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -81,14 +118,16 @@
       </div>
   </div>
 
-  <!-- Q&A 새 작품 추가 모달 -->
   <div id="prompt-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 id="prompt-modal-title" class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
               <i data-lucide="folder-plus" class="w-5 h-5 text-blue-500 mr-2"></i> 모의 출제 새 작품 등록
           </h3>
-          <p id="prompt-modal-desc" class="text-xs text-slate-500 dark:text-slate-400 mb-4">문제를 출제할 새로운 작품의 이름을 입력하세요.</p>
-          <input type="text" id="prompt-input" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none bg-slate-50 dark:bg-slate-950 dark:text-white mb-6 focus:ring-2 focus:ring-blue-500 transition-all" placeholder="예: 관동별곡">
+          <p id="prompt-modal-desc" class="text-xs text-slate-500 dark:text-slate-400 mb-4">문제를 출제할 작품의 번호와 이름을 입력하세요.</p>
+          <div class="flex space-x-2 mb-6">
+              <input type="number" id="prompt-num-input" class="w-20 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none bg-slate-50 dark:bg-slate-950 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all" placeholder="번호">
+              <input type="text" id="prompt-input" class="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none bg-slate-50 dark:bg-slate-950 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all" placeholder="작품명 (예: 관동별곡)">
+          </div>
           <div class="flex space-x-3">
               <button onclick="document.getElementById('prompt-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors">취소</button>
               <button id="prompt-confirm-btn" onclick="window.StudyApp.confirmPromptNewQAWork()" class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm">확인</button>
@@ -96,7 +135,6 @@
       </div>
   </div>
 
-  <!-- 정답해설 확인 모달 -->
   <div id="answer-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-2 sm:p-6">
       <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl relative flex flex-col fade-in border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
@@ -163,7 +201,6 @@
   </nav>
 
   <main class="max-w-[1800px] mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
-    <!-- 라이브러리 사이드바 -->
     <aside id="library-sidebar" class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10 transition-all duration-300">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
         <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
@@ -189,7 +226,6 @@
       </div>
     </aside>
 
-    <!-- PDF 뷰어 영역 -->
     <section id="pdf-section" class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40 transition-all duration-300">
         <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
             <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
@@ -233,7 +269,6 @@
         </div>
     </section>
 
-    <!-- 작업창 영역 -->
     <section id="right-panel" class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10 transition-all duration-300">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
@@ -252,7 +287,6 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
 
-                <!-- OMR -->
                 <div id="view-omr" class="space-y-5 fade-in">
                     <div class="grid grid-cols-4 gap-2">
                         <div class="col-span-1">
@@ -270,7 +304,6 @@
                     </button>
                 </div>
 
-                <!-- Essay -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
                     <div class="grid grid-cols-4 gap-2">
                         <div class="col-span-1">
@@ -288,7 +321,6 @@
                     </button>
                 </div>
 
-                <!-- Shared Records -->
                 <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
                     <div class="flex space-x-2 shrink-0">
                         <select id="comm-week-filter" onchange="window.StudyApp.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all">
@@ -305,7 +337,6 @@
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2 transition-all"></div>
                 </div>
 
-                <!-- Q&A (모의 출제) 섹터 -->
                 <div id="view-qa" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
                     <div class="flex space-x-2 shrink-0">
                         <select id="qa-work-filter" onchange="window.StudyApp.setQAWork(this.value)" class="flex-1 bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-blue-500/20">
@@ -343,7 +374,6 @@
                     </div>
                 </div>
                 
-                <!-- 🌟 모의 기출 섹터 🌟 -->
                 <div id="view-mock" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
                     <div class="flex space-x-2 shrink-0">
                         <select id="mock-week-filter" onchange="window.StudyApp.updateMockView()" class="flex-1 bg-white dark:bg-slate-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-emerald-500/20">
@@ -431,14 +461,11 @@
     async function getUserName() {
         if(!state.user) return "익명";
         
-        // 🌟 1. 파이어베이스 인증 객체에 이름이 있는 경우 최우선 사용 (랜딩페이지 구글/이메일 로그인 연동)
         if (state.user.displayName) return state.user.displayName;
 
-        // 🌟 2. 랜딩페이지에서 로컬 스토리지에 이름을 임시 저장해뒀을 경우 대비
         const localName = localStorage.getItem('userName') || localStorage.getItem('nickname');
         if (localName) return localName;
 
-        // 🌟 3. 파이어베이스 DB 프로필 문서 확인
         try {
             const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
             const profileSnap = await getDoc(profileRef);
@@ -504,7 +531,6 @@
         
         document.getElementById('week-selector-bar').classList.toggle('hidden', mode === 'qa' || mode === 'mock');
 
-        // 🌟 모의 기출 시 레이아웃 스마트 변경
         const sidebar = document.getElementById('library-sidebar');
         const pdfSec = document.getElementById('pdf-section');
         const rightPanel = document.getElementById('right-panel');
@@ -760,13 +786,11 @@
             const userName = await getUserName();
             const recordData = { week, workName, type: "OMR", userAnswers: ans, userId: state.user.uid, userName, isDeleted: false, timestamp: Date.now() };
             
-            // 🌟 중복 제출 방지: 현재 사용자가 같은 주차/작품에 이미 제출한 기록이 있는지 확인
             const existing = state.allSubmissions.find(s => s.userId === state.user.uid && String(s.week) === String(week) && s.workName === workName && s.type === "OMR");
 
             if (state.editingDocId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), { ...recordData, isEdited: true, editedAt: Date.now() });
             } else if (existing) {
-                // 이미 기록이 있다면 새로 추가하지 않고 기존 기록을 덮어쓰기(업데이트) 합니다.
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', existing.id), { ...recordData, isEdited: true, editedAt: Date.now() });
             } else {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
@@ -812,13 +836,11 @@
             const userName = await getUserName();
             const recordData = { week, workName, type: "Essay", userAnswers: ess, userId: state.user.uid, userName, isDeleted: false, timestamp: Date.now() };
             
-            // 🌟 중복 제출 방지: 현재 사용자가 같은 주차/작품에 이미 제출한 기록이 있는지 확인
             const existing = state.allSubmissions.find(s => s.userId === state.user.uid && String(s.week) === String(week) && s.workName === workName && s.type === "Essay");
 
             if (state.editingDocId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), { ...recordData, isEdited: true, editedAt: Date.now() });
             } else if (existing) {
-                // 이미 기록이 있다면 새로 추가하지 않고 기존 기록을 덮어쓰기(업데이트) 합니다.
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', existing.id), { ...recordData, isEdited: true, editedAt: Date.now() });
             } else {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
@@ -886,7 +908,7 @@
       },
 
       updateQAWorksDropdown: () => {
-          const qWorks = [...new Set(state.qaQuestions.map(q => q.workName))];
+          const qWorks = [...new Set(state.qaQuestions.map(q => q.workName))].sort();
           const select = document.getElementById('qa-work-filter');
           const currentVal = select.value;
           
@@ -917,18 +939,28 @@
       promptQAWork: (isEdit = false) => {
           const titleEl = document.getElementById('prompt-modal-title');
           const descEl = document.getElementById('prompt-modal-desc');
+          const numEl = document.getElementById('prompt-num-input');
           const inputEl = document.getElementById('prompt-input');
           const btnEl = document.getElementById('prompt-confirm-btn');
 
           if (isEdit) {
               if (!state.qaCurrentWork) return window.StudyApp.showToast("선택된 작품이 없습니다.", "error");
               titleEl.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-blue-500 mr-2"></i> 작품명 수정`;
-              descEl.textContent = "수정할 작품의 이름을 입력하세요.";
-              inputEl.value = state.qaCurrentWork;
+              descEl.textContent = "수정할 작품의 번호와 이름을 입력하세요.";
+              
+              const match = state.qaCurrentWork.match(/^(\d{3})\.\s(.*)$/);
+              if(match) {
+                  numEl.value = parseInt(match[1], 10);
+                  inputEl.value = match[2];
+              } else {
+                  numEl.value = "";
+                  inputEl.value = state.qaCurrentWork;
+              }
               btnEl.onclick = () => window.StudyApp.confirmEditQAWork();
           } else {
               titleEl.innerHTML = `<i data-lucide="folder-plus" class="w-5 h-5 text-blue-500 mr-2"></i> 모의 출제 새 작품 등록`;
-              descEl.textContent = "문제를 출제할 새로운 작품의 이름을 입력하세요.";
+              descEl.textContent = "문제를 출제할 작품의 번호와 이름을 입력하세요.";
+              numEl.value = "";
               inputEl.value = "";
               btnEl.onclick = () => window.StudyApp.confirmPromptNewQAWork();
           }
@@ -939,21 +971,28 @@
       },
 
       confirmPromptNewQAWork: () => {
-          const input = document.getElementById('prompt-input').value.trim();
-          if(!input) return window.StudyApp.showToast("작품명을 입력해주세요.", "error");
+          const num = document.getElementById('prompt-num-input').value.trim();
+          const text = document.getElementById('prompt-input').value.trim();
+          if(!text) return window.StudyApp.showToast("작품명을 입력해주세요.", "error");
+          
+          const finalWorkName = num ? `${num.padStart(3, '0')}. ${text}` : text;
           
           document.getElementById('prompt-modal').classList.add('hidden');
-          window.StudyApp.addQAWorkOption(input);
+          window.StudyApp.addQAWorkOption(finalWorkName);
           
           const select = document.getElementById('qa-work-filter');
-          select.value = input;
-          window.StudyApp.setQAWork(input);
+          select.value = finalWorkName;
+          window.StudyApp.setQAWork(finalWorkName);
       },
 
       confirmEditQAWork: async () => {
-          const input = document.getElementById('prompt-input').value.trim();
-          if(!input) return window.StudyApp.showToast("작품명을 입력해주세요.", "error");
-          if(input === state.qaCurrentWork) {
+          const num = document.getElementById('prompt-num-input').value.trim();
+          const text = document.getElementById('prompt-input').value.trim();
+          if(!text) return window.StudyApp.showToast("작품명을 입력해주세요.", "error");
+          
+          const finalWorkName = num ? `${num.padStart(3, '0')}. ${text}` : text;
+          
+          if(finalWorkName === state.qaCurrentWork) {
               document.getElementById('prompt-modal').classList.add('hidden');
               return;
           }
@@ -966,18 +1005,18 @@
               const qQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), where('workName', '==', oldName));
               const qSnap = await getDocs(qQuery);
               const qPromises = [];
-              qSnap.forEach(d => qPromises.push(updateDoc(d.ref, { workName: input })));
+              qSnap.forEach(d => qPromises.push(updateDoc(d.ref, { workName: finalWorkName })));
 
               const aQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers'), where('workName', '==', oldName));
               const aSnap = await getDocs(aQuery);
               const aPromises = [];
-              aSnap.forEach(d => aPromises.push(updateDoc(d.ref, { workName: input })));
+              aSnap.forEach(d => aPromises.push(updateDoc(d.ref, { workName: finalWorkName })));
 
               await Promise.all([...qPromises, ...aPromises]);
 
-              state.qaCurrentWork = input;
+              state.qaCurrentWork = finalWorkName;
               window.StudyApp.updateQAWorksDropdown();
-              document.getElementById('qa-work-filter').value = input;
+              document.getElementById('qa-work-filter').value = finalWorkName;
               window.StudyApp.showToast("작품명이 성공적으로 수정되었습니다.", "success");
           } catch(e) {
               window.StudyApp.showToast("작품명 수정 실패: " + e.message, "error");
@@ -1086,6 +1125,17 @@
           if(state.mode !== 'qa' || !state.qaCurrentWork) return;
           const container = document.getElementById('qa-list-container');
           
+          // 초기화 방지: 현재 입력 중이던 값 백업
+          const currentInputs = {};
+          const textareas = container.querySelectorAll('textarea');
+          textareas.forEach(ta => currentInputs[ta.id] = ta.value);
+          const activeId = document.activeElement?.id;
+          let cursorStart = 0, cursorEnd = 0;
+          if (activeId && currentInputs[activeId] !== undefined) {
+              cursorStart = document.activeElement.selectionStart;
+              cursorEnd = document.activeElement.selectionEnd;
+          }
+          
           const qs = state.qaQuestions.filter(q => q.workName === state.qaCurrentWork);
           
           if(qs.length === 0) {
@@ -1122,14 +1172,14 @@
                                   <i data-lucide="bot" class="w-5 h-5 text-blue-600"></i>
                                   <span class="font-black text-blue-900 dark:text-blue-300 text-xs">AI 선생님의 모범 답안 및 총평</span>
                               </div>
-                              <div class="space-y-3">
+                              <div class="space-y-4">
                                   <div>
                                       <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-1"><i data-lucide="check-circle-2" class="w-3 h-3 inline mr-0.5"></i> 모범 답안</p>
-                                      <p class="text-xs text-blue-900 dark:text-blue-200 leading-relaxed font-medium whitespace-pre-wrap">${q.aiFeedback.modelAnswer}</p>
+                                      <div class="prose prose-sm dark:prose-invert max-w-none text-xs text-blue-900 dark:text-blue-200 leading-relaxed font-medium">${marked.parse(q.aiFeedback.modelAnswer)}</div>
                                   </div>
                                   <div class="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
-                                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-1"><i data-lucide="message-square-text" class="w-3 h-3 inline mr-0.5"></i> 스터디원 답안 총평</p>
-                                      <p class="text-xs text-blue-800 dark:text-blue-200 leading-relaxed whitespace-pre-wrap">${q.aiFeedback.generalFeedback}</p>
+                                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-2"><i data-lucide="message-square-text" class="w-3 h-3 inline mr-0.5"></i> 스터디원 학생별 평가 및 총평</p>
+                                      <div class="prose prose-sm dark:prose-invert max-w-none text-xs text-blue-800 dark:text-blue-200 leading-relaxed">${marked.parse(q.aiFeedback.generalFeedback)}</div>
                                   </div>
                               </div>
                           </div>
@@ -1138,7 +1188,7 @@
                       contentHtml += `
                           <div class="mt-4 text-center">
                               <button id="req-ai-btn-${q.id}" onclick="window.StudyApp.requestAIFeedback('${q.id}')" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-2.5 rounded-lg shadow-sm transition-all inline-flex items-center">
-                                  <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1.5"></i> AI 모범 답안 및 스터디원 총평 요청하기
+                                  <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1.5"></i> AI 학생별 코멘트 및 총평 요청하기
                               </button>
                           </div>
                       `;
@@ -1181,6 +1231,21 @@
           }).join('');
 
           if(typeof lucide !== 'undefined') lucide.createIcons();
+
+          // 초기화 방지: 화면 재렌더링 후 백업했던 값 즉시 복원
+          setTimeout(() => {
+              for (const [id, val] of Object.entries(currentInputs)) {
+                  const el = document.getElementById(id);
+                  if (el) el.value = val;
+              }
+              if (activeId) {
+                  const el = document.getElementById(activeId);
+                  if (el) {
+                      el.focus();
+                      el.setSelectionRange(cursorStart, cursorEnd);
+                  }
+              }
+          }, 0);
       },
 
       submitQAAnswer: async (questionId) => {
@@ -1251,12 +1316,13 @@ ${answersPrompt}
 
 당신은 다정하고 통찰력 있는 국어 선생님입니다. 위 문제에 대해 스터디원들이 제출한 답안들을 모두 읽어보고 다음 사항을 작성해주세요.
 1. 문제에 대한 완벽한 '모범 답안'
-2. 학생들이 제출한 답안들에 대한 '전체적인 총평 및 피드백' (어떤 학생의 접근이 좋았는지, 어떤 점을 공통적으로 보완하면 좋을지 등 구체적이고 다정하게 작성)
+2. 학생들이 제출한 답안들에 대한 '학생별 1:1 코멘트 및 전체 총평'
+   (주의: 각 스터디원별로 줄바꿈을 하고 이름을 굵은 글씨로 명시하여 한눈에 구분되도록 작성해주세요. 예: "- **홍길동 학생**: 접근이 훌륭합니다...")
 
 반드시 아래 JSON 형식으로만 응답해주세요:
 {
-  "modelAnswer": "(문제에 대한 명쾌한 모범 답안 및 해설. 3~4문장 분량)",
-  "generalFeedback": "(학생 답안들에 대한 다정한 총평. 3~4문장 분량)"
+  "modelAnswer": "(문제에 대한 명쾌한 모범 답안 및 해설. 마크다운 사용 가능)",
+  "generalFeedback": "(각 학생별 개별 평가와 전체적인 다정한 총평. 반드시 마크다운 줄바꿈과 글머리 기호를 사용하여 가독성을 높일 것)"
 }`;
 
           try {
@@ -1296,7 +1362,7 @@ ${answersPrompt}
           }
       },
 
-      // 🌟 모의 기출 (Mock) 섹터 관련 기능 🌟
+      // 모의 기출 기능
       updateMockView: () => {
           const w = document.getElementById('mock-week-filter').value;
           const empty = document.getElementById('mock-empty-state');
@@ -1396,7 +1462,7 @@ ${answersPrompt}
                               ${isAuthor ? `<button onclick="window.StudyApp.deleteMockExam('${m.id}')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="기출 삭제"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
                           </div>
                       </div>
-                      <div class="prose prose-slate prose-sm dark:prose-invert max-w-none text-xs break-words">
+                      <div class="exam-paper prose prose-slate prose-sm dark:prose-invert max-w-none text-xs break-words mb-6">
                           ${marked.parse(examText)}
                       </div>
                       ${contentHtml}
