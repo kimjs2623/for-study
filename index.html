@@ -139,16 +139,21 @@
 
     <header class="bg-indigo-600 dark:bg-indigo-900 text-white py-10 px-4 relative overflow-hidden">
       <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:opacity-5"></div>
-      <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between">
+      <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
           <div class="inline-flex items-center space-x-2 bg-indigo-500/50 dark:bg-indigo-800/50 px-3 py-1 rounded-full text-sm font-medium mb-4">
             <i data-lucide="target" class="w-4 h-4"></i><span>정확한 키워드, 치밀한 작품 분석.</span>
           </div>
           <h1 class="text-3xl md:text-4xl font-bold mb-2">가온길 스터디 허브</h1>
         </div>
-        <div class="mt-6 md:mt-0 bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl text-center min-w-[180px] shadow-lg">
-          <p class="text-indigo-100 text-sm font-medium mb-1">내년 중등임용 1차 D-Day</p>
-          <div class="text-4xl font-extrabold tracking-tight" id="d-day-display">D-0</div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <!-- 🌟 나의 진도 표시 위젯 (D-Day 옆) -->
+          <div id="header-progress-container" class="hidden bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-lg flex items-center justify-center min-w-[180px]"></div>
+          
+          <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg min-w-[140px] flex flex-col justify-center">
+            <p class="text-indigo-100 text-xs font-bold mb-1">내년 중등임용 1차 D-Day</p>
+            <div class="text-3xl font-black tracking-tight" id="d-day-display">D-0</div>
+          </div>
         </div>
       </div>
     </header>
@@ -235,8 +240,9 @@
       tempSelectedDays: [], 
       chatMessages: [],
       
-      todos: {}, activeTodoTab: '', isAddingTodo: false, 
-      newTodo: { type: 'assign', days: [], desc: '' },
+      // 🌟 개인 학습 트래커 데이터 (진도 데이터 포함)
+      todos: {}, activeTodoTab: '',
+      progressData: {}, // { "홍길동": { "고전시가": 15, "현대시": 8 } }
 
       finesData: { records: [] }, isAddingFine: false, newFine: { memberName: '', reason: '지각', amount: 1000 },
       driveFiles: [], authMode: 'login'
@@ -256,7 +262,7 @@
       dayPickerModal: document.getElementById('day-picker-modal'), dayPickerGrid: document.getElementById('day-picker-grid'),
       dayPickerSubtitle: document.getElementById('day-picker-subtitle'), chatContainer: document.getElementById('chat-container'),
       todosContainer: document.getElementById('todos-container'), adminPanel: document.getElementById('admin-panel'),
-      adminMemberList: document.getElementById('admin-member-list')
+      adminMemberList: document.getElementById('admin-member-list'), headerProgressContainer: document.getElementById('header-progress-container')
     };
 
     function showToast(message, type = 'info') {
@@ -315,6 +321,12 @@
         } else { state.scheduleData = { '고전시가': { weeks: [] }, '현대시': { weeks: [] } }; }
         renderSchedule();
       });
+      // 🌟 개인 진도 데이터 불러오기
+      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'progress'), (snap) => {
+        if (snap.exists()) state.progressData = snap.data();
+        renderTodos();
+        renderHeaderProgress();
+      });
       onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), (snap) => {
         const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         msgs.sort((a,b) => a.timestamp - b.timestamp);
@@ -330,7 +342,7 @@
       if (state.user && !state.appAccount) { els.auth.classList.remove('hidden'); els.dashboard.classList.add('hidden'); } 
       else if (state.user && state.appAccount) {
         els.auth.classList.add('hidden'); els.dashboard.classList.remove('hidden'); els.navUsername.textContent = state.appAccount.name;
-        renderSchedule(); renderChat(); renderFines(); renderDriveFiles(); renderTodos(); lucide.createIcons();
+        renderSchedule(); renderChat(); renderFines(); renderDriveFiles(); renderTodos(); renderHeaderProgress(); lucide.createIcons();
       }
     }
 
@@ -439,7 +451,7 @@
       openDayPickerForTodo: () => {
           state.pickerMode = 'todo';
           state.pickerEditingId = null;
-          state.tempSelectedDays = [...(state.newTodo.days || [])];
+          state.tempSelectedDays = [];
           els.dayPickerSubtitle.textContent = `출제 범위로 할당할 Day를 터치해서 모두 고르세요.`;
           els.dayPickerModal.classList.remove('hidden');
           renderDayPickerGrid();
@@ -462,15 +474,22 @@
           }
           renderDayPickerGrid();
       },
-      confirmDaySelection: () => {
+      confirmDaySelection: async () => {
           state.tempSelectedDays.sort((a,b) => a - b);
           if(state.pickerMode === 'schedule' && state.pickerEditingId !== null) {
               const wk = state.editScheduleForm.find(w => w.id === state.pickerEditingId);
               if(wk) wk.days = [...state.tempSelectedDays];
               renderSchedule();
           } else if (state.pickerMode === 'todo') {
-              state.newTodo.days = [...state.tempSelectedDays];
-              renderTodos();
+              if(state.tempSelectedDays.length === 0) return showToast('할당할 Day를 1개 이상 선택해주세요.', 'error');
+              const text = getRangeText(state.tempSelectedDays);
+              const finalDesc = `[출제] ${text} 문제 생성`;
+              const tasks = state.todos[state.activeTodoTab] || [];
+              await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { 
+                  ...state.todos, 
+                  [state.activeTodoTab]: [...tasks, { id: Date.now(), type: 'assign', desc: finalDesc, done: false }] 
+              });
+              showToast('출제 할당이 명단에 추가되었습니다.', 'success');
           }
           app.closeDayPicker();
       },
@@ -500,7 +519,7 @@
           showToast(`[${subj}] 주차별 일정이 저장되었습니다.`, 'success'); 
       },
 
-      setActiveTodoTab: (name) => { state.activeTodoTab = name; state.isAddingTodo = false; renderTodos(); },
+      setActiveTodoTab: (name) => { state.activeTodoTab = name; renderTodos(); },
       toggleTodoTask: async (taskId) => {
         if(state.activeTodoTab !== state.appAccount.name && !checkIsAdmin()) return;
         const updated = state.todos[state.activeTodoTab].map(t => t.id === taskId ? { ...t, done: !t.done } : t);
@@ -512,32 +531,19 @@
         const updated = state.todos[state.activeTodoTab].filter(t => t.id !== taskId);
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: updated });
       },
-      setAddingTodo: (val) => { 
-          state.isAddingTodo = val; 
-          if(val) state.newTodo = { type: 'assign', days: [], desc: '' }; 
-          renderTodos(); 
-      },
-      updateTodoType: (type) => { state.newTodo.type = type; renderTodos(); },
-      updateTodoDesc: (desc) => { state.newTodo.desc = desc; },
-      submitNewTodo: async () => {
-        if(state.newTodo.type === 'study' && !state.newTodo.desc.trim()) return showToast('학습 내용을 입력하세요.', 'error');
-        
-        let finalDesc = '';
-        if(state.newTodo.type === 'assign') {
-            if(!state.newTodo.days || state.newTodo.days.length === 0) return showToast('출제할 범위를 선택해주세요.', 'error');
-            const text = getRangeText(state.newTodo.days);
-            finalDesc = `[출제] ${text} 문제 생성`;
-        } else {
-            finalDesc = `[학습] ${state.newTodo.desc}`;
-        }
-
-        const tasks = state.todos[state.activeTodoTab] || [];
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { 
-            ...state.todos, 
-            [state.activeTodoTab]: [...tasks, { id: Date.now(), type: state.newTodo.type, desc: finalDesc, done: false }] 
-        });
-        state.isAddingTodo = false;
-        showToast('항목이 추가되었습니다.', 'success');
+      
+      // 🌟 개인 진도 업데이트
+      updateProgress: async () => {
+          const subj = document.getElementById('prog-subj-input').value;
+          const num = document.getElementById('prog-num-input').value;
+          if(num === '' || Number(num) < 0) return showToast('올바른 작품 번호를 입력하세요.', 'error');
+          
+          const currentData = { ...state.progressData };
+          if(!currentData[state.appAccount.name]) currentData[state.appAccount.name] = { '고전시가': 0, '현대시': 0 };
+          currentData[state.appAccount.name][subj] = Number(num);
+          
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'progress'), currentData);
+          showToast(`${subj} 진도가 업데이트 되었습니다. (No.${num})`, 'success');
       },
 
       submitChat: async (e) => {
@@ -613,6 +619,26 @@
         return `Day ${first}~${last} (${minWorks}~${maxWorks}번)`;
     }
 
+    function renderHeaderProgress() {
+        if(!els.headerProgressContainer || !state.appAccount) return;
+        const myProg = state.progressData[state.appAccount.name] || { '고전시가': 0, '현대시': 0 };
+        els.headerProgressContainer.innerHTML = `
+            <div class="flex space-x-6 items-center justify-center">
+                <div class="text-center">
+                    <p class="text-indigo-200 text-[10px] font-bold mb-1"><i data-lucide="book-open" class="w-3 h-3 inline pb-0.5"></i> 고전시가 완료</p>
+                    <div class="text-2xl font-black text-white">No.${myProg['고전시가'] || 0}</div>
+                </div>
+                <div class="w-px h-10 bg-white/20"></div>
+                <div class="text-center">
+                    <p class="text-blue-200 text-[10px] font-bold mb-1"><i data-lucide="feather" class="w-3 h-3 inline pb-0.5"></i> 현대시 완료</p>
+                    <div class="text-2xl font-black text-white">No.${myProg['현대시'] || 0}</div>
+                </div>
+            </div>
+        `;
+        els.headerProgressContainer.classList.remove('hidden');
+        lucide.createIcons();
+    }
+
     function renderAdminPanel() {
         if(!els.adminPanel || !els.adminMemberList) return;
         if(checkIsAdmin()) {
@@ -672,7 +698,7 @@
              <h2 class="text-sm font-black text-indigo-700 dark:text-indigo-300 px-2 w-20 text-center tracking-tight">${subj}</h2>
              <button onclick="app.switchScheduleTab('next')" class="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-800 rounded transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
           </div>
-          <button onclick="${state.isEditingSchedule?'app.saveSchedule()':'app.toggleEditSchedule()'}" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-4 h-4"></i></button>
+          <button onclick="${state.isEditingSchedule?'app.saveSchedule()':'app.toggleEditSchedule()'}" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-4 h-4 ${state.isEditingSchedule?'text-emerald-500':''}"></i></button>
         </div>`;
 
       html += `<div class="grid grid-cols-7 gap-1 bg-slate-100 dark:bg-slate-900 p-2.5 rounded-2xl mb-4 border border-slate-200 dark:border-slate-800 shadow-inner shrink-0">`;
@@ -736,40 +762,66 @@
       els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
     }
 
+    // 🌟 개편된 진도 트래커 렌더링
     function renderTodos() {
-      if(!state.appAccount) return;
+      if(!state.appAccount || !els.todosContainer) return;
       const isAdmin = checkIsAdmin();
       const members = state.allMembers.length > 0 ? state.allMembers.map(m=>m.name) : [state.appAccount.name];
       const isMyTab = state.activeTodoTab === state.appAccount.name;
       
-      let html = `<div class="flex items-center justify-between mb-4 shrink-0"><h2 class="text-lg font-bold flex items-center text-emerald-600 dark:text-emerald-400"><i data-lucide="check-square" class="w-5 h-5 mr-2"></i> 출제 할당 & 학습 현황</h2></div>`;
+      let html = `<div class="flex items-center justify-between mb-4 shrink-0"><h2 class="text-lg font-bold flex items-center text-emerald-600 dark:text-emerald-400"><i data-lucide="check-square" class="w-5 h-5 mr-2"></i> 출제 할당 & 진도 트래커</h2></div>`;
       html += `<div class="flex space-x-2 overflow-x-auto hide-scrollbar mb-4 shrink-0 pb-1">`;
       members.forEach(name => { 
           html += `<button onclick="app.setActiveTodoTab('${name}')" class="px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${state.activeTodoTab === name ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}">${name}</button>`; 
       });
       html += `</div>`;
       
-      if(!isMyTab && !isAdmin) {
-          html += `<div class="mb-3 text-[10px] font-bold text-amber-600 bg-amber-50 p-2 rounded-lg"><i data-lucide="info" class="w-3 h-3 inline pb-0.5"></i> 스터디장(관리자)만 다른 멤버의 일정을 추가/삭제할 수 있습니다.</div>`;
+      const targetName = state.activeTodoTab;
+      const targetProg = state.progressData[targetName] || { '고전시가': 0, '현대시': 0 };
+
+      html += `<div class="mb-5 flex bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-inner shrink-0">
+        <div class="flex-1 text-center border-r border-slate-200 dark:border-slate-700">
+            <p class="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 mb-1 uppercase tracking-widest">고전시가 완료</p>
+            <p class="text-2xl font-black text-slate-800 dark:text-white">No. ${targetProg['고전시가'] || 0}</p>
+        </div>
+        <div class="flex-1 text-center">
+            <p class="text-[10px] font-bold text-blue-500 dark:text-blue-400 mb-1 uppercase tracking-widest">현대시 완료</p>
+            <p class="text-2xl font-black text-slate-800 dark:text-white">No. ${targetProg['현대시'] || 0}</p>
+        </div>
+      </div>`;
+
+      if(isMyTab) {
+          html += `
+          <div class="flex flex-col sm:flex-row items-center gap-2 mb-6 shrink-0 bg-white dark:bg-slate-700 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
+              <span class="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0"><i data-lucide="edit-3" class="w-4 h-4 inline pb-0.5"></i> 진도 기록:</span>
+              <select id="prog-subj-input" class="w-full sm:w-auto flex-1 p-2 rounded-lg border text-xs font-bold bg-slate-50 dark:bg-slate-800 dark:border-slate-500 dark:text-white outline-none">
+                  <option value="고전시가">고전시가</option>
+                  <option value="현대시">현대시</option>
+              </select>
+              <input type="number" id="prog-num-input" placeholder="번호 (예: 15)" class="w-full sm:w-24 p-2 rounded-lg border text-xs bg-slate-50 dark:bg-slate-800 dark:border-slate-500 dark:text-white outline-none font-bold text-center" />
+              <button onclick="app.updateProgress()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors">기록하기</button>
+          </div>`;
       }
+
+      html += `<div class="flex items-center justify-between mb-2 shrink-0">
+         <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300"><i data-lucide="pin" class="w-4 h-4 inline pb-0.5"></i> 출제 범위 할당 현황</h3>
+      </div>`;
 
       html += `<div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2">`;
       const tasks = state.todos[state.activeTodoTab] || [];
-      if(tasks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-10">등록된 할당/학습 일정이 없습니다.</div>`;
+      const assignTasks = tasks.filter(t => t.type === 'assign');
       
-      tasks.forEach(t => {
-        const isAssign = t.type === 'assign';
-        const typeBadge = isAssign 
-            ? `<span class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[9px] font-black mr-2 shrink-0">출제 할당</span>` 
-            : `<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400 px-1.5 py-0.5 rounded text-[9px] font-black mr-2 shrink-0">개인 학습</span>`;
-
+      if(assignTasks.length === 0) {
+          html += `<div class="text-center text-slate-400 text-sm py-6">등록된 출제 할당이 없습니다.</div>`;
+      }
+      
+      assignTasks.forEach(t => {
         html += `<div onclick="${isMyTab || isAdmin ? `app.toggleTodoTask(${t.id})` : ''}" class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 ${isMyTab || isAdmin ? 'cursor-pointer hover:border-emerald-300' : ''} transition-colors ${t.done?'opacity-50 bg-slate-50':''}">
           <div class="flex items-center flex-1 pr-2 overflow-hidden">
               <div class="w-4 h-4 rounded border-2 flex items-center justify-center mr-3 shrink-0 ${t.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}">
                   ${t.done ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
               </div>
-              ${typeBadge}
-              <span class="text-xs font-bold dark:text-slate-200 truncate ${t.done?'line-through text-slate-400':''}">${t.desc.replace(/\[.*?\]\s*/, '')}</span>
+              <span class="text-xs font-bold dark:text-slate-200 truncate ${t.done?'line-through text-slate-400':''}">${t.desc}</span>
           </div>
           ${isMyTab || isAdmin ? `<button onclick="app.deleteTodoTask(${t.id}, event)" class="p-1 text-slate-300 hover:text-red-500 transition-colors shrink-0"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
         </div>`;
@@ -777,27 +829,7 @@
       html += `</div>`;
 
       if(isMyTab || isAdmin) {
-        if(state.isAddingTodo) {
-            html += `<div class="mt-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
-              <select onchange="app.updateTodoType(this.value)" class="w-full p-2 mb-2 rounded-lg border text-xs font-bold bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none">
-                 <option value="assign" ${state.newTodo.type==='assign'?'selected':''}>📌 출제 범위 할당 (Day 다중 선택)</option>
-                 <option value="study" ${state.newTodo.type==='study'?'selected':''}>✏️ 개인 학습 목표 (직접 입력)</option>
-              </select>
-              ${state.newTodo.type === 'assign' ? 
-                 `<button onclick="app.openDayPickerForTodo()" class="w-full p-2.5 rounded-lg border text-xs bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none mb-2 border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 font-bold flex justify-between items-center transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/30">
-                    <span><i data-lucide="calendar-range" class="w-4 h-4 inline pb-0.5 mr-1"></i> ${getRangeText(state.newTodo.days)}</span>
-                    <span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px]">범위 선택</span>
-                  </button>` : 
-                 `<input type="text" onchange="app.updateTodoDesc(this.value)" placeholder="학습할 내용을 적어주세요..." class="w-full p-2 rounded-lg border text-xs bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white outline-none mb-2 font-bold" autofocus />`
-              }
-              <div class="flex gap-2">
-                 <button onclick="app.setAddingTodo(false)" class="flex-1 py-2 bg-slate-200 dark:bg-slate-600 rounded-lg text-xs font-bold">취소</button>
-                 <button onclick="app.submitNewTodo()" class="flex-1 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold">추가하기</button>
-              </div>
-            </div>`;
-        } else {
-            html += `<button onclick="app.setAddingTodo(true)" class="w-full mt-3 py-2.5 border-2 border-dashed border-emerald-200 dark:border-emerald-800/50 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors shrink-0"><i data-lucide="plus" class="w-4 h-4 inline pb-0.5 mr-1"></i> 할당 및 학습 추가</button>`;
-        }
+         html += `<button onclick="app.openDayPickerForTodo()" class="w-full mt-3 py-2.5 border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 rounded-xl text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors shrink-0"><i data-lucide="plus" class="w-4 h-4 inline pb-0.5 mr-1"></i> 새 출제 할당 추가 (Day 선택)</button>`;
       }
       els.todosContainer.innerHTML = html; lucide.createIcons();
     }
