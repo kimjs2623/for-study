@@ -62,7 +62,6 @@
     .dark .prose strong { color: #34d399; }
     .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
     
-    /* 실제 시험지 같은 가시성을 위한 CSS */
     .exam-paper { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 0.5rem; box-shadow: inset 0 0 0 1px #f1f5f9, 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #1e293b; }
     .dark .exam-paper { background-color: #0f172a; border-color: #334155; box-shadow: inset 0 0 0 1px #1e293b, 0 4px 6px -1px rgba(0, 0, 0, 0.5); color: #cbd5e1; }
     .prose blockquote { border: 2px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc; padding: 1.5rem; font-style: normal; margin: 1.5rem 0; color: #334155; }
@@ -70,7 +69,6 @@
     .prose h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 2rem; }
     .dark .prose h3 { color: #f8fafc; border-color: #334155; }
     
-    /* 페이지 입력창 스피너 제거 */
     input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
   </style>
@@ -79,7 +77,6 @@
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- 삭제 확인 모달 -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -93,7 +90,6 @@
       </div>
   </div>
 
-  <!-- Q&A 새 작품 추가 모달 (번호 입력 포함) -->
   <div id="prompt-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 id="prompt-modal-title" class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
@@ -111,7 +107,6 @@
       </div>
   </div>
 
-  <!-- 정답해설 확인 모달 -->
   <div id="answer-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-2 sm:p-6">
       <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl relative flex flex-col fade-in border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
@@ -156,7 +151,6 @@
         </a>
         <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 shrink-0"></div>
         <div class="flex space-x-1 items-center overflow-x-auto no-scrollbar">
-            <!-- 🌟 탭 이름 변경 (OMR & 서술형 통합) -->
             <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="tab-active text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">OMR & 서술형</button>
             <button onclick="window.StudyApp.setMode('community')" id="tab-community" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-brand-500 whitespace-nowrap flex items-center transition-colors">
                 <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Shared Records
@@ -226,10 +220,8 @@
                 </div>
             </div>
             
-            <!-- 🌟 PDF 컨트롤 바 -->
             <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-between z-50 shadow-sm shrink-0 relative min-h-[44px]">
                 
-                <!-- 🌟 PDF 뷰어 내 작품 검색 바 -->
                 <div class="flex items-center relative mr-2 z-10">
                     <input type="text" id="pdf-search-work" onkeypress="if(event.key==='Enter') window.StudyApp.findAndGoToWork('pdf-search-work')" placeholder="작품명 검색..." class="text-[10px] sm:text-xs w-28 sm:w-48 pl-3 pr-8 py-1.5 border border-brand-200 dark:border-brand-800/50 bg-brand-50/30 dark:bg-slate-800 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-bold">
                     <button onclick="window.StudyApp.findAndGoToWork('pdf-search-work')" class="absolute right-1 top-1 bottom-1 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-slate-700 px-1.5 rounded transition-colors flex items-center justify-center">
@@ -237,7 +229,6 @@
                     </button>
                 </div>
 
-                <!-- 🌟 페이지 이동 및 입력창 -->
                 <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center space-x-1 sm:space-x-2 z-0">
                     <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                     <div class="flex items-center text-[11px] font-black">
@@ -247,7 +238,6 @@
                     <button onclick="window.StudyApp.nextPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                 </div>
 
-                <!-- 🌟 확대/축소 버튼 -->
                 <div class="flex items-center space-x-1 sm:space-x-2 z-10">
                     <button onclick="window.StudyApp.zoomOut()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
                     <button onclick="window.StudyApp.zoomIn()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
@@ -287,7 +277,7 @@
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
 
-                <!-- 🌟 OMR & 서술형 통합 탭 🌟 -->
+                <!-- OMR & 서술형 통합 탭 -->
                 <div id="view-omr" class="space-y-6 fade-in">
                     <div class="grid grid-cols-4 gap-2 relative">
                         <div class="col-span-1">
@@ -296,7 +286,10 @@
                         </div>
                         <div class="col-span-3 relative">
                             <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
-                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 pr-16 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                            <button onclick="window.StudyApp.findAndGoToWork('omr-work-name')" class="absolute right-1.5 top-6 bottom-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-black px-2 rounded-md transition-colors flex items-center shadow-sm">
+                                📖 찾기
+                            </button>
                         </div>
                     </div>
                     
@@ -377,7 +370,7 @@
                     </div>
                 </div>
                 
-                <!-- 🌟 모의 기출 섹터 🌟 -->
+                <!-- 모의 기출 섹터 -->
                 <div id="view-mock" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
                     <div class="flex space-x-2 shrink-0">
                         <select id="mock-week-filter" onchange="window.StudyApp.updateMockView()" class="flex-1 bg-white dark:bg-slate-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-emerald-500/20">
@@ -404,7 +397,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, updateDoc, deleteDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     const p1 = "AIzaSy";
@@ -417,8 +410,8 @@
     const apiKey = p1 + p2 + p3 + p4 + p5 + p6 + p7;
 
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
-    const firebaseConfig = { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
-    const appId = 'my-study-app'; 
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app'; 
 
     const appAuth = initializeApp(firebaseConfig);
     const auth = getAuth(appAuth);
@@ -659,7 +652,6 @@
 
       setMode: (mode) => {
         state.mode = mode;
-        // 🌟 essay 모드가 통합되었으므로 배열에서 제거
         ['omr', 'community', 'qa', 'mock'].forEach(m => {
             const el = document.getElementById(`view-${m}`);
             if(el) el.classList.toggle('hidden', m !== mode);
@@ -982,11 +974,10 @@
           document.getElementById('ans_page_count').textContent = state.answerKeyPdfDoc.numPages;
           document.getElementById('answer-modal').classList.remove('hidden');
           
-          state.answerPageNum = 1;
+          if (!state.answerPageNum) state.answerPageNum = 1;
           window.StudyApp.renderAnswerPage(state.answerPageNum);
       },
 
-      // 🌟 OMR과 서술형을 한 번에 통합 수집하여 제출하는 기능
       submitOMR: async () => {
         const week = document.getElementById('week-select').value;
         if(!week) return window.StudyApp.showToast("주차를 먼저 선택해 주세요.", "error");
@@ -995,13 +986,11 @@
         
         const ans = [];
         
-        // 1. 객관식 데이터 수집
         for(let i=1; i<=10; i++) {
             const v = document.getElementById(`omr-${i}`).value.trim();
             if(v) ans.push(`[객관식 ${i}번] ${v}`);
         }
         
-        // 2. 서술형 데이터 수집
         for(let i=1; i<=2; i++) {
             const n = document.getElementById(`essay-num-${i}`).value.trim();
             const a = document.getElementById(`essay-ans-${i}`).value.trim();
@@ -1024,17 +1013,19 @@
 
             if (state.editingDocId) {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), { ...recordData, isEdited: true, editedAt: Date.now() });
+                window.StudyApp.showToast("수정된 답안이 성공적으로 기록되었습니다.", "success");
             } else if (existing) {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', existing.id), { ...recordData, isEdited: true, editedAt: Date.now() });
+                const mergedAnswers = [...existing.userAnswers, "\n[추가 제출]", ...ans];
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', existing.id), { userAnswers: mergedAnswers, isEdited: true, editedAt: Date.now() });
+                window.StudyApp.showToast("기존 답안에 새로운 답안이 추가로 병합되었습니다.", "success");
             } else {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
+                window.StudyApp.showToast("답안 기록 완료! 이제 해설을 볼 수 있습니다.", "success");
             }
             
             state.editingDocId = null; 
             document.getElementById('editing-badge').classList.add('hidden');
-            window.StudyApp.showToast("기록 완료! 이제 해설을 볼 수 있습니다.", "success");
             
-            // 제출 완료 후 입력칸 모두 비우기
             for(let i=1; i<=10; i++) document.getElementById(`omr-${i}`).value = '';
             for(let i=1; i<=2; i++) {
                 document.getElementById(`essay-num-${i}`).value = '';
@@ -1054,8 +1045,36 @@
           const record = state.allSubmissions.find(s => s.id === docId);
           if(!record) return;
           state.editingDocId = docId; document.getElementById('editing-badge').classList.remove('hidden');
+          
+          document.getElementById('week-select').value = record.week;
+          document.getElementById('omr-work-name').value = record.workName;
+          
+          for(let i=1; i<=10; i++) document.getElementById(`omr-${i}`).value = '';
+          for(let i=1; i<=2; i++) {
+              document.getElementById(`essay-num-${i}`).value = '';
+              document.getElementById(`essay-ans-${i}`).value = '';
+          }
+
+          let essayCount = 1;
+          record.userAnswers.forEach(ans => {
+              if (ans === "\n[추가 제출]") return; 
+              
+              const omrMatch = ans.match(/^\[객관식 (\d+)번\]\s*(.*)$/);
+              if (omrMatch) {
+                  const el = document.getElementById(`omr-${omrMatch[1]}`);
+                  if (el) el.value = omrMatch[2];
+              }
+              
+              const essayMatch = ans.match(/^\[서술형 (.*?)번\]\n([\s\S]*)$/);
+              if (essayMatch && essayCount <= 2) {
+                  document.getElementById(`essay-num-${essayCount}`).value = essayMatch[1];
+                  document.getElementById(`essay-ans-${essayCount}`).value = essayMatch[2];
+                  essayCount++;
+              }
+          });
+
           window.StudyApp.setMode('omr');
-          window.StudyApp.showToast("수정 모드로 전환되었습니다. 빈칸에 답안을 새로 입력하고 다시 제출해주세요.");
+          window.StudyApp.showToast("수정 모드로 전환되었습니다. 작성하셨던 답안을 복원했습니다.");
       },
 
       deleteSubmission: (docId) => {
@@ -1323,6 +1342,25 @@
           };
       },
 
+      editQAAnswer: async (answerId, questionId) => {
+          const answer = state.qaAnswers.find(a => a.id === answerId);
+          if(!answer) return;
+          const text = answer.answerText;
+          try {
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qa_answers', answerId));
+              window.StudyApp.showToast("수정 모드: 작성하신 답안을 입력칸에 복원했습니다.");
+              setTimeout(() => {
+                  const ta = document.getElementById(`qa-ans-${questionId}`);
+                  if(ta) {
+                      ta.value = text;
+                      ta.focus();
+                  }
+              }, 300);
+          } catch(e) {
+              window.StudyApp.showToast("수정 모드 전환 실패", "error");
+          }
+      },
+
       renderQAQuestions: () => {
           if(state.mode !== 'qa' || !state.qaCurrentWork) return;
           const container = document.getElementById('qa-list-container');
@@ -1356,7 +1394,7 @@
                       <div class="mt-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border ${a.userId === state.user.uid ? 'border-brand-300 dark:border-brand-700' : 'border-slate-100 dark:border-slate-800'} relative">
                           <p class="text-[10px] text-slate-500 font-bold mb-1">${a.userId === state.user.uid ? '🌟 내 답안 (' + (a.userName || '익명') + ')' : (a.userName || '익명') + '님의 답안'}</p>
                           <p class="text-xs text-slate-800 dark:text-slate-300 whitespace-pre-wrap">${a.answerText}</p>
-                          ${a.userId === state.user.uid ? `<button onclick="window.StudyApp.deleteQAAnswer('${a.id}')" class="mt-2 text-[9px] font-bold text-red-400 hover:text-red-600 underline underline-offset-2 transition-colors">답안 삭제하고 다시 쓰기</button>` : ''}
+                          ${a.userId === state.user.uid ? `<button onclick="window.StudyApp.editQAAnswer('${a.id}', '${q.id}')" class="mt-2 text-[9px] font-bold text-blue-500 hover:text-blue-700 underline underline-offset-2 transition-colors">답안 수정하기</button>` : ''}
                       </div>
                   `).join('');
 
@@ -1588,6 +1626,25 @@ ${answersPrompt}
           window.StudyApp.renderMockExams();
       },
 
+      editMockAnswer: async (answerId, examId) => {
+          const answer = state.mockAnswers.find(a => a.id === answerId);
+          if(!answer) return;
+          const text = answer.answerText;
+          try {
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mock_answers', answerId));
+              window.StudyApp.showToast("수정 모드: 작성하신 답안을 입력칸에 복원했습니다.");
+              setTimeout(() => {
+                  const ta = document.getElementById(`mock-ans-${examId}`);
+                  if(ta) {
+                      ta.value = text;
+                      ta.focus();
+                  }
+              }, 300);
+          } catch(e) {
+              window.StudyApp.showToast("수정 모드 전환 실패", "error");
+          }
+      },
+
       renderMockExams: () => {
           const w = document.getElementById('mock-week-filter').value;
           if (!w) return;
@@ -1610,7 +1667,6 @@ ${answersPrompt}
               let contentHtml = '';
 
               if (myAnswer) {
-                  // 🌟 스포일러 방지: 다른 사람들의 답안 목록을 완전히 제거하고 내 답안만 보여줍니다.
                   contentHtml = `
                       <div class="mt-4 border-t border-emerald-200 dark:border-emerald-800/50 pt-4">
                           <h4 class="font-black text-emerald-800 dark:text-emerald-300 text-sm mb-3 flex items-center"><i data-lucide="check-circle" class="w-4 h-4 mr-1.5"></i> 출제 의도 및 모범 답안</h4>
@@ -1629,7 +1685,7 @@ ${answersPrompt}
                               <i data-lucide="bot" class="w-3.5 h-3.5 inline mb-0.5 mr-1 text-emerald-600"></i> ${myAnswer.feedback}
                           </div>
                           <div class="flex justify-end mt-3">
-                              <button onclick="window.StudyApp.deleteMockAnswer('${myAnswer.id}')" class="text-[10px] font-bold text-red-400 hover:text-red-600 underline underline-offset-2 transition-colors">답안 삭제하고 다시 풀기</button>
+                              <button onclick="window.StudyApp.editMockAnswer('${myAnswer.id}', '${m.id}')" class="text-[10px] font-bold text-emerald-500 hover:text-emerald-700 underline underline-offset-2 transition-colors">답안 수정하기</button>
                           </div>
                       </div>
                   `;
@@ -1851,6 +1907,20 @@ ${answerText}
       }
     };
 
+    // 🌟 Auth 초기화 시 signInWithCustomToken 및 signInAnonymously 올바르게 호출
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth init error:", error);
+      }
+    };
+    initAuth();
+
     async function scanGitHub() {
         const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.folder}?ref=${GITHUB_CONFIG.branch}`;
         try {
@@ -1894,6 +1964,7 @@ ${answerText}
     }
 
     function fetchStudySchedule() {
+        if (!state.user) return;
         onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
             state.docWeeks = [];
             state.scheduleWeeks = []; 
@@ -1914,46 +1985,50 @@ ${answerText}
                 }
             }
             updateGlobalWeeks();
-        });
+        }, (error) => console.error("fetchStudySchedule Error:", error));
     }
 
     function fetchPublicSubmissions() {
+        if (!state.user) return;
         onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'submissions')), (snap) => {
             const subs = []; snap.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
             subs.sort((a, b) => b.timestamp - a.timestamp);
             state.allSubmissions = subs; updateGlobalWeeks();
-        });
+        }, (error) => console.error("fetchPublicSubmissions Error:", error));
     }
 
     function fetchQAData() {
+        if (!state.user) return;
         onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions')), (snap) => {
             const qs = []; snap.forEach(doc => qs.push({ id: doc.id, ...doc.data() }));
             state.qaQuestions = qs.sort((a,b) => b.timestamp - a.timestamp);
             window.StudyApp.updateQAWorksDropdown();
             if(state.mode === 'qa') window.StudyApp.renderQAQuestions();
-        });
+        }, (error) => console.error("fetchQAData (questions) Error:", error));
 
         onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers')), (snap) => {
             const ans = []; snap.forEach(doc => ans.push({ id: doc.id, ...doc.data() }));
             state.qaAnswers = ans;
             if(state.mode === 'qa') window.StudyApp.renderQAQuestions();
-        });
+        }, (error) => console.error("fetchQAData (answers) Error:", error));
     }
 
     function fetchMockExams() {
+        if (!state.user) return;
         onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'mock_exams')), (snap) => {
             const mocks = []; snap.forEach(doc => mocks.push({ id: doc.id, ...doc.data() }));
             state.mockExams = mocks.sort((a, b) => b.timestamp - a.timestamp);
             if(state.mode === 'mock') window.StudyApp.renderMockExams();
-        });
+        }, (error) => console.error("fetchMockExams Error:", error));
     }
 
     function fetchMockAnswers() {
+        if (!state.user) return;
         onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'mock_answers')), (snap) => {
             const ans = []; snap.forEach(doc => ans.push({ id: doc.id, ...doc.data() }));
             state.mockAnswers = ans.sort((a, b) => b.timestamp - a.timestamp);
             if(state.mode === 'mock') window.StudyApp.renderMockExams();
-        });
+        }, (error) => console.error("fetchMockAnswers Error:", error));
     }
 
     onAuthStateChanged(auth, (user) => {
@@ -1968,7 +2043,7 @@ ${answerText}
             fetchMockExams(); 
             fetchMockAnswers(); 
             window.StudyApp.setMode('omr'); 
-        } else signInAnonymously(auth);
+        }
     });
   </script>
 </body>
