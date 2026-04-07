@@ -63,44 +63,16 @@
     .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
     
     /* 실제 시험지 같은 가시성을 위한 CSS */
-    .exam-paper {
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        padding: 2rem;
-        border-radius: 0.5rem;
-        box-shadow: inset 0 0 0 1px #f1f5f9, 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        color: #1e293b;
-    }
-    .dark .exam-paper {
-        background-color: #0f172a;
-        border-color: #334155;
-        box-shadow: inset 0 0 0 1px #1e293b, 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-        color: #cbd5e1;
-    }
-    .prose blockquote {
-        border: 2px solid #cbd5e1;
-        border-radius: 8px;
-        background-color: #f8fafc;
-        padding: 1.5rem;
-        font-style: normal;
-        margin: 1.5rem 0;
-        color: #334155;
-    }
-    .dark .prose blockquote {
-        border-color: #475569;
-        background-color: #1e293b;
-        color: #e2e8f0;
-    }
-    .prose h3 {
-        color: #0f172a;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 0.5rem;
-        margin-top: 2rem;
-    }
-    .dark .prose h3 {
-        color: #f8fafc;
-        border-color: #334155;
-    }
+    .exam-paper { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 0.5rem; box-shadow: inset 0 0 0 1px #f1f5f9, 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #1e293b; }
+    .dark .exam-paper { background-color: #0f172a; border-color: #334155; box-shadow: inset 0 0 0 1px #1e293b, 0 4px 6px -1px rgba(0, 0, 0, 0.5); color: #cbd5e1; }
+    .prose blockquote { border: 2px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc; padding: 1.5rem; font-style: normal; margin: 1.5rem 0; color: #334155; }
+    .dark .prose blockquote { border-color: #475569; background-color: #1e293b; color: #e2e8f0; }
+    .prose h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 2rem; }
+    .dark .prose h3 { color: #f8fafc; border-color: #334155; }
+    
+    /* 페이지 입력창 스피너 제거 */
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen relative">
@@ -150,7 +122,10 @@
               <div class="flex items-center space-x-3">
                   <div class="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 shadow-sm">
                       <button onclick="window.StudyApp.prevAnswerPage()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                      <span class="text-xs font-black w-16 text-center text-slate-600 dark:text-slate-300"><span id="ans_page_num">1</span> / <span id="ans_page_count">-</span></span>
+                      <div class="flex items-center text-xs font-black px-2 text-slate-600 dark:text-slate-300">
+                          <input type="number" id="ans_page_num_input" onchange="window.StudyApp.jumpToAnswerPage(this.value)" class="w-8 text-center bg-transparent border-b border-slate-300 dark:border-slate-600 outline-none focus:border-brand-500 transition-colors mr-1">
+                          <span>/ <span id="ans_page_count">-</span></span>
+                      </div>
                       <button onclick="window.StudyApp.nextAnswerPage()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                   </div>
                   <div class="w-px h-4 bg-slate-200 dark:bg-slate-700"></div>
@@ -253,7 +228,11 @@
             <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center space-x-4 z-50 shadow-sm shrink-0">
                 <div class="flex items-center space-x-2">
                     <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                    <span class="text-[11px] font-black w-14 text-center"><span id="page_num">1</span> / <span id="page_count">-</span></span>
+                    <!-- 🌟 페이지 번호 직접 입력창 -->
+                    <div class="flex items-center text-[11px] font-black">
+                        <input type="number" id="page_num_input" onchange="window.StudyApp.jumpToPage(this.value)" min="1" class="w-10 text-center bg-transparent border-b border-slate-300 dark:border-slate-600 outline-none focus:border-brand-500 transition-colors mr-1">
+                        <span>/ <span id="page_count">-</span></span>
+                    </div>
                     <button onclick="window.StudyApp.nextPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                 </div>
                 <div class="w-px h-4 bg-slate-200 dark:bg-slate-700"></div>
@@ -297,14 +276,18 @@
 
                 <!-- OMR -->
                 <div id="view-omr" class="space-y-5 fade-in">
-                    <div class="grid grid-cols-4 gap-2">
+                    <div class="grid grid-cols-4 gap-2 relative">
                         <div class="col-span-1">
                             <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Num</label>
                             <input type="text" id="omr-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
                         </div>
-                        <div class="col-span-3">
+                        <div class="col-span-3 relative">
                             <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
-                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 pr-16 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                            <!-- 🌟 자동 본문 찾기 버튼 -->
+                            <button onclick="window.StudyApp.findAndGoToWork('omr-work-name')" class="absolute right-1.5 top-6 bottom-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-black px-2 rounded-md transition-colors flex items-center shadow-sm">
+                                📖 찾기
+                            </button>
                         </div>
                     </div>
                     <div id="omr-grid-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 shadow-sm"></div>
@@ -315,14 +298,18 @@
 
                 <!-- Essay -->
                 <div id="view-essay" class="hidden space-y-5 fade-in">
-                    <div class="grid grid-cols-4 gap-2">
+                    <div class="grid grid-cols-4 gap-2 relative">
                         <div class="col-span-1">
                             <label class="block text-[9px] font-black text-purple-600 uppercase mb-1.5 ml-1 tracking-widest">Num</label>
                             <input type="text" id="essay-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
                         </div>
-                        <div class="col-span-3">
+                        <div class="col-span-3 relative">
                             <label class="block text-[9px] font-black text-purple-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
-                            <input type="text" id="essay-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                            <input type="text" id="essay-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 pr-16 rounded-lg border border-purple-200 bg-purple-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                            <!-- 🌟 자동 본문 찾기 버튼 -->
+                            <button onclick="window.StudyApp.findAndGoToWork('essay-work-name')" class="absolute right-1.5 top-6 bottom-1.5 bg-purple-100 text-purple-700 hover:bg-purple-200 text-[10px] font-black px-2 rounded-md transition-colors flex items-center shadow-sm">
+                                📖 찾기
+                            </button>
                         </div>
                     </div>
                     <div id="essay-grid-container" class="space-y-4"></div>
@@ -371,8 +358,13 @@
                     </div>
 
                     <div id="qa-content-area" class="hidden flex-col space-y-4 flex-1 overflow-hidden mt-2">
-                        <div class="bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-xl p-3 shadow-sm shrink-0 focus-within:border-blue-400 transition-all group">
-                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 새로운 모의 문제를 출제해 보세요..." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-14 custom-scrollbar dark:text-slate-200 group-focus-within:h-20 transition-all" maxlength="300"></textarea>
+                        <div class="bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-xl p-3 shadow-sm shrink-0 focus-within:border-blue-400 transition-all group relative">
+                            <!-- 🌟 모의 출제 탭용 본문 찾기 버튼 -->
+                            <button onclick="window.StudyApp.findAndGoToWorkByString(state.qaCurrentWork)" class="absolute right-2 top-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-[9px] font-black px-2 py-1 rounded transition-colors flex items-center border border-blue-100 z-10">
+                                📖 이 작품 본문 찾기
+                            </button>
+                            
+                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 새로운 모의 문제를 출제해 보세요..." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-14 pt-6 custom-scrollbar dark:text-slate-200 group-focus-within:h-20 transition-all" maxlength="300"></textarea>
                             <div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-2 mt-1">
                                 <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center"><i data-lucide="pen-tool" class="w-3 h-3 mr-1"></i>새로운 창작 문제</span>
                                 <button onclick="window.StudyApp.submitQAQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center">
@@ -449,6 +441,74 @@
       "186-188", "189-192", "193-195", "196-198", "199-201", "202-204", "205-208"
     ];
 
+    // 🌟 작품 이름 -> 파일명 및 페이지(오프셋 계산용) 매핑 데이터 (자동 탐색용)
+    // 참고: 선생님의 실제 깃허브 PDF 파일명으로 "file" 값을 수정해 주시면 완벽합니다.
+    const WORK_INDEX = {
+        "공무도하가": { file: "01_고대가요.pdf", bookPage: 28 },
+        "구지가": { file: "01_고대가요.pdf", bookPage: 30 },
+        "황조가": { file: "01_고대가요.pdf", bookPage: 32 },
+        "해가": { file: "01_고대가요.pdf", bookPage: 34 },
+        "정읍사": { file: "01_고대가요.pdf", bookPage: 36 },
+        "서동요": { file: "02_향가.pdf", bookPage: 38 },
+        "모죽지랑가": { file: "02_향가.pdf", bookPage: 40 },
+        "헌화가": { file: "02_향가.pdf", bookPage: 42 },
+        "제망매가": { file: "02_향가.pdf", bookPage: 44 },
+        "찬기파랑가": { file: "02_향가.pdf", bookPage: 46 },
+        "도솔가": { file: "02_향가.pdf", bookPage: 48 },
+        "처용가": { file: "02_향가.pdf", bookPage: 50 },
+        "원왕생가": { file: "02_향가.pdf", bookPage: 52 },
+        "안민가": { file: "02_향가.pdf", bookPage: 53 },
+        "여수장우중문시": { file: "03_한시.pdf", bookPage: 54 },
+        "야청도의성": { file: "03_한시.pdf", bookPage: 56 },
+        "촉규화": { file: "03_한시.pdf", bookPage: 58 },
+        "추야우중": { file: "03_한시.pdf", bookPage: 60 },
+        "제가야산독서당": { file: "03_한시.pdf", bookPage: 62 },
+        "가시리": { file: "04_고려가요.pdf", bookPage: 70 },
+        "동동": { file: "04_고려가요.pdf", bookPage: 72 },
+        "서경별곡": { file: "04_고려가요.pdf", bookPage: 76 },
+        "정과정": { file: "04_고려가요.pdf", bookPage: 78 },
+        "정석가": { file: "04_고려가요.pdf", bookPage: 80 },
+        "사모곡": { file: "04_고려가요.pdf", bookPage: 82 },
+        "청산별곡": { file: "04_고려가요.pdf", bookPage: 84 },
+        "만전춘별사": { file: "04_고려가요.pdf", bookPage: 86 },
+        "쌍화점": { file: "04_고려가요.pdf", bookPage: 87 },
+        "삼상저가": { file: "04_고려가요.pdf", bookPage: 87 },
+        "한림별곡": { file: "05_경기체가.pdf", bookPage: 88 },
+        "관동별곡(안축)": { file: "05_경기체가.pdf", bookPage: 91 },
+        "백설이 자자진 골에": { file: "06_시조.pdf", bookPage: 92 },
+        "이화에 월백하고": { file: "06_시조.pdf", bookPage: 92 },
+        "송인": { file: "07_한시.pdf", bookPage: 98 },
+        "용비어천가": { file: "08_악장.pdf", bookPage: 112 },
+        "상춘곡": { file: "11_가사.pdf", bookPage: 156 },
+        "관동별곡": { file: "11_가사.pdf", bookPage: 166 },
+        "사미인곡": { file: "11_가사.pdf", bookPage: 172 },
+        "속미인곡": { file: "11_가사.pdf", bookPage: 176 },
+        "어부사시사": { file: "13_시조_후기.pdf", bookPage: 230 },
+        "누항사": { file: "14_가사_후기.pdf", bookPage: 246 },
+        "일동장유가": { file: "14_가사_후기.pdf", bookPage: 250 },
+        "아리랑": { file: "15_민요.pdf", bookPage: 272 },
+        "시집살이 노래": { file: "15_민요.pdf", bookPage: 274 },
+        "보리타작": { file: "16_한시_후기.pdf", bookPage: 288 },
+        // 필요에 따라 작품명과 책 페이지를 계속 추가하시면 됩니다.
+    };
+
+    // 파일별 시작 페이지 매핑 (오프셋 계산용) - 예시: 01_고대가요.pdf는 교재 28p부터 시작함.
+    const FILE_START_PAGE = {
+        "01_고대가요.pdf": 28,
+        "02_향가.pdf": 38,
+        "03_한시.pdf": 54,
+        "04_고려가요.pdf": 70,
+        "05_경기체가.pdf": 88,
+        "06_시조.pdf": 92,
+        "07_한시.pdf": 98,
+        "08_악장.pdf": 112,
+        "11_가사.pdf": 156,
+        "13_시조_후기.pdf": 196, // 임의값
+        "14_가사_후기.pdf": 242, // 임의값
+        "15_민요.pdf": 272,
+        "16_한시_후기.pdf": 286
+    };
+
     function getRangeText(daysArray) {
         if(!daysArray || daysArray.length === 0) return '진도 범위를 선택해주세요.';
         const sortedDays = [...daysArray].map(Number).sort((a, b) => a - b);
@@ -471,7 +531,8 @@
         pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false, docWeeks: [],
         scheduleWeeks: [], 
         qaQuestions: [], qaAnswers: [], qaCurrentWork: "",
-        mockExams: [], mockAnswers: [], sidebarOpen: true 
+        mockExams: [], mockAnswers: [], sidebarOpen: true,
+        renderTask: null // 🌟 현재 렌더링 작업 추적용 변수 추가
     };
 
     async function getUserName() {
@@ -623,7 +684,8 @@
         if(state.pdfDoc) window.StudyApp.renderPage(state.pageNum);
       },
 
-      loadMaterial: async (name, url) => {
+      // 🌟 스트리밍 방식 적용: Blob 다운로드 대기 없이 URL로 즉시 로딩 시작
+      loadMaterial: async (name, url, targetPage = 1) => {
         if (state.isFetching) return;
         state.isFetching = true;
         
@@ -636,31 +698,34 @@
         if (state.sidebarOpen) window.StudyApp.toggleSidebar();
 
         try {
-          const res = await fetch(url);
-          const blob = await res.blob();
-          state.problemPdfBlob = blob;
-          await window.StudyApp.renderPDF(blob);
+          // Blob 없이 URL을 직접 넘기면 백그라운드에서 스트리밍으로 필요한 부분만 받아옵니다!
+          const loadingTask = pdfjsLib.getDocument(url);
+          state.pdfDoc = await loadingTask.promise;
+          
+          document.getElementById('page_count').textContent = state.pdfDoc.numPages;
+          document.getElementById('pdf-controls').classList.remove('hidden');
+          document.getElementById('pdf-canvas-container').classList.remove('hidden');
+          
+          state.pageNum = targetPage; 
+          state.userZoomed = false;
+          window.StudyApp.renderPage(state.pageNum);
           window.StudyApp.showToast(`${cleanName} 로드 완료`);
-        } catch (e) { window.StudyApp.showToast("PDF 로드 실패", "error"); }
+        } catch (e) { window.StudyApp.showToast("PDF 로드 실패: " + e.message, "error"); }
         finally { state.isFetching = false; }
       },
 
-      renderPDF: async (blob) => {
-        const arrayBuffer = await blob.arrayBuffer();
-        state.pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        document.getElementById('page_count').textContent = state.pdfDoc.numPages;
-        document.getElementById('pdf-controls').classList.remove('hidden');
-        document.getElementById('pdf-canvas-container').classList.remove('hidden');
-        state.pageNum = 1; state.userZoomed = false;
-        window.StudyApp.renderPage(state.pageNum);
-      },
-
+      // 🌟 렌더링 캔슬 & 비우기 적용으로 초고속 렌더링
       renderPage: (num) => {
         state.pdfDoc.getPage(num).then((page) => {
           const canvas = document.getElementById('pdf-canvas');
           const ctx = canvas.getContext('2d');
           const container = document.getElementById('pdf-canvas-container');
           
+          // 이전에 그리던 게 있다면 강제 취소! (페이지 꼬임 방지)
+          if (state.renderTask) {
+              state.renderTask.cancel();
+          }
+
           if(!state.userZoomed) {
               state.pdfScale = (container.clientWidth - 30) / page.getViewport({scale: 1}).width;
           }
@@ -674,17 +739,90 @@
           canvas.style.height = Math.floor(viewport.height) + "px";
 
           const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+          
+          // 새 페이지를 그리기 전에 캔버스를 하얗게 한 번 밀어버립니다. (체감 속도 증가)
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
           const renderContext = { canvasContext: ctx, transform: transform, viewport: viewport };
 
-          page.render(renderContext).promise.then(() => canvas.classList.remove('hidden'));
-          document.getElementById('page_num').textContent = num;
+          // 렌더링 작업을 변수에 저장
+          state.renderTask = page.render(renderContext);
+
+          state.renderTask.promise.then(() => {
+              canvas.classList.remove('hidden');
+              state.renderTask = null; // 렌더링 끝나면 비우기
+          }).catch((err) => {
+              if (err.name !== 'RenderingCancelledException') console.error(err);
+          });
+          
+          document.getElementById('page_num_input').value = num; // 입력창 동기화
         });
+      },
+
+      // 페이지 직접 점프 기능
+      jumpToPage: (val) => {
+          let num = parseInt(val, 10);
+          if (isNaN(num) || num < 1) num = 1;
+          if (num > state.pdfDoc.numPages) num = state.pdfDoc.numPages;
+          if (state.pageNum !== num) {
+              state.pageNum = num;
+              window.StudyApp.renderPage(state.pageNum);
+          } else {
+              document.getElementById('page_num_input').value = state.pageNum;
+          }
       },
 
       prevPage: () => { if (state.pageNum > 1) { state.pageNum--; window.StudyApp.renderPage(state.pageNum); } },
       nextPage: () => { if (state.pageNum < state.pdfDoc.numPages) { state.pageNum++; window.StudyApp.renderPage(state.pageNum); } },
       zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.StudyApp.renderPage(state.pageNum); },
       zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.StudyApp.renderPage(state.pageNum); } },
+
+      // 🌟 본문 탐색 (Magic!)
+      findAndGoToWorkByString: (workString) => {
+          if (!workString) return;
+          // 번호 포함된 경우(ex. "001. 관동별곡") 파싱하여 순수 이름만 추출
+          const cleanName = workString.replace(/^\d+\.\s*/, '').trim();
+          
+          let target = WORK_INDEX[cleanName];
+          if (!target) {
+              // 완전히 일치하지 않으면 포함하는 단어로 검색 시도
+              const key = Object.keys(WORK_INDEX).find(k => k.includes(cleanName) || cleanName.includes(k));
+              if (key) target = WORK_INDEX[key];
+          }
+
+          if (!target) {
+              return window.StudyApp.showToast(`목차에 [${cleanName}] 작품이 없습니다. 파일명이나 작품명을 확인해주세요.`, "error");
+          }
+
+          // 오프셋 계산 (실제 PDF의 몇 번째 페이지인지)
+          const startPage = FILE_START_PAGE[target.file] || 1; 
+          let calculatedPdfPage = target.bookPage - startPage + 1;
+          if (calculatedPdfPage < 1) calculatedPdfPage = 1; // 안전 장치
+
+          const currentFileName = document.getElementById('viewer-filename').textContent;
+          const targetFileNameClean = target.file.replace('.pdf', '');
+
+          if (currentFileName === targetFileNameClean && state.pdfDoc) {
+              // 이미 열려있는 파일이면 바로 점프!
+              window.StudyApp.jumpToPage(calculatedPdfPage);
+              window.StudyApp.showToast(`[${cleanName}] 본문으로 이동했습니다.`);
+          } else {
+              // 안 열려있으면 파일 찾아서 깃허브에서 가져오고 점프!
+              const fileObj = state.allFiles.find(f => f.name === target.file);
+              if (fileObj) {
+                  window.StudyApp.showToast(`[${target.file}] 파일을 열고 본문으로 이동합니다...`, "info");
+                  window.StudyApp.loadMaterial(fileObj.name, fileObj.download_url, calculatedPdfPage);
+              } else {
+                  window.StudyApp.showToast(`[${target.file}] 파일이 라이브러리에 없습니다. 관리자에게 문의하세요.`, "error");
+              }
+          }
+      },
+
+      findAndGoToWork: (inputId) => {
+          const workName = document.getElementById(inputId).value.trim();
+          if(!workName) return window.StudyApp.showToast("작품명을 먼저 입력해주세요.", "error");
+          window.StudyApp.findAndGoToWorkByString(workName);
+      },
 
       onWeekChange: () => {
           const weekVal = document.getElementById('week-select').value;
@@ -736,9 +874,23 @@
               const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
 
               page.render({ canvasContext: ctx, transform: transform, viewport: viewport });
-              document.getElementById('ans_page_num').textContent = num;
+              
+              document.getElementById('ans_page_num_input').value = num;
           });
       },
+
+      jumpToAnswerPage: (val) => {
+          let num = parseInt(val, 10);
+          if (isNaN(num) || num < 1) num = 1;
+          if (num > state.answerKeyPdfDoc.numPages) num = state.answerKeyPdfDoc.numPages;
+          if (state.answerPageNum !== num) {
+              state.answerPageNum = num;
+              window.StudyApp.renderAnswerPage(state.answerPageNum);
+          } else {
+              document.getElementById('ans_page_num_input').value = state.answerPageNum;
+          }
+      },
+
       prevAnswerPage: () => { if (state.answerPageNum > 1) { state.answerPageNum--; window.StudyApp.renderAnswerPage(state.answerPageNum); } },
       nextAnswerPage: () => { if (state.answerPageNum < state.answerKeyPdfDoc.numPages) { state.answerPageNum++; window.StudyApp.renderAnswerPage(state.answerPageNum); } },
       zoomInAnswer: () => { state.answerPdfScale += 0.25; window.StudyApp.renderAnswerPage(state.answerPageNum); },
@@ -923,10 +1075,8 @@
           if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
-      // 🌟 주차 필터가 추가된 Q&A 목록 업데이트 로직
       updateQAWorksDropdown: () => {
           const w = document.getElementById('qa-week-filter')?.value;
-          // 선택된 주차에 해당하는 문제들만 필터링 (주차가 없으면 빈 배열)
           let filteredQs = w ? state.qaQuestions.filter(q => String(q.week) === String(w)) : [];
           const qWorks = [...new Set(filteredQs.map(q => q.workName))].sort();
           
@@ -945,7 +1095,7 @@
               select.value = state.qaCurrentWork;
           } else {
               select.value = "";
-              window.StudyApp.setQAWork(""); // 주차가 바뀌어 현재 작품이 없으면 초기화
+              window.StudyApp.setQAWork(""); 
           }
       },
 
@@ -1120,7 +1270,6 @@
 
           try {
               const userName = await getUserName();
-              // 🌟 DB 저장 시 주차(week) 정보 함께 저장
               await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), {
                   week: w,
                   workName: state.qaCurrentWork,
@@ -1158,7 +1307,6 @@
           const container = document.getElementById('qa-list-container');
           const w = document.getElementById('qa-week-filter').value;
           
-          // 🌟 초기화 방지: 현재 입력 중이던 값과 커서 위치 백업
           const currentInputs = {};
           const textareas = container.querySelectorAll('textarea');
           textareas.forEach(ta => currentInputs[ta.id] = ta.value);
@@ -1199,7 +1347,6 @@
                   `;
 
                   if (q.aiFeedback) {
-                      // 🌟 마크다운을 통해 AI 피드백을 가독성 있게 렌더링
                       contentHtml += `
                           <div class="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl relative overflow-hidden">
                               <div class="flex items-center gap-2 mb-3">
@@ -1266,7 +1413,6 @@
 
           if(typeof lucide !== 'undefined') lucide.createIcons();
 
-          // 🌟 초기화 방지: 화면 재렌더링 후 백업했던 값과 포커스 즉시 복원
           setTimeout(() => {
               for (const [id, val] of Object.entries(currentInputs)) {
                   const el = document.getElementById(id);
@@ -1396,7 +1542,6 @@ ${answersPrompt}
           }
       },
 
-      // 모의 기출 기능
       updateMockView: () => {
           const w = document.getElementById('mock-week-filter').value;
           const empty = document.getElementById('mock-empty-state');
