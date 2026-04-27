@@ -3,222 +3,420 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>가온길 문학 스터디 허브</title>
+  <title>가온길 문학 공동 스터디</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- PDF 렌더링 엔진 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+  <!-- Markdown 렌더링 엔진 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: { extend: { fontFamily: { sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'] } } }
+      theme: { 
+        extend: { 
+          fontFamily: { sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'] },
+          colors: { brand: { 50: '#f5f7ff', 500: '#4f46e5', 600: '#4338ca', 700: '#3730a3' } }
+        } 
+      }
     }
   </script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fade-in-down { animation: fadeInDown 0.4s ease-out forwards; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .animate-spin-custom { animation: spin 1s linear infinite; }
-    .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    
+    .tab-active { border-bottom: 3px solid #4f46e5; color: #4f46e5; font-weight: 900 !important; }
+    .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .viewer-fullscreen {
+        position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+        width: 100vw !important; height: 100dvh !important;
+        z-index: 99990 !important; border-radius: 0 !important; margin: 0 !important;
+        display: flex !important; flex-direction: column !important;
+    }
+    
+    .fab-button {
+        position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+        z-index: 999999 !important; box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.6);
+        border: 2px solid white;
+    }
+    
+    canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    #pdf-canvas, #answer-pdf-canvas { max-width: none !important; transform-origin: top center; }
+
+    .prose h1, .prose h2, .prose h3 { font-weight: 900; margin-top: 1.5em; margin-bottom: 0.5em; }
+    .prose p { margin-bottom: 1em; line-height: 1.6; }
+    .prose strong { font-weight: 900; color: #047857; }
+    .dark .prose strong { color: #34d399; }
+    .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+    
+    .exam-paper { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 0.5rem; box-shadow: inset 0 0 0 1px #f1f5f9, 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #1e293b; }
+    .dark .exam-paper { background-color: #0f172a; border-color: #334155; box-shadow: inset 0 0 0 1px #1e293b, 0 4px 6px -1px rgba(0, 0, 0, 0.5); color: #cbd5e1; }
+    .prose blockquote { border: 2px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc; padding: 1.5rem; font-style: normal; margin: 1.5rem 0; color: #334155; }
+    .dark .prose blockquote { border-color: #475569; background-color: #1e293b; color: #e2e8f0; }
+    .prose h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 2rem; }
+    .dark .prose h3 { color: #f8fafc; border-color: #334155; }
+    
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans">
+<body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans dark:bg-slate-950 dark:text-slate-200 lg:overflow-hidden flex flex-col lg:h-screen relative">
 
-  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <div id="loading-screen" class="min-h-screen flex flex-col items-center justify-center dark:bg-slate-900 dark:text-white z-50">
-    <i data-lucide="loader-2" class="w-10 h-10 animate-spin-custom text-indigo-500 mb-4"></i>
-    <p class="font-bold">데이터를 동기화하는 중입니다...</p>
+  <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
+          <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i> 기록 삭제
+          </h3>
+          <p id="delete-modal-desc" class="text-xs text-slate-500 dark:text-slate-400 mb-6">해당 기록을 영구적으로 삭제하시겠습니까?</p>
+          <div class="flex space-x-3">
+              <button onclick="document.getElementById('delete-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors">취소</button>
+              <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors shadow-sm">영구 삭제</button>
+          </div>
+      </div>
   </div>
 
-  <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4 dark:bg-slate-900">
-    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-200 dark:border-slate-700 animate-fade-in-down">
-      <div class="text-center mb-8">
-        <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <i data-lucide="book-open" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"></i>
-        </div>
-        <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">가온길 스터디 허브</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400">스터디원 전용 공간에 오신 것을 환영합니다.</p>
+  <div id="prompt-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
+          <h3 id="prompt-modal-title" class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
+              <i data-lucide="folder-plus" class="w-5 h-5 text-blue-500 mr-2"></i> 모의 출제 새 작품 등록
+          </h3>
+          <p id="prompt-modal-desc" class="text-xs text-slate-500 dark:text-slate-400 mb-4">문제를 출제할 작품의 번호와 이름을 입력하세요.</p>
+          <div class="flex space-x-2 mb-6">
+              <input type="number" id="prompt-num-input" class="w-20 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none bg-slate-50 dark:bg-slate-950 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all" placeholder="번호">
+              <input type="text" id="prompt-input" class="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none bg-slate-50 dark:bg-slate-950 dark:text-white focus:ring-2 focus:ring-blue-500 transition-all" placeholder="작품명 (예: 관동별곡)">
+          </div>
+          <div class="flex space-x-3">
+              <button onclick="document.getElementById('prompt-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors">취소</button>
+              <button id="prompt-confirm-btn" onclick="window.StudyApp.confirmPromptNewQAWork()" class="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-sm">확인</button>
+          </div>
       </div>
-      <div class="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl mb-6">
-        <button id="tab-login" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" onclick="app.setAuthMode('login')">로그인</button>
-        <button id="tab-signup" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" onclick="app.setAuthMode('signup')">스터디원 가입</button>
-      </div>
-      <form id="auth-form" class="space-y-4">
-        <div id="auth-error" class="hidden p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl text-center"></div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">아이디</label>
-          <input required type="text" id="auth-id" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">비밀번호</label>
-          <input required type="password" id="auth-pw" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <div id="auth-name-container" class="hidden">
-          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">사용할 이름 (스터디용)</label>
-          <input type="text" id="auth-name" placeholder="예: 김국어, 이교육" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
-        </div>
-        <button type="submit" id="auth-submit-btn" class="w-full py-3.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center disabled:opacity-70">
-          <i data-lucide="log-in" class="w-5 h-5 mr-2" id="auth-submit-icon"></i> <span id="auth-submit-text">로그인</span>
-        </button>
-      </form>
-    </div>
   </div>
 
-  <div id="dashboard-screen" class="hidden min-h-screen pb-20 dark:bg-slate-900 dark:text-slate-200">
-    <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
-      <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <i data-lucide="book-open" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
-          <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">가온길 문학 스터디</span>
-        </div>
-        <div class="flex items-center space-x-3 sm:space-x-6">
-          <button onclick="app.openProfileModal()" class="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-indigo-100 transition-colors group border border-indigo-100 dark:border-indigo-800">
-            <span id="nav-username" class="text-indigo-600 dark:text-indigo-400 font-bold"></span>
-            <i data-lucide="settings" class="w-4 h-4 text-indigo-400 group-hover:text-indigo-600"></i>
-          </button>
-          <button onclick="app.logout()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors" title="로그아웃"><i data-lucide="log-out" class="w-5 h-5"></i></button>
-          <button onclick="app.toggleDarkMode()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-all"><i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i></button>
-        </div>
-      </div>
-    </nav>
-
-    <div id="profile-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay hidden">
-      <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center shrink-0">
-          <h2 class="text-lg font-bold flex items-center"><i data-lucide="user-cog" class="w-5 h-5 mr-2 text-indigo-500"></i> 정보 수정</h2>
-          <button onclick="app.closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-        </div>
-        <div class="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-          <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">이름 변경</label>
-            <input type="text" id="edit-profile-name" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">비밀번호 변경</label>
-            <input type="password" id="edit-profile-pw" placeholder="변경할 경우에만 입력" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
-          </div>
-          <button onclick="app.updateProfile()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-colors">저장하기</button>
-          
-          <div class="pt-5 border-t border-slate-100 dark:border-slate-700 mt-2">
-            <button onclick="app.withdrawAccount()" class="w-full py-2.5 border border-red-200 text-red-500 hover:bg-red-50 font-bold rounded-xl text-sm transition-colors dark:border-red-900/50 dark:hover:bg-red-900/20">내 스터디 탈퇴 (데이터 삭제)</button>
-          </div>
-
-          <div id="admin-panel" class="hidden pt-5 border-t border-slate-200 dark:border-slate-700 mt-4">
-            <h3 class="text-sm font-black text-rose-500 mb-3 flex items-center"><i data-lucide="shield-alert" class="w-4 h-4 mr-1.5"></i> 스터디장 전용 관리 메뉴</h3>
-            <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">아래에서 스터디원을 강제 탈퇴시킬 수 있습니다. (더미 계정 삭제용)</p>
-            <div id="admin-member-list" class="space-y-2 bg-rose-50 dark:bg-rose-900/10 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30 max-h-[150px] overflow-y-auto custom-scrollbar">
+  <div id="answer-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1000000] flex items-center justify-center p-2 sm:p-6">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl relative flex flex-col fade-in border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 shrink-0">
+              <div class="flex items-center gap-2">
+                  <i data-lucide="bookmark" class="w-5 h-5 text-brand-500"></i>
+                  <span class="text-sm font-black text-slate-800 dark:text-white tracking-widest">정답해설.pdf 전문</span>
+              </div>
+              <div class="flex items-center space-x-3">
+                  <div class="flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 shadow-sm">
+                      <button onclick="window.StudyApp.prevAnswerPage()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                      <div class="flex items-center text-xs font-black px-2 text-slate-600 dark:text-slate-300">
+                          <input type="number" id="ans_page_num_input" onchange="window.StudyApp.jumpToAnswerPage(this.value)" class="w-8 text-center bg-transparent border-b border-slate-300 dark:border-slate-600 outline-none focus:border-brand-500 transition-colors mr-1">
+                          <span>/ <span id="ans_page_count">-</span></span>
+                      </div>
+                      <button onclick="window.StudyApp.nextAnswerPage()" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                  </div>
+                  <div class="w-px h-4 bg-slate-200 dark:bg-slate-700"></div>
+                  <div class="flex items-center space-x-1">
+                      <button onclick="window.StudyApp.zoomOutAnswer()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"><i data-lucide="zoom-out" class="w-4 h-4 text-slate-500"></i></button>
+                      <button onclick="window.StudyApp.zoomInAnswer()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"><i data-lucide="zoom-in" class="w-4 h-4 text-slate-500"></i></button>
+                  </div>
+                  <button onclick="document.getElementById('answer-modal').classList.add('hidden')" class="ml-2 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 rounded-full text-slate-400 transition-colors">
+                      <i data-lucide="x" class="w-5 h-5"></i>
+                  </button>
               </div>
           </div>
+          <div id="answer-pdf-container" class="flex-1 overflow-auto bg-slate-200 dark:bg-slate-950 p-4 flex justify-center items-start relative custom-scrollbar">
+              <canvas id="answer-pdf-canvas" class="shadow-2xl"></canvas>
+          </div>
+      </div>
+  </div>
+
+  <button id="exit-fullscreen-fab" onclick="window.StudyApp.toggleFullScreen()" class="hidden fab-button bg-brand-600 hover:bg-brand-700 text-white px-8 py-4 rounded-full font-black text-sm transition-all active:scale-95">
+      <i data-lucide="minimize-2" class="w-5 h-5 mr-2"></i> 원래 화면으로 돌아가기
+  </button>
+
+  <nav class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 h-16 shrink-0 z-50 sticky top-0 lg:relative">
+    <div class="max-w-[1800px] mx-auto px-4 h-full flex items-center justify-between">
+      <div class="flex items-center space-x-4 h-full">
+        <a href="../index.html" class="flex items-center text-brand-600 font-black text-lg tracking-tight">
+          <i data-lucide="home" class="w-5 h-5 mr-2"></i> Home
+        </a>
+        <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 shrink-0"></div>
+        <div class="flex space-x-1 items-center overflow-x-auto no-scrollbar">
+            <button onclick="window.StudyApp.setMode('omr')" id="tab-omr" class="tab-active text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-slate-500 whitespace-nowrap transition-colors">OMR & 서술형</button>
+            <button onclick="window.StudyApp.setMode('community')" id="tab-community" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-brand-500 whitespace-nowrap flex items-center transition-colors">
+                <i data-lucide="users" class="w-3.5 h-3.5 mr-1"></i> Shared Records
+            </button>
+            <button onclick="window.StudyApp.setMode('qa')" id="tab-qa" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-blue-500 whitespace-nowrap flex items-center transition-colors">
+                <i data-lucide="pen-tool" class="w-3.5 h-3.5 mr-1"></i> 모의 출제
+            </button>
+            <button onclick="window.StudyApp.setMode('mock')" id="tab-mock" class="text-xs px-4 py-5 rounded-lg uppercase tracking-widest text-emerald-600 whitespace-nowrap flex items-center transition-colors">
+                <i data-lucide="graduation-cap" class="w-3.5 h-3.5 mr-1"></i> 모의 기출
+            </button>
         </div>
+      </div>
+      <div class="flex items-center space-x-3 shrink-0">
+        <div id="answer-key-badge" class="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest transition-all">
+            <i data-lucide="loader-2" class="w-3 h-3 mr-1 animate-spin"></i> Loading Key...
+        </div>
+        <button onclick="window.StudyApp.toggleDarkMode()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-105 transition-all">
+          <i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i>
+        </button>
       </div>
     </div>
+  </nav>
 
-    <!-- 진도 선택 모달 (일정표 & 출제 범위 공동 사용) -->
-    <div id="day-picker-modal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 modal-overlay hidden">
-      <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
-        <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
-          <div>
-            <h2 class="text-lg font-black flex items-center text-slate-800 dark:text-white"><i data-lucide="calendar-check" class="w-5 h-5 mr-2 text-indigo-500"></i> 진도(Day) 다중 선택</h2>
-            <p id="day-picker-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">진행할 Day를 여러 개 터치할 수 있습니다.</p>
+  <main class="max-w-[1800px] mx-auto px-4 py-4 flex flex-col lg:flex-row gap-4 flex-1 w-full lg:min-h-0 overflow-y-auto lg:overflow-visible">
+    <aside id="library-sidebar" class="w-full lg:w-[260px] flex flex-col shrink-0 h-[250px] lg:h-full z-10 transition-all duration-300">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden shadow-sm">
+        <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-black flex items-center text-slate-900 dark:text-white uppercase tracking-tighter">
+              <i data-lucide="library" class="w-3.5 h-3.5 mr-1.5 text-brand-500"></i> Library
+            </h2>
+            <button onclick="window.StudyApp.refreshFiles()" class="p-1 text-slate-400 hover:text-brand-500 transition-colors">
+              <i data-lucide="refresh-cw" class="w-3 h-3" id="refresh-icon"></i>
+            </button>
           </div>
-          <button onclick="app.closeDayPicker()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
-        </div>
-        <div class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-slate-900">
-          <div id="day-picker-grid" class="grid grid-cols-7 gap-1.5"></div>
-        </div>
-        <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-          <button onclick="app.confirmDaySelection()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-sm transition-colors">선택 완료</button>
-        </div>
-      </div>
-    </div>
-
-    <header class="bg-indigo-600 dark:bg-indigo-900 text-white py-10 px-4 relative overflow-hidden">
-      <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:opacity-5"></div>
-      <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-          <div class="inline-flex items-center space-x-2 bg-indigo-500/50 dark:bg-indigo-800/50 px-3 py-1 rounded-full text-sm font-medium mb-4">
-            <i data-lucide="target" class="w-4 h-4"></i><span>정확한 키워드, 치밀한 작품 분석.</span>
-          </div>
-          <h1 class="text-3xl md:text-4xl font-bold mb-2">가온길 스터디 허브</h1>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <!-- 🌟 나의 진도 표시 위젯 (D-Day 옆) -->
-          <div id="header-progress-container" class="hidden bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-lg flex items-center justify-center min-w-[180px]"></div>
-          
-          <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg min-w-[140px] flex flex-col justify-center">
-            <p class="text-indigo-100 text-xs font-bold mb-1">내년 중등임용 1차 D-Day</p>
-            <div class="text-3xl font-black tracking-tight" id="d-day-display">D-0</div>
+          <div class="relative">
+            <input type="text" id="file-search" oninput="window.StudyApp.filterFiles()" placeholder="문제지 검색..." class="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white shadow-sm transition-all">
+            <i data-lucide="search" class="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400"></i>
           </div>
         </div>
-      </div>
-    </header>
-
-    <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1">
-          <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col max-h-[600px]">
+        <div id="material-list" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar bg-slate-50/30 dark:bg-slate-950/30">
+            <div class="flex flex-col items-center justify-center py-10 text-slate-300">
+                <i data-lucide="loader-2" class="w-5 h-5 animate-spin mb-2"></i>
+                <p class="text-[9px] font-black uppercase tracking-widest text-center">Scanning Files...</p>
             </div>
         </div>
-        <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col max-h-[600px]">
-          <div id="todos-container" class="flex-1 flex flex-col h-full overflow-hidden"></div>
-        </div>
       </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="md:col-span-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[400px]">
-          <div id="chat-container" class="flex flex-col h-full"></div>
-        </div>
-        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white min-h-[250px]">
-            <h2 class="text-2xl font-bold mb-6 flex items-center justify-center"><i data-lucide="book-open" class="w-6 h-6 mr-2 text-indigo-200"></i> 고전시가</h2>
-            <a href="./01/index.html" class="inline-flex items-center justify-center px-8 py-3.5 bg-white text-indigo-700 font-black rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto">라운지 입장 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i></a>
-          </div>
-          <div class="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-8 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white min-h-[250px]">
-            <h2 class="text-2xl font-bold mb-6 flex items-center justify-center"><i data-lucide="feather" class="w-6 h-6 mr-2 text-blue-200"></i> 현대시</h2>
-            <a href="./02/index.html" class="inline-flex items-center justify-center px-8 py-3.5 bg-white text-blue-700 font-black rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto">라운지 입장 <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i></a>
-          </div>
-        </div>
-      </div>
+    </aside>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
-        <div id="fines-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full"></div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col">
-          <h2 class="text-lg font-bold flex items-center mb-4 text-blue-600 dark:text-blue-400"><i data-lucide="folder-open" class="w-5 h-5 mr-2"></i> 공유 드라이브</h2>
-          <div class="mb-4">
-            <input type="file" id="drive-upload" class="hidden" onchange="app.handleDriveUpload(this)" />
-            <label for="drive-upload" class="cursor-pointer w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 text-sm font-bold rounded-xl transition-colors flex items-center justify-center border border-blue-200 dark:border-blue-800/50 shadow-sm">
-              <i data-lucide="upload" class="w-4 h-4 mr-2"></i> 파일 업로드 (최대 2MB)
-            </label>
-          </div>
-          <div id="drive-files-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[250px] custom-scrollbar"></div>
+    <section id="pdf-section" class="flex-1 min-w-0 flex flex-col h-[400px] lg:h-full relative z-40 transition-all duration-300">
+        <div id="viewer-container" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-sm transition-all duration-300 relative bg-slate-100 dark:bg-slate-950">
+            <div class="bg-slate-50 dark:bg-slate-950 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-50 shadow-sm">
+                <div class="flex items-center space-x-2 overflow-hidden flex-1 mr-2">
+                    <button onclick="window.StudyApp.toggleSidebar()" class="p-1.5 mr-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500 shrink-0" title="목록 열기/닫기">
+                        <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+                    </button>
+                    <i data-lucide="file-text" class="w-4 h-4 text-brand-500 shrink-0"></i>
+                    <span id="viewer-filename" class="text-[10px] font-black text-slate-500 uppercase italic truncate">No File Selected</span>
+                </div>
+                
+                <div class="flex items-center">
+                    <button onclick="window.StudyApp.toggleFullScreen()" class="px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-brand-500 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-lg uppercase tracking-tighter flex items-center shadow-sm transition-colors transition-all active:scale-95">
+                        <i data-lucide="maximize" class="w-3.5 h-3.5 sm:mr-1.5"></i> <span class="hidden sm:inline">크게 보기</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-between z-50 shadow-sm shrink-0 relative min-h-[44px]">
+                
+                <div class="flex items-center relative mr-2 z-10">
+                    <input type="text" id="pdf-search-work" onkeypress="if(event.key==='Enter') window.StudyApp.findAndGoToWork('pdf-search-work')" placeholder="작품명 검색..." class="text-[10px] sm:text-xs w-28 sm:w-48 pl-3 pr-8 py-1.5 border border-brand-200 dark:border-brand-800/50 bg-brand-50/30 dark:bg-slate-800 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-bold">
+                    <button onclick="window.StudyApp.findAndGoToWork('pdf-search-work')" class="absolute right-1 top-1 bottom-1 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-slate-700 px-1.5 rounded transition-colors flex items-center justify-center">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center space-x-1 sm:space-x-2 z-0">
+                    <button onclick="window.StudyApp.prevPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                    <div class="flex items-center text-[11px] font-black">
+                        <input type="number" id="page_num_input" onchange="window.StudyApp.jumpToPage(this.value)" min="1" class="w-10 text-center bg-transparent border-b border-slate-300 dark:border-slate-600 outline-none focus:border-brand-500 transition-colors mr-1">
+                        <span>/ <span id="page_count">-</span></span>
+                    </div>
+                    <button onclick="window.StudyApp.nextPage()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                </div>
+
+                <div class="flex items-center space-x-1 sm:space-x-2 z-10">
+                    <button onclick="window.StudyApp.zoomOut()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+                    <button onclick="window.StudyApp.zoomIn()" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            
+            <div class="flex-1 flex justify-center relative overflow-auto bg-slate-200 dark:bg-slate-950 custom-scrollbar">
+                <div id="pdf-canvas-container" class="hidden w-full h-full relative p-4 flex justify-center min-h-full items-start">
+                    <canvas id="pdf-canvas"></canvas>
+                </div>
+                <div id="viewer-placeholder" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div class="w-12 h-12 bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 rounded-2xl flex items-center justify-center mb-3">
+                        <i data-lucide="book-open" class="w-6 h-6 text-slate-300 dark:text-slate-500"></i>
+                    </div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4 leading-relaxed">라이브러리에서 문서를 선택하거나<br>작품 번호/명을 직접 입력해 주세요.</p>
+                </div>
+            </div>
         </div>
-        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full">
-          <h2 class="text-lg font-bold flex items-center mb-4 text-rose-600 dark:text-rose-400"><i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i> 스터디 벌금 규칙</h2>
-          <ul class="space-y-3">
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">발제문 지각 (전날 24시)</span><span class="text-sm font-bold text-rose-500">2,000원</span></li>
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">스터디 지각 (10분 당)</span><span class="text-sm font-bold text-rose-500">1,000원</span></li>
-            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">과제 미수행</span><span class="text-sm font-bold text-rose-500">5,000원</span></li>
-          </ul>
+    </section>
+
+    <!-- 작업창 영역 -->
+    <section id="right-panel" class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10 transition-all duration-300">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
+            
+            <div id="week-selector-bar" class="bg-brand-50/80 dark:bg-brand-900/20 px-5 py-3 border-b border-brand-100 dark:border-brand-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center space-x-2 flex-1">
+                    <i data-lucide="calendar" class="w-4 h-4 text-brand-600"></i>
+                    <select id="week-select" onchange="window.StudyApp.onWeekChange()" class="bg-transparent text-[11px] font-black text-brand-700 dark:text-brand-300 outline-none cursor-pointer uppercase max-w-[250px] truncate">
+                        <option value="">주차 선택</option>
+                    </select>
+                    <div id="week-days-info" class="hidden items-center text-[10px] font-black text-brand-600 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/50 border border-brand-200 dark:border-brand-700 px-2 py-1 rounded-md ml-1 tracking-widest uppercase transition-all shadow-sm"></div>
+                </div>
+                <div id="editing-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-black rounded uppercase animate-pulse flex items-center">
+                    <i data-lucide="edit-3" class="w-3 h-3 mr-1"></i> 수정 모드
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6 relative">
+
+                <!-- OMR & 서술형 통합 탭 -->
+                <div id="view-omr" class="space-y-6 fade-in">
+                    <div class="grid grid-cols-4 gap-2 relative">
+                        <div class="col-span-1">
+                            <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Num</label>
+                            <input type="text" id="omr-work-num" placeholder="001" class="w-full px-3 py-2.5 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                        </div>
+                        <div class="col-span-3 relative">
+                            <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1.5 ml-1 tracking-widest">Work Name</label>
+                            <input type="text" id="omr-work-name" placeholder="작품 이름을 입력하세요." class="w-full px-3 py-2.5 pr-16 rounded-lg border border-emerald-200 bg-emerald-50/30 dark:bg-slate-950 text-xs font-bold outline-none">
+                            <button onclick="window.StudyApp.findAndGoToWork('omr-work-name')" class="absolute right-1.5 top-6 bottom-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] font-black px-2 rounded-md transition-colors flex items-center shadow-sm">
+                                📖 찾기
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-[10px] font-black text-slate-500 mb-3 flex items-center"><i data-lucide="check-square" class="w-3.5 h-3.5 mr-1 text-emerald-500"></i> 객관식 입력</h3>
+                        <div id="omr-grid-container" class="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 shadow-sm"></div>
+                    </div>
+                    
+                    <div class="border-t border-slate-100 dark:border-slate-800 pt-5">
+                        <h3 class="text-[10px] font-black text-slate-500 mb-3 flex items-center"><i data-lucide="align-left" class="w-3.5 h-3.5 mr-1 text-purple-500"></i> 서술형 입력</h3>
+                        <div id="essay-grid-container" class="space-y-4"></div>
+                    </div>
+
+                    <button onclick="window.StudyApp.submitOMR()" id="submit-omr-btn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center disabled:opacity-70">
+                        <i data-lucide="send" class="w-4 h-4 mr-2"></i> 답안 기록 및 공유하기
+                    </button>
+                </div>
+
+                <!-- Shared Records -->
+                <div id="view-community" class="hidden space-y-4 fade-in h-full flex flex-col">
+                    <div class="flex space-x-2 shrink-0">
+                        <select id="comm-week-filter" onchange="window.StudyApp.updateCommunityWorks()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all">
+                            <option value="">주차 선택</option>
+                        </select>
+                        <select id="comm-work-filter" onchange="window.StudyApp.renderCommunityRecords()" class="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all">
+                            <option value="">작품 선택</option>
+                        </select>
+                        
+                        <button onclick="window.StudyApp.showOfficialAnswer()" class="bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:hover:bg-brand-900/50 dark:text-brand-300 border border-brand-200 dark:border-brand-800 text-[11px] font-black outline-none rounded-lg px-4 py-2.5 shadow-sm whitespace-nowrap transition-all flex items-center">
+                            <i data-lucide="file-search" class="w-3.5 h-3.5 mr-1.5"></i> 답지해설
+                        </button>
+                    </div>
+                    <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2 transition-all"></div>
+                </div>
+
+                <!-- Q&A (모의 출제) 섹터 -->
+                <div id="view-qa" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
+                    <div class="flex space-x-2 shrink-0">
+                        <select id="qa-week-filter" onchange="window.StudyApp.updateQAWorksDropdown()" class="w-24 bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase transition-all focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">주차</option>
+                        </select>
+                        <select id="qa-work-filter" onchange="window.StudyApp.setQAWork(this.value)" class="flex-1 bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">작품 선택</option>
+                        </select>
+                        <div class="flex space-x-1 shrink-0">
+                            <button onclick="window.StudyApp.promptQAWork(false)" class="bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 text-[11px] font-black rounded-lg px-3 shadow-sm transition-all whitespace-nowrap flex items-center outline-none">
+                                <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i> 새 작품
+                            </button>
+                            <button id="qa-work-edit-btn" onclick="window.StudyApp.promptQAWork(true)" class="hidden bg-slate-50 hover:bg-slate-100 text-slate-600 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[11px] font-black rounded-lg px-2 shadow-sm transition-all flex items-center outline-none" title="작품명 수정">
+                                <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button id="qa-work-delete-btn" onclick="window.StudyApp.deleteQAWork()" class="hidden bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-[11px] font-black rounded-lg px-2 shadow-sm transition-all flex items-center outline-none" title="작품 삭제">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="qa-content-area" class="hidden flex-col space-y-4 flex-1 overflow-hidden mt-2">
+                        <div class="bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-xl p-3 shadow-sm shrink-0 focus-within:border-blue-400 transition-all group relative">
+                            <button onclick="window.StudyApp.findAndGoToWorkByString(state.qaCurrentWork)" class="absolute right-2 top-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-[9px] font-black px-2 py-1 rounded transition-colors flex items-center border border-blue-100 z-10">
+                                📖 이 작품 본문 찾기
+                            </button>
+                            
+                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 새로운 모의 문제를 출제해 보세요..." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-14 pt-6 custom-scrollbar dark:text-slate-200 group-focus-within:h-20 transition-all" maxlength="300"></textarea>
+                            <div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-2 mt-1">
+                                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center"><i data-lucide="pen-tool" class="w-3 h-3 mr-1"></i>새로운 창작 문제</span>
+                                <button onclick="window.StudyApp.submitQAQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center">
+                                    <i data-lucide="send" class="w-3 h-3 mr-1"></i> 문제 등록
+                                </button>
+                            </div>
+                        </div>
+                        <div id="qa-list-container" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4"></div>
+                    </div>
+                    
+                    <div id="qa-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-400 opacity-70">
+                        <i data-lucide="folder-search" class="w-10 h-10 mb-3 text-blue-300"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-center leading-relaxed">주차와 작품을 선택하거나 새 작품을 등록하여<br>스스로 문제를 출제하고 AI에게 피드백을 받아보세요.</p>
+                    </div>
+                </div>
+                
+                <!-- 모의 기출 섹터 -->
+                <div id="view-mock" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
+                    <div class="flex space-x-2 shrink-0">
+                        <select id="mock-week-filter" onchange="window.StudyApp.updateMockView()" class="flex-1 bg-white dark:bg-slate-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase truncate transition-all focus:ring-2 focus:ring-emerald-500/20">
+                            <option value="">주차를 선택하세요</option>
+                        </select>
+                        <button onclick="window.StudyApp.generateMockExam()" id="generate-mock-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black rounded-lg px-4 shadow-sm transition-all whitespace-nowrap flex items-center outline-none">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1.5"></i> 기출 연계 모의고사 출제
+                        </button>
+                    </div>
+                    <div id="mock-works-info" class="text-[10px] text-slate-500 dark:text-slate-400 font-bold px-1"></div>
+                    
+                    <div id="mock-list-container" class="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-1 pb-4"></div>
+                    
+                    <div id="mock-empty-state" class="flex-1 flex flex-col items-center justify-center text-slate-400 opacity-70">
+                        <i data-lucide="graduation-cap" class="w-10 h-10 mb-3 text-emerald-300"></i>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-center leading-relaxed">주차를 선택하시면 해당 주차에 등록된 작품들을 모아<br>AI가 임용 기출 기반 모의고사를 자동으로 생성합니다.</p>
+                    </div>
+                </div>
+
+            </div>
         </div>
-      </div>
-    </main>
-  </div>
+    </section>
+  </main>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    const p1 = "AIzaSy";
+    const p2 = "DXOp5V";
+    const p3 = "IQatsh";
+    const p4 = "zwM5k0";
+    const p5 = "lpNWU9";
+    const p6 = "WkngNs";
+    const p7 = "UjU";
+    const apiKey = p1 + p2 + p3 + p4 + p5 + p6 + p7;
 
-    // 🚨 [필독] 관리자 아이디를 여기에 적어주세요!
-    const ADMIN_ID = "kimjs2623"; 
+    const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "01/pdf", answerKeyFileName: "정답해설.pdf" };
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app'; 
 
-    // 🌟 완벽한 49일치 데이터
+    const appAuth = initializeApp(firebaseConfig);
+    const auth = getAuth(appAuth);
+    const db = getFirestore(appAuth);
+
+    const SUBJECT_NAME = "고전시가";
+
     const DAY_MAP = [
       "01-04", "05-07", "08-10", "11-13", "14-16", "17-19", "20-22",
       "23-25", "26-29", "30-32", "33-39", "40-43", "44-47", "48-50",
@@ -229,720 +427,1633 @@
       "186-188", "189-192", "193-195", "196-198", "199-201", "202-204", "205-208"
     ];
 
-    const state = {
-      isDarkMode: false, user: null, appAccount: null, allMembers: [],
-      currentScheduleTab: '고전시가',
-      scheduleData: { '고전시가': { weeks: [] }, '현대시': { weeks: [] } },
-      isEditingSchedule: false, editScheduleForm: [],
-      
-      pickerMode: 'schedule', // 'schedule' or 'todo'
-      pickerEditingId: null, 
-      tempSelectedDays: [], 
-      chatMessages: [],
-      
-      // 🌟 개인 학습 트래커 데이터 (진도 데이터 포함)
-      todos: {}, activeTodoTab: '',
-      progressData: {}, // { "홍길동": { "고전시가": 15, "현대시": 8 } }
-
-      finesData: { records: [] }, isAddingFine: false, newFine: { memberName: '', reason: '지각', amount: 1000 },
-      driveFiles: [], authMode: 'login'
+    const WORK_INDEX = {
+        "공무도하가": { file: "01. 고대가요_1-5.pdf", bookPage: 28 },
+        "구지가": { file: "01. 고대가요_1-5.pdf", bookPage: 30 },
+        "황조가": { file: "01. 고대가요_1-5.pdf", bookPage: 32 },
+        "해가": { file: "01. 고대가요_1-5.pdf", bookPage: 34 },
+        "정읍사": { file: "01. 고대가요_1-5.pdf", bookPage: 36 },
+        "서동요": { file: "02. 향가_6-12.pdf", bookPage: 38 },
+        "모죽지랑가": { file: "02. 향가_6-12.pdf", bookPage: 40 },
+        "헌화가": { file: "02. 향가_6-12.pdf", bookPage: 42 },
+        "제망매가": { file: "02. 향가_6-12.pdf", bookPage: 44 },
+        "찬기파랑가": { file: "02. 향가_6-12.pdf", bookPage: 46 },
+        "도솔가": { file: "02. 향가_6-12.pdf", bookPage: 48 },
+        "처용가": { file: "02. 향가_6-12.pdf", bookPage: 50 },
+        "원왕생가": { file: "02. 향가_6-12.pdf", bookPage: 52 },
+        "안민가": { file: "02. 향가_6-12.pdf", bookPage: 53 },
+        "여수장우중문시": { file: "03. 한시_15-19.pdf", bookPage: 54 },
+        "야청도의성": { file: "03. 한시_15-19.pdf", bookPage: 56 },
+        "촉규화": { file: "03. 한시_15-19.pdf", bookPage: 58 },
+        "추야우중": { file: "03. 한시_15-19.pdf", bookPage: 60 },
+        "제가야산독서당": { file: "03. 한시_15-19.pdf", bookPage: 62 },
+        "가시리": { file: "04. 고려가요_20-29.pdf", bookPage: 70 },
+        "동동": { file: "04. 고려가요_20-29.pdf", bookPage: 72 },
+        "서경별곡": { file: "04. 고려가요_20-29.pdf", bookPage: 76 },
+        "정과정": { file: "04. 고려가요_20-29.pdf", bookPage: 78 },
+        "정석가": { file: "04. 고려가요_20-29.pdf", bookPage: 80 },
+        "사모곡": { file: "04. 고려가요_20-29.pdf", bookPage: 82 },
+        "청산별곡": { file: "04. 고려가요_20-29.pdf", bookPage: 84 },
+        "만전춘별사": { file: "04. 고려가요_20-29.pdf", bookPage: 86 },
+        "쌍화점": { file: "04. 고려가요_20-29.pdf", bookPage: 87 },
+        "삼상저가": { file: "04. 고려가요_20-29.pdf", bookPage: 87 },
+        "한림별곡": { file: "05. 경기체가_30-32.pdf", bookPage: 88 },
+        "관동별곡(안축)": { file: "05. 경기체가_30-32.pdf", bookPage: 91 },
+        "백설이 잦아진 골에": { file: "06. 고려 시조_33-41.pdf", bookPage: 92 },
+        "춘산에 눈 녹인 바람": { file: "06. 고려 시조_33-41.pdf", bookPage: 92 },
+        "이화에 월백하고": { file: "06. 고려 시조_33-41.pdf", bookPage: 92 },
+        "이런들 엇더하며": { file: "06. 고려 시조_33-41.pdf", bookPage: 94 },
+        "이 몸이 주거 주거": { file: "06. 고려 시조_33-41.pdf", bookPage: 94 },
+        "송인": { file: "07. 고려 한시_42-47.pdf", bookPage: 98 },
+        "설중방우인불우": { file: "07. 고려 한시_42-47.pdf", bookPage: 100 },
+        "사리화": { file: "07. 고려 한시_42-47.pdf", bookPage: 102 },
+        "동명왕편": { file: "07. 고려 한시_42-47.pdf", bookPage: 104 },
+        "용비어천가": { file: "08. 악장_48-50.pdf", bookPage: 112 },
+        "신도가": { file: "08. 악장_48-50.pdf", bookPage: 118 },
+        "월인천강지곡": { file: "08. 악장_48-50.pdf", bookPage: 119 },
+        "강촌": { file: "09. 언해_51-57.pdf", bookPage: 120 },
+        "등악양루": { file: "09. 언해_51-57.pdf", bookPage: 122 },
+        "강남봉이구년": { file: "09. 언해_51-57.pdf", bookPage: 122 },
+        "오백 년 도읍지를": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 126 },
+        "흥망이 유수하니": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 126 },
+        "선인교 나린 물이": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 126 },
+        "수양산 바라보며": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 128 },
+        "가마귀 눈비 마자": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 130 },
+        "방 안에 혓는 촛불": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 132 },
+        "추강에 밤이 드니": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 134 },
+        "묏버들 갈해 것거": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 136 },
+        "동짓달 기나긴 밤을": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 136 },
+        "어져 내 일이야": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 138 },
+        "청초 우거진 골에": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 138 },
+        "어부사": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 142 },
+        "강호사시가": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 144 },
+        "도산십이곡": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 146 },
+        "고산구곡가": { file: "10. 조선 전기 시조_58-94.pdf", bookPage: 148 },
+        "상춘곡": { file: "11. 가사_95-101.pdf", bookPage: 156 },
+        "만분가": { file: "11. 가사_95-101.pdf", bookPage: 158 },
+        "면앙정가": { file: "11. 가사_95-101.pdf", bookPage: 162 },
+        "관동별곡": { file: "11. 가사_95-101.pdf", bookPage: 166 },
+        "사미인곡": { file: "11. 가사_95-101.pdf", bookPage: 172 },
+        "속미인곡": { file: "11. 가사_95-101.pdf", bookPage: 176 },
+        "규원가": { file: "11. 가사_95-101.pdf", bookPage: 180 },
+        "만보": { file: "12. 조선 전기 한시_102-104.pdf", bookPage: 184 },
+        "국화야 너는 어이": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 196 },
+        "백구야 말 물어보자": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 202 },
+        "만흥": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 224 },
+        "견회요": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 226 },
+        "오우가": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 228 },
+        "어부사시사": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 230 },
+        "매화사": { file: "13. 조선 후기 시조_109-169.pdf", bookPage: 232 },
+        "선상탄": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 242 },
+        "누항사": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 246 },
+        "일동장유가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 250 },
+        "만언사": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 254 },
+        "연행가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 258 },
+        "춘면곡": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 260 },
+        "유산가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 262 },
+        "덴동어미 화전가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 264 },
+        "농가월령가": { file: "14. 조선 후기 가사_170-178.pdf", bookPage: 270 },
+        "아리랑": { file: "15. 민요_183-192.pdf", bookPage: 272 },
+        "시집살이 노래": { file: "15. 민요_183-192.pdf", bookPage: 274 },
+        "잠노래": { file: "15. 민요_183-192.pdf", bookPage: 276 },
+        "요양의 달": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 286 },
+        "보리타작": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 288 },
+        "자술": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 292 },
+        "화왕가": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 294 },
+        "절명시": { file: "16. 조선 후기 한시_193-208.pdf", bookPage: 300 },
+        "오디세이아": { file: "17. 세계 문학_209-226.pdf", bookPage: 308 }
     };
 
-    const els = {
-      loading: document.getElementById('loading-screen'), auth: document.getElementById('auth-screen'),
-      dashboard: document.getElementById('dashboard-screen'), authNameContainer: document.getElementById('auth-name-container'),
-      authName: document.getElementById('auth-name'), authId: document.getElementById('auth-id'),
-      authPw: document.getElementById('auth-pw'), authSubmitText: document.getElementById('auth-submit-text'),
-      authSubmitIcon: document.getElementById('auth-submit-icon'), tabLogin: document.getElementById('tab-login'),
-      tabSignup: document.getElementById('tab-signup'), dDayDisplay: document.getElementById('d-day-display'),
-      navUsername: document.getElementById('nav-username'), scheduleContainer: document.getElementById('schedule-container'),
-      finesContainer: document.getElementById('fines-container'), driveContainer: document.getElementById('drive-files-container'), 
-      toast: document.getElementById('toast-container'), profileModal: document.getElementById('profile-modal'), 
-      editProfileName: document.getElementById('edit-profile-name'), editProfilePw: document.getElementById('edit-profile-pw'),
-      dayPickerModal: document.getElementById('day-picker-modal'), dayPickerGrid: document.getElementById('day-picker-grid'),
-      dayPickerSubtitle: document.getElementById('day-picker-subtitle'), chatContainer: document.getElementById('chat-container'),
-      todosContainer: document.getElementById('todos-container'), adminPanel: document.getElementById('admin-panel'),
-      adminMemberList: document.getElementById('admin-member-list'), headerProgressContainer: document.getElementById('header-progress-container')
+    const FILE_START_PAGE = {
+        "01. 고대가요_1-5.pdf": 28,
+        "02. 향가_6-12.pdf": 38,
+        "03. 한시_15-19.pdf": 54,
+        "04. 고려가요_20-29.pdf": 70,
+        "05. 경기체가_30-32.pdf": 88,
+        "06. 고려 시조_33-41.pdf": 92,
+        "07. 고려 한시_42-47.pdf": 98,
+        "08. 악장_48-50.pdf": 112,
+        "09. 언해_51-57.pdf": 120,
+        "10. 조선 전기 시조_58-94.pdf": 126,
+        "11. 가사_95-101.pdf": 156,
+        "12. 조선 전기 한시_102-104.pdf": 184,
+        "13. 조선 후기 시조_109-169.pdf": 196,
+        "14. 조선 후기 가사_170-178.pdf": 242,
+        "15. 민요_183-192.pdf": 272,
+        "16. 조선 후기 한시_193-208.pdf": 286,
+        "17. 세계 문학_209-226.pdf": 308
     };
 
-    function showToast(message, type = 'info') {
-      const toast = document.createElement('div');
-      toast.className = `p-3 rounded-xl shadow-lg border text-sm font-bold animate-fade-in-down flex items-center ${type === 'error' ? 'bg-red-50 border-red-200 text-red-600' : type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-indigo-50 border-indigo-200 text-indigo-600'}`;
-      toast.textContent = message; els.toast.appendChild(toast);
-      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
-    }
-
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-      apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", authDomain: "study-99725.firebaseapp.com",
-      projectId: "study-99725", storageBucket: "study-99725.firebasestorage.app", messagingSenderId: "850626154259", appId: "1:850626154259:web:c3307473b7fbb09d9554e6"
+    const FILE_OFFSET_MAP = {
+        "01. 고대가요_1-5.pdf": { pdfPage: 1, bookPage: 24 },
+        "02. 향가_6-12.pdf": { pdfPage: 1, bookPage: 38 },
+        "03. 한시_15-19.pdf": { pdfPage: 1, bookPage: 54 },
+        "04. 고려가요_20-29.pdf": { pdfPage: 1, bookPage: 64 },
+        "05. 경기체가_30-32.pdf": { pdfPage: 1, bookPage: 88 },
+        "06. 고려 시조_33-41.pdf": { pdfPage: 1, bookPage: 92 },
+        "07. 고려 한시_42-47.pdf": { pdfPage: 1, bookPage: 98 },
+        "08. 악장_48-50.pdf": { pdfPage: 1, bookPage: 106 },
+        "09. 언해_51-57.pdf": { pdfPage: 1, bookPage: 120 },
+        "10. 조선 전기 시조_58-94.pdf": { pdfPage: 1, bookPage: 126 },
+        "11. 가사_95-101.pdf": { pdfPage: 1, bookPage: 156 },
+        "12. 조선 전기 한시_102-104.pdf": { pdfPage: 1, bookPage: 184 },
+        "13. 조선 후기 시조_109-169.pdf": { pdfPage: 1, bookPage: 190 },
+        "14. 조선 후기 가사_170-178.pdf": { pdfPage: 1, bookPage: 242 },
+        "15. 민요_183-192.pdf": { pdfPage: 1, bookPage: 272 },
+        "16. 조선 후기 한시_193-208.pdf": { pdfPage: 1, bookPage: 286 },
+        "17. 세계 문학_209-226.pdf": { pdfPage: 1, bookPage: 306 }
     };
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'my-study-app';
-    let firebaseApp, auth, db;
-    try { firebaseApp = initializeApp(firebaseConfig); auth = getAuth(firebaseApp); db = getFirestore(firebaseApp); } catch(e) { console.warn("Firebase Init Waiting..."); }
-
-    async function init() {
-      const examDate = new Date('2027-11-20T00:00:00');
-      const diffDays = Math.ceil(Math.abs(examDate - new Date()) / (1000 * 60 * 60 * 24));
-      els.dDayDisplay.textContent = `D-${diffDays}`;
-
-      state.isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', state.isDarkMode); updateDarkModeIcon();
-
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-        else await signInAnonymously(auth);
-      } catch (error) { showToast("인증 오류", "error"); }
-
-      onAuthStateChanged(auth, (user) => {
-        state.user = user;
-        if (user) setupListeners(user.uid);
-        else updateView();
-      });
-    }
-
-    function setupListeners(uid) {
-      onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data'), (snap) => {
-        if (snap.exists() && snap.data().appAccountId) { state.appAccount = snap.data(); } 
-        else { state.appAccount = null; } updateView();
-      });
-      onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), (snap) => {
-        state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
-        if(state.appAccount && !state.activeTodoTab) state.activeTodoTab = state.appAccount.name;
-        renderTodos(); renderFines(); renderAdminPanel();
-      });
-      onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'sharedDrive'), (snap) => {
-        state.driveFiles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp); renderDriveFiles();
-      });
-      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
-        if (snap.exists()) {
-            const data = snap.data();
-            if(data.weeks && !data['고전시가']) { state.scheduleData = { '고전시가': { weeks: data.weeks }, '현대시': { weeks: [] } }; } 
-            else { state.scheduleData = { '고전시가': data['고전시가'] || { weeks: [] }, '현대시': data['현대시'] || { weeks: [] } }; }
-        } else { state.scheduleData = { '고전시가': { weeks: [] }, '현대시': { weeks: [] } }; }
-        renderSchedule();
-      });
-      // 🌟 개인 진도 데이터 불러오기
-      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'progress'), (snap) => {
-        if (snap.exists()) state.progressData = snap.data();
-        renderTodos();
-        renderHeaderProgress();
-      });
-      onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), (snap) => {
-        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        msgs.sort((a,b) => a.timestamp - b.timestamp);
-        state.chatMessages = msgs;
-        renderChat();
-      });
-      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), (snap) => { if (snap.exists()) state.todos = snap.data(); renderTodos(); });
-      onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), (snap) => { if (snap.exists()) state.finesData = snap.data(); renderFines(); });
-    }
-
-    function updateView() {
-      els.loading.classList.add('hidden');
-      if (state.user && !state.appAccount) { els.auth.classList.remove('hidden'); els.dashboard.classList.add('hidden'); } 
-      else if (state.user && state.appAccount) {
-        els.auth.classList.add('hidden'); els.dashboard.classList.remove('hidden'); els.navUsername.textContent = state.appAccount.name;
-        renderSchedule(); renderChat(); renderFines(); renderDriveFiles(); renderTodos(); renderHeaderProgress(); lucide.createIcons();
-      }
-    }
-
-    function checkIsAdmin() {
-        return state.appAccount && state.appAccount.appAccountId === ADMIN_ID;
-    }
-
-    window.app = {
-      toggleDarkMode: () => { state.isDarkMode = !state.isDarkMode; document.documentElement.classList.toggle('dark', state.isDarkMode); updateDarkModeIcon(); },
-      setAuthMode: (mode) => {
-        state.authMode = mode; const isLogin = mode === 'login';
-        els.tabLogin.className = isLogin ? "flex-1 py-2 text-sm font-bold rounded-lg bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" : "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700";
-        els.tabSignup.className = !isLogin ? "flex-1 py-2 text-sm font-bold rounded-lg bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" : "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700";
-        els.authNameContainer.classList.toggle('hidden', isLogin); els.authSubmitText.textContent = isLogin ? '로그인' : '가입하고 시작하기'; els.authSubmitIcon.setAttribute('data-lucide', isLogin ? 'log-in' : 'user-plus'); lucide.createIcons();
-      },
-      logout: async () => { await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: null, name: null }); state.appAccount = null; updateView(); },
-      
-      openProfileModal: () => { 
-          els.editProfileName.value = state.appAccount.name; 
-          els.editProfilePw.value = ''; 
-          els.profileModal.classList.remove('hidden'); 
-          renderAdminPanel();
-          lucide.createIcons(); 
-      },
-      closeProfileModal: () => { els.profileModal.classList.add('hidden'); },
-      updateProfile: async () => {
-        const newName = els.editProfileName.value.trim(), newPw = els.editProfilePw.value.trim();
-        if(!newName) return showToast('이름을 입력해주세요.', 'error');
-        try {
-          const updateData = { name: newName }; if(newPw) updateData.password = newPw;
-          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', state.appAccount.appAccountId), updateData);
-          await updateDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { name: newName });
-          showToast('정보가 수정되었습니다.', 'success'); app.closeProfileModal();
-        } catch(e) { showToast('수정 실패', 'error'); }
-      },
-      withdrawAccount: async () => {
-        if(!confirm('정말 탈퇴하시겠습니까? 데이터가 모두 삭제됩니다.')) return;
-        try {
-          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', state.appAccount.appAccountId));
-          await deleteDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'));
-          showToast('탈퇴가 완료되었습니다.', 'success'); state.appAccount = null; app.closeProfileModal(); updateView();
-        } catch(e) { showToast('탈퇴 실패', 'error'); }
-      },
-      
-      adminKickMember: async (targetId, targetName) => {
-          if(!checkIsAdmin()) return;
-          if(!confirm(`정말 '${targetName}' 선생님을 명단에서 삭제(강제탈퇴)하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) return;
-          try {
-              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', targetId));
-              showToast(`${targetName} 님이 명단에서 삭제되었습니다.`, 'success');
-          } catch(e) { showToast('삭제 실패', 'error'); }
-      },
-
-      handleDriveUpload: (input) => {
-        const file = input.files[0]; if(!file) return;
-        if(file.size > 1024 * 1024 * 2) return showToast('2MB 이하만 가능합니다.', 'error');
-        showToast('업로드 중...', 'info'); const reader = new FileReader();
-        reader.onloadend = async () => {
-          try {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'sharedDrive'), {
-              fileName: file.name, fileType: file.type || 'application/octet-stream', base64: reader.result.split(',')[1], size: file.size,
-              uploadedBy: state.appAccount?.name || '익명', date: new Date().toLocaleDateString('ko-KR'), timestamp: Date.now()
-            }); showToast('업로드 완료!', 'success');
-          } catch(e) { showToast('업로드 실패', 'error'); } finally { input.value = ''; }
-        }; reader.readAsDataURL(file);
-      },
-      downloadDriveFile: (id) => {
-        const file = state.driveFiles.find(f => f.id === id); if(!file) return;
-        const link = document.createElement('a'); link.href = `data:${file.fileType};base64,${file.base64}`; link.download = file.fileName;
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
-      },
-      deleteDriveFile: async (id) => { if(confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sharedDrive', id)); },
-
-      switchScheduleTab: (dir) => {
-          const tabs = ['고전시가', '현대시'];
-          let idx = tabs.indexOf(state.currentScheduleTab);
-          if (dir === 'next') idx = (idx + 1) % tabs.length;
-          else idx = (idx - 1 + tabs.length) % tabs.length;
-          state.currentScheduleTab = tabs[idx];
-          if (state.isEditingSchedule) {
-              state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData[tabs[idx]]?.weeks || []));
-          }
-          renderSchedule();
-      },
-      toggleEditSchedule: () => { 
-          state.isEditingSchedule = !state.isEditingSchedule; 
-          const subj = state.currentScheduleTab;
-          if(state.isEditingSchedule) state.editScheduleForm = JSON.parse(JSON.stringify(state.scheduleData[subj]?.weeks || [])); 
-          renderSchedule(); 
-      },
-      addScheduleWeek: () => { 
-          const subj = state.currentScheduleTab;
-          state.editScheduleForm.push({ id: Date.now(), weekNum: state.editScheduleForm.length + 1, meetDate: '', area: subj, days: [], isCompleted: false }); 
-          renderSchedule(); 
-      },
-      removeScheduleWeek: (id) => { 
-          state.editScheduleForm = state.editScheduleForm.filter(w => w.id !== id);
-          state.editScheduleForm.sort((a,b) => a.weekNum - b.weekNum).forEach((w, i) => w.weekNum = i + 1); 
-          renderSchedule(); 
-      },
-      updateScheduleField: (id, field, val) => { 
-          const wk = state.editScheduleForm.find(w => w.id === id);
-          if(wk) wk[field] = val; 
-      },
-      
-      openDayPickerForTodo: () => {
-          state.pickerMode = 'todo';
-          state.pickerEditingId = null;
-          state.tempSelectedDays = [];
-          els.dayPickerSubtitle.textContent = `출제 범위로 할당할 Day를 터치해서 모두 고르세요.`;
-          els.dayPickerModal.classList.remove('hidden');
-          renderDayPickerGrid();
-      },
-      openDayPicker: (id) => {
-          state.pickerMode = 'schedule';
-          state.pickerEditingId = id;
-          const wk = state.editScheduleForm.find(w => w.id === id);
-          state.tempSelectedDays = [...(wk.days || [])];
-          els.dayPickerSubtitle.textContent = `[${state.currentScheduleTab}] ${wk.weekNum}주차에 진행할 Day를 골라주세요.`;
-          els.dayPickerModal.classList.remove('hidden');
-          renderDayPickerGrid();
-      },
-      closeDayPicker: () => { els.dayPickerModal.classList.add('hidden'); state.pickerEditingId = null; },
-      toggleDaySelection: (dayNum) => {
-          if(state.tempSelectedDays.includes(dayNum)) {
-              state.tempSelectedDays = state.tempSelectedDays.filter(d => d !== dayNum);
-          } else {
-              state.tempSelectedDays.push(dayNum);
-          }
-          renderDayPickerGrid();
-      },
-      confirmDaySelection: async () => {
-          state.tempSelectedDays.sort((a,b) => a - b);
-          if(state.pickerMode === 'schedule' && state.pickerEditingId !== null) {
-              const wk = state.editScheduleForm.find(w => w.id === state.pickerEditingId);
-              if(wk) wk.days = [...state.tempSelectedDays];
-              renderSchedule();
-          } else if (state.pickerMode === 'todo') {
-              if(state.tempSelectedDays.length === 0) return showToast('할당할 Day를 1개 이상 선택해주세요.', 'error');
-              const text = getRangeText(state.tempSelectedDays);
-              const finalDesc = `[출제] ${text} 문제 생성`;
-              const tasks = state.todos[state.activeTodoTab] || [];
-              await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { 
-                  ...state.todos, 
-                  [state.activeTodoTab]: [...tasks, { id: Date.now(), type: 'assign', desc: finalDesc, done: false }] 
-              });
-              showToast('출제 할당이 명단에 추가되었습니다.', 'success');
-          }
-          app.closeDayPicker();
-      },
-      toggleWeekCompletion: async (id) => {
-          const subj = state.currentScheduleTab;
-          const updatedData = { ...state.scheduleData };
-          if(!updatedData[subj]) updatedData[subj] = { weeks: [] };
-          const weeks = [...(updatedData[subj].weeks || [])];
-          const wk = weeks.find(w => w.id === id);
-          if(wk) {
-              wk.isCompleted = !wk.isCompleted;
-              updatedData[subj].weeks = weeks;
-              await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), updatedData);
-              showToast(wk.isCompleted ? '✅ 진도가 완료 처리되었습니다!' : '진도 완료가 취소되었습니다.');
-          }
-      },
-      saveSchedule: async () => { 
-          const subj = state.currentScheduleTab;
-          const updatedData = { ...state.scheduleData };
-          if(!updatedData[subj]) updatedData[subj] = { weeks: [] };
-          state.editScheduleForm.sort((a,b) => a.weekNum - b.weekNum);
-          updatedData[subj].weeks = state.editScheduleForm;
-
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), updatedData);
-          state.isEditingSchedule = false; 
-          renderSchedule(); 
-          showToast(`[${subj}] 주차별 일정이 저장되었습니다.`, 'success'); 
-      },
-
-      setActiveTodoTab: (name) => { state.activeTodoTab = name; renderTodos(); },
-      toggleTodoTask: async (taskId) => {
-        if(state.activeTodoTab !== state.appAccount.name && !checkIsAdmin()) return;
-        const updated = state.todos[state.activeTodoTab].map(t => t.id === taskId ? { ...t, done: !t.done } : t);
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: updated });
-      },
-      deleteTodoTask: async (taskId, event) => {
-        event.stopPropagation(); 
-        if(state.activeTodoTab !== state.appAccount.name && !checkIsAdmin()) return;
-        const updated = state.todos[state.activeTodoTab].filter(t => t.id !== taskId);
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: updated });
-      },
-      
-      // 🌟 개인 진도 업데이트
-      updateProgress: async () => {
-          const subj = document.getElementById('prog-subj-input').value;
-          const num = document.getElementById('prog-num-input').value;
-          if(num === '' || Number(num) < 0) return showToast('올바른 작품 번호를 입력하세요.', 'error');
-          
-          const currentData = { ...state.progressData };
-          if(!currentData[state.appAccount.name]) currentData[state.appAccount.name] = { '고전시가': 0, '현대시': 0 };
-          currentData[state.appAccount.name][subj] = Number(num);
-          
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'progress'), currentData);
-          showToast(`${subj} 진도가 업데이트 되었습니다. (No.${num})`, 'success');
-      },
-
-      submitChat: async (e) => {
-          e.preventDefault();
-          const input = document.getElementById('chat-input');
-          const text = input.value.trim();
-          if(!text) return;
-          input.value = '';
-          try {
-              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), {
-                  text, userName: state.appAccount.name, timestamp: Date.now()
-              });
-          } catch(err) { showToast('메시지 전송 실패', 'error'); }
-      },
-
-      toggleAddingFine: () => { state.isAddingFine = !state.isAddingFine; if(state.isAddingFine) state.newFine = { memberName: '', reason: '', amount: 1000 }; renderFines(); },
-      updateFineField: (field, val) => { state.newFine[field] = val; },
-      submitFine: async (e) => {
-        e.preventDefault(); if(!state.newFine.memberName) return;
-        const records = state.finesData.records || [];
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), { records: [{ id: Date.now(), ...state.newFine, amount: Number(state.newFine.amount), date: new Date().toLocaleDateString('ko-KR'), isPaid: false }, ...records] });
-        state.isAddingFine = false; showToast('추가되었습니다.', 'success');
-      },
-      toggleFinePaid: async (id) => { const updated = state.finesData.records.map(r => r.id === id ? { ...r, isPaid: !r.isPaid } : r); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), { records: updated }); },
-      deleteFine: async (id) => { const updated = state.finesData.records.filter(r => r.id !== id); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), { records: updated }); }
-    };
-
-    function updateDarkModeIcon() { const icon = document.getElementById('dark-mode-icon'); if(icon) { icon.setAttribute('data-lucide', state.isDarkMode ? 'sun' : 'moon'); lucide.createIcons(); } }
-
-    document.getElementById('auth-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const id = els.authId.value.trim(), pw = els.authPw.value.trim(), name = els.authName.value.trim();
-      const btn = document.getElementById('auth-submit-btn'); btn.disabled = true;
-      try {
-        const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'members'));
-        const members = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (state.authMode === 'signup') {
-          if (members.some(m => m.id === id)) throw new Error('이미 사용 중인 아이디입니다.');
-          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', id), { password: pw, name: name });
-          await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: id, name: name });
-          state.appAccount = { appAccountId: id, name: name }; updateView();
-        } else {
-          const member = members.find(m => m.id === id && m.password === pw);
-          if (member) {
-            await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: member.id, name: member.name });
-            state.appAccount = { appAccountId: member.id, name: member.name }; updateView();
-          } else { throw new Error('아이디/비번 불일치'); }
-        }
-      } catch(err) { document.getElementById('auth-error').textContent = err.message; document.getElementById('auth-error').classList.remove('hidden'); }
-      finally { btn.disabled = false; }
-    });
-
-    function getDayStatus(dayNum) {
-        const subj = state.currentScheduleTab;
-        const weeks = state.isEditingSchedule ? state.editScheduleForm : (state.scheduleData[subj]?.weeks || []);
-        for(let wk of weeks) {
-            if(wk.days && wk.days.includes(dayNum)) {
-                return { status: wk.isCompleted ? 'completed' : 'planned', weekNum: wk.weekNum };
-            }
-        }
-        return { status: 'none' };
-    }
 
     function getRangeText(daysArray) {
         if(!daysArray || daysArray.length === 0) return '진도 범위를 선택해주세요.';
         const sortedDays = [...daysArray].map(Number).sort((a, b) => a - b);
         const first = sortedDays[0];
         const last = sortedDays[sortedDays.length - 1];
+        
         if (!DAY_MAP[first-1] || !DAY_MAP[last-1]) return `Day ${first}~${last} (데이터 오류)`;
+
         const minWorks = DAY_MAP[first-1].split('-')[0];
         const maxWorks = DAY_MAP[last-1].split('-')[1] || DAY_MAP[last-1];
+        
         if(first === last) return `Day ${first} (${minWorks}~${maxWorks}번)`;
         return `Day ${first}~${last} (${minWorks}~${maxWorks}번)`;
     }
 
-    function renderHeaderProgress() {
-        if(!els.headerProgressContainer || !state.appAccount) return;
-        const myProg = state.progressData[state.appAccount.name] || { '고전시가': 0, '현대시': 0 };
-        els.headerProgressContainer.innerHTML = `
-            <div class="flex space-x-6 items-center justify-center">
-                <div class="text-center">
-                    <p class="text-indigo-200 text-[10px] font-bold mb-1"><i data-lucide="book-open" class="w-3 h-3 inline pb-0.5"></i> 고전시가 완료</p>
-                    <div class="text-2xl font-black text-white">No.${myProg['고전시가'] || 0}</div>
-                </div>
-                <div class="w-px h-10 bg-white/20"></div>
-                <div class="text-center">
-                    <p class="text-blue-200 text-[10px] font-bold mb-1"><i data-lucide="feather" class="w-3 h-3 inline pb-0.5"></i> 현대시 완료</p>
-                    <div class="text-2xl font-black text-white">No.${myProg['현대시'] || 0}</div>
-                </div>
-            </div>
-        `;
-        els.headerProgressContainer.classList.remove('hidden');
-        lucide.createIcons();
+    const state = { 
+        user: null, allFiles: [], filteredFiles: [], problemPdfBlob: null,
+        answerKeyPdfDoc: null, answerPageNum: 1, answerPdfScale: 1.5,
+        isFetching: false, mode: 'omr', weeks: [], allSubmissions: [], editingDocId: null, 
+        pdfDoc: null, pageNum: 1, pdfScale: 1.2, userZoomed: false, docWeeks: [],
+        scheduleWeeks: [], qaQuestions: [], qaAnswers: [], qaCurrentWork: "",
+        mockExams: [], mockAnswers: [], sidebarOpen: true,
+        renderTask: null
+    };
+
+    async function getUserName() {
+        if(!state.user) return "익명";
+        
+        if (state.user.displayName) return state.user.displayName;
+
+        const localName = localStorage.getItem('userName') || localStorage.getItem('nickname');
+        if (localName) return localName;
+
+        try {
+            const profileRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data');
+            const profileSnap = await getDoc(profileRef);
+            if(profileSnap.exists() && profileSnap.data().name) return profileSnap.data().name;
+        } catch(e) {}
+        
+        return "스터디원";
     }
 
-    function renderAdminPanel() {
-        if(!els.adminPanel || !els.adminMemberList) return;
-        if(checkIsAdmin()) {
-            els.adminPanel.classList.remove('hidden');
+    function updateGlobalWeeks() {
+        state.weeks = [...new Set([...state.docWeeks])].filter(w => w && w !== 'undefined');
+        state.weeks.sort((a, b) => parseInt(a) - parseInt(b));
+
+        ['week-select', 'comm-week-filter', 'mock-week-filter', 'qa-week-filter'].forEach(id => {
+            const el = document.getElementById(id);
+            if(!el) return;
+            const prev = el.value;
+            el.innerHTML = `<option value="">주차 선택</option>` + state.weeks.map(w => {
+                return `<option value="${w}">${w}주차</option>`;
+            }).join('');
+            if(state.weeks.includes(prev)) el.value = prev;
+        });
+        window.StudyApp.onWeekChange();
+    }
+
+    window.StudyApp = {
+      showToast: (msg, type='info') => {
+        const toast = document.createElement('div');
+        toast.className = `p-4 rounded-xl shadow-2xl border text-[10px] font-black transition-all duration-300 z-[1000000] pointer-events-auto flex items-center ${type==='error'?'bg-red-50 text-red-600 border-red-200':'bg-brand-50 text-brand-600 border-brand-200'}`;
+        toast.innerHTML = `<i data-lucide="${type==='error'?'alert-circle':'info'}" class="w-4 h-4 mr-2"></i><span>${msg}</span>`;
+        document.getElementById('toast-container').appendChild(toast);
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
+      },
+
+      initUI: () => {
+        const omrGrid = document.getElementById('omr-grid-container');
+        if(omrGrid) {
             let html = '';
-            state.allMembers.forEach(m => {
-                const isMe = m.id === state.appAccount.appAccountId;
-                html += `
-                <div class="flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-                    <div class="flex items-center">
-                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 mr-2">${m.name}</span>
-                        <span class="text-[9px] text-slate-400">ID: ${m.id}</span>
-                    </div>
-                    ${!isMe ? `<button onclick="app.adminKickMember('${m.id}', '${m.name}')" class="px-2 py-1 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded text-[9px] font-black transition-colors">강제탈퇴</button>` : `<span class="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded">나 (스터디장)</span>`}
-                </div>`;
-            });
-            els.adminMemberList.innerHTML = html;
+            for(let i=1; i<=10; i++) html += `<div class="space-y-1 text-center"><label class="text-[9px] font-black text-slate-400 uppercase">${i}</label><input type="text" id="omr-${i}" class="w-full p-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-center outline-none uppercase shadow-sm"></div>`;
+            omrGrid.innerHTML = html;
+        }
+        const essayGrid = document.getElementById('essay-grid-container');
+        if(essayGrid) {
+            let html = '';
+            for(let i=1; i<=2; i++) html += `<div class="shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 transition-all focus-within:ring-2 focus-within:ring-brand-500/10"><div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 border-b border-slate-200 dark:border-slate-800"><span class="text-[9px] font-black text-slate-400 uppercase ml-1">서술형 0${i}</span><input type="text" id="essay-num-${i}" placeholder="번호" class="w-14 bg-white dark:bg-slate-950 border border-slate-200 text-[10px] text-center rounded py-1 outline-none"></div><textarea id="essay-ans-${i}" placeholder="서술형 답안을 작성하세요..." class="w-full h-32 p-4 bg-white dark:bg-slate-950 text-xs resize-none outline-none custom-scrollbar border-none transition-all"></textarea></div>`;
+            essayGrid.innerHTML = html;
+        }
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+      },
+
+      setMode: (mode) => {
+        state.mode = mode;
+        ['omr', 'community', 'qa', 'mock'].forEach(m => {
+            const el = document.getElementById(`view-${m}`);
+            if(el) el.classList.toggle('hidden', m !== mode);
+            const tab = document.getElementById(`tab-${m}`);
+            if(tab) {
+                if(m === mode) { tab.classList.add('tab-active'); tab.classList.remove('text-slate-500'); }
+                else { tab.classList.remove('tab-active'); tab.classList.add('text-slate-500'); }
+            }
+        });
+        
+        document.getElementById('week-selector-bar').classList.toggle('hidden', mode === 'qa' || mode === 'mock');
+
+        const sidebar = document.getElementById('library-sidebar');
+        const pdfSec = document.getElementById('pdf-section');
+        const rightPanel = document.getElementById('right-panel');
+        
+        if (sidebar && pdfSec && rightPanel) {
+            if (mode === 'mock') {
+                sidebar.classList.add('hidden');
+                sidebar.classList.remove('flex');
+                pdfSec.classList.add('hidden');
+                pdfSec.classList.remove('flex');
+                rightPanel.classList.remove('lg:w-[480px]');
+                rightPanel.classList.add('flex-1', 'max-w-4xl', 'mx-auto');
+            } else {
+                if (state.sidebarOpen) {
+                    sidebar.classList.remove('hidden');
+                    sidebar.classList.add('flex');
+                }
+                pdfSec.classList.remove('hidden');
+                pdfSec.classList.add('flex');
+                rightPanel.classList.add('lg:w-[480px]');
+                rightPanel.classList.remove('flex-1', 'max-w-4xl', 'mx-auto');
+            }
+        }
+
+        if(mode === 'community') window.StudyApp.renderCommunityRecords();
+        if(mode === 'qa') {
+            window.StudyApp.updateQAWorksDropdown();
+            window.StudyApp.renderQAQuestions();
+        }
+        if(mode === 'mock') {
+            window.StudyApp.updateMockView();
+        }
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+      },
+
+      toggleDarkMode: () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        const icon = document.getElementById('dark-mode-icon');
+        if (icon) icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+      },
+
+      refreshFiles: () => scanGitHub(),
+      filterFiles: () => {
+        const q = document.getElementById('file-search').value.toLowerCase();
+        state.filteredFiles = state.allFiles.filter(f => f.name.toLowerCase().includes(q));
+        renderFileList();
+      },
+
+      toggleSidebar: () => {
+          state.sidebarOpen = !state.sidebarOpen;
+          const sidebar = document.getElementById('library-sidebar');
+          if (state.sidebarOpen) {
+              sidebar.classList.remove('hidden');
+              sidebar.classList.add('flex');
+          } else {
+              sidebar.classList.add('hidden');
+              sidebar.classList.remove('flex');
+          }
+          
+          setTimeout(() => {
+              if(state.pdfDoc) {
+                  state.userZoomed = false;
+                  window.StudyApp.renderPage(state.pageNum);
+              }
+          }, 300);
+      },
+
+      toggleFullScreen: () => {
+        const viewer = document.getElementById('viewer-container');
+        const isFull = viewer.classList.toggle('viewer-fullscreen');
+        document.body.style.overflow = isFull ? 'hidden' : '';
+        document.getElementById('exit-fullscreen-fab').classList.toggle('hidden', !isFull);
+        if(state.pdfDoc) window.StudyApp.renderPage(state.pageNum);
+      },
+
+      loadMaterial: async (name, url, targetPage = 1) => {
+        if (state.isFetching) return;
+        state.isFetching = true;
+        
+        const cleanName = name.replace('.pdf', '');
+        document.getElementById('viewer-filename').textContent = cleanName;
+        document.getElementById('viewer-placeholder').classList.add('hidden');
+        document.querySelectorAll('.file-btn').forEach(b => b.classList.remove('border-brand-500', 'bg-brand-50/30'));
+        document.getElementById(`btn-${name.replace(/\s+/g, '')}`)?.classList.add('border-brand-500', 'bg-brand-50/30');
+
+        if (state.sidebarOpen) window.StudyApp.toggleSidebar();
+
+        try {
+          const loadingTask = pdfjsLib.getDocument(url);
+          state.pdfDoc = await loadingTask.promise;
+          
+          document.getElementById('page_count').textContent = state.pdfDoc.numPages;
+          document.getElementById('pdf-controls').classList.remove('hidden');
+          document.getElementById('pdf-canvas-container').classList.remove('hidden');
+          
+          state.pageNum = targetPage; 
+          state.userZoomed = false;
+          window.StudyApp.renderPage(state.pageNum);
+          window.StudyApp.showToast(`${cleanName} 로드 완료`);
+        } catch (e) { window.StudyApp.showToast("PDF 로드 실패: " + e.message, "error"); }
+        finally { state.isFetching = false; }
+      },
+
+      renderPage: (num) => {
+        if(!state.pdfDoc) return;
+        
+        state.pdfDoc.getPage(num).then((page) => {
+          const canvas = document.getElementById('pdf-canvas');
+          const ctx = canvas.getContext('2d');
+          const container = document.getElementById('pdf-canvas-container');
+          
+          if (state.renderTask) {
+              state.renderTask.cancel();
+          }
+
+          if(!state.userZoomed) {
+              state.pdfScale = (container.clientWidth - 30) / page.getViewport({scale: 1}).width;
+          }
+          
+          const viewport = page.getViewport({scale: state.pdfScale});
+          const outputScale = window.devicePixelRatio || 2;
+          
+          canvas.width = Math.floor(viewport.width * outputScale);
+          canvas.height = Math.floor(viewport.height * outputScale);
+          canvas.style.width = Math.floor(viewport.width) + "px";
+          canvas.style.height = Math.floor(viewport.height) + "px";
+
+          const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          const renderContext = { canvasContext: ctx, transform: transform, viewport: viewport };
+
+          state.renderTask = page.render(renderContext);
+
+          state.renderTask.promise.then(() => {
+              canvas.classList.remove('hidden');
+              state.renderTask = null; 
+          }).catch((err) => {
+              if (err.name !== 'RenderingCancelledException') {
+                  console.error('렌더링 에러:', err);
+              }
+          });
+          
+          document.getElementById('page_num_input').value = num;
+        });
+      },
+
+      jumpToPage: (val) => {
+          let num = parseInt(val, 10);
+          if (isNaN(num) || num < 1) num = 1;
+          if (state.pdfDoc && num > state.pdfDoc.numPages) num = state.pdfDoc.numPages;
+          if (state.pageNum !== num) {
+              state.pageNum = num;
+              window.StudyApp.renderPage(state.pageNum);
+          } else {
+              document.getElementById('page_num_input').value = state.pageNum;
+          }
+      },
+
+      prevPage: () => { if (state.pageNum > 1) { state.pageNum--; window.StudyApp.renderPage(state.pageNum); } },
+      nextPage: () => { if (state.pdfDoc && state.pageNum < state.pdfDoc.numPages) { state.pageNum++; window.StudyApp.renderPage(state.pageNum); } },
+      zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.StudyApp.renderPage(state.pageNum); },
+      zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.StudyApp.renderPage(state.pageNum); } },
+
+      findAndGoToWorkByString: (workString) => {
+          if (!workString) return;
+          const cleanName = workString.replace(/^\d+\.\s*/, '').trim();
+          
+          let target = WORK_INDEX[cleanName];
+          if (!target) {
+              const key = Object.keys(WORK_INDEX).find(k => k.includes(cleanName) || cleanName.includes(k));
+              if (key) target = WORK_INDEX[key];
+          }
+
+          if (!target) {
+              return window.StudyApp.showToast(`목차에 [${cleanName}] 작품이 없습니다. 작품명을 확인해주세요.`, "error");
+          }
+
+          let calculatedPdfPage = 1;
+          const offsetData = FILE_OFFSET_MAP[target.file];
+          
+          if (offsetData) {
+              calculatedPdfPage = target.bookPage - offsetData.bookPage + offsetData.pdfPage;
+          }
+          if (calculatedPdfPage < 1) calculatedPdfPage = 1; 
+
+          const currentFileName = document.getElementById('viewer-filename').textContent;
+          const targetFileNameClean = target.file.replace('.pdf', '');
+
+          if (currentFileName === targetFileNameClean && state.pdfDoc) {
+              window.StudyApp.jumpToPage(calculatedPdfPage);
+              window.StudyApp.showToast(`[${cleanName}] 본문으로 이동했습니다.`, "success");
+          } else {
+              const fileObj = state.allFiles.find(f => f.name === target.file);
+              if (fileObj) {
+                  window.StudyApp.showToast(`[${target.file}] 파일을 열고 본문으로 이동합니다...`, "info");
+                  window.StudyApp.loadMaterial(fileObj.name, fileObj.download_url, calculatedPdfPage);
+              } else {
+                  window.StudyApp.showToast(`[${target.file}] 파일을 라이브러리에서 찾을 수 없습니다.`, "error");
+              }
+          }
+      },
+
+      findAndGoToWork: (inputId) => {
+          const workName = document.getElementById(inputId).value.trim();
+          if(!workName) return window.StudyApp.showToast("작품명을 입력하고 검색을 눌러주세요.", "error");
+          window.StudyApp.findAndGoToWorkByString(workName);
+      },
+
+      onWeekChange: () => {
+          const weekVal = document.getElementById('week-select').value;
+          const infoEl = document.getElementById('week-days-info');
+          
+          if (infoEl) {
+              const weekObj = state.scheduleWeeks.find(w => {
+                  const num = String(w.weekNum || w.week).replace(/[^0-9]/g, '');
+                  return num === weekVal;
+              });
+              
+              if (weekObj && weekObj.days && Array.isArray(weekObj.days) && weekObj.days.length > 0) {
+                  const badgeText = getRangeText(weekObj.days);
+                  infoEl.innerHTML = `<i data-lucide="check-square" class="w-3 h-3 mr-1"></i> ${badgeText}`;
+                  infoEl.classList.remove('hidden');
+                  infoEl.classList.add('flex');
+                  if(typeof lucide !== 'undefined') lucide.createIcons();
+              } else {
+                  infoEl.classList.add('hidden');
+                  infoEl.classList.remove('flex');
+              }
+          }
+          window.StudyApp.updateCommunityWorks();
+      },
+
+      updateCommunityWorks: () => {
+          const w = document.getElementById('comm-week-filter').value;
+          const prevWork = document.getElementById('comm-work-filter').value;
+          const works = [...new Set(state.allSubmissions.filter(s => String(s.week) === String(w) && !s.isDeleted).map(s => s.workName))];
+          const el = document.getElementById('comm-work-filter');
+          el.innerHTML = works.length ? `<option value="">작품 선택</option>` + works.map(w => `<option value="${w}">${w}</option>`).join('') : `<option value="">기록 없음</option>`;
+          if (works.includes(prevWork)) el.value = prevWork;
+          window.StudyApp.renderCommunityRecords();
+      },
+
+      renderAnswerPage: (num) => {
+          if(!state.answerKeyPdfDoc) return;
+          state.answerKeyPdfDoc.getPage(num).then((page) => {
+              const canvas = document.getElementById('answer-pdf-canvas');
+              const ctx = canvas.getContext('2d');
+              const viewport = page.getViewport({scale: state.answerPdfScale});
+              
+              const outputScale = window.devicePixelRatio || 2;
+              canvas.width = Math.floor(viewport.width * outputScale);
+              canvas.height = Math.floor(viewport.height * outputScale);
+              canvas.style.width = Math.floor(viewport.width) + "px";
+              canvas.style.height = Math.floor(viewport.height) + "px";
+
+              const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+
+              page.render({ canvasContext: ctx, transform: transform, viewport: viewport });
+              
+              document.getElementById('ans_page_num_input').value = num;
+          });
+      },
+
+      jumpToAnswerPage: (val) => {
+          let num = parseInt(val, 10);
+          if (isNaN(num) || num < 1) num = 1;
+          if (num > state.answerKeyPdfDoc.numPages) num = state.answerKeyPdfDoc.numPages;
+          if (state.answerPageNum !== num) {
+              state.answerPageNum = num;
+              window.StudyApp.renderAnswerPage(state.answerPageNum);
+          } else {
+              document.getElementById('ans_page_num_input').value = state.answerPageNum;
+          }
+      },
+
+      prevAnswerPage: () => { if (state.answerPageNum > 1) { state.answerPageNum--; window.StudyApp.renderAnswerPage(state.answerPageNum); } },
+      nextAnswerPage: () => { if (state.answerPageNum < state.answerKeyPdfDoc.numPages) { state.answerPageNum++; window.StudyApp.renderAnswerPage(state.answerPageNum); } },
+      zoomInAnswer: () => { state.answerPdfScale += 0.25; window.StudyApp.renderAnswerPage(state.answerPageNum); },
+      zoomOutAnswer: () => { if (state.answerPdfScale > 0.5) { state.answerPdfScale -= 0.25; window.StudyApp.renderAnswerPage(state.answerPageNum); } },
+
+      showOfficialAnswer: async () => {
+          let week = "", name = "";
+          
+          if (state.mode === 'omr') { 
+              week = document.getElementById('week-select').value;
+              name = document.getElementById('omr-work-name').value.trim(); 
+          } else if (state.mode === 'community') { 
+              week = document.getElementById('comm-week-filter').value;
+              name = document.getElementById('comm-work-filter').value; 
+          }
+          
+          if (!week || !name) {
+              return window.StudyApp.showToast("주차와 작품명을 먼저 지정(또는 선택)해주세요.", "error");
+          }
+          if (!state.answerKeyPdfDoc) {
+              return window.StudyApp.showToast("정답 해설지 PDF가 아직 로드되지 않았습니다.", "error");
+          }
+
+          const hasSubmitted = state.allSubmissions.some(s => s.userId === state.user.uid && String(s.week) === String(week) && s.workName === name && !s.isDeleted);
+          
+          if (!hasSubmitted) {
+              return window.StudyApp.showToast(`[${name}]의 답안을 먼저 제출해야 해설을 확인할 수 있습니다!`, "error");
+          }
+
+          document.getElementById('ans_page_count').textContent = state.answerKeyPdfDoc.numPages;
+          document.getElementById('answer-modal').classList.remove('hidden');
+          
+          if (!state.answerPageNum) state.answerPageNum = 1;
+          window.StudyApp.renderAnswerPage(state.answerPageNum);
+      },
+
+      submitOMR: async () => {
+        const week = document.getElementById('week-select').value;
+        if(!week) return window.StudyApp.showToast("주차를 먼저 선택해 주세요.", "error");
+        const workName = document.getElementById('omr-work-name').value.trim();
+        if(!workName) return window.StudyApp.showToast("작품 이름을 입력해주세요.", "error");
+        
+        const ans = [];
+        
+        for(let i=1; i<=10; i++) {
+            const v = document.getElementById(`omr-${i}`).value.trim();
+            if(v) ans.push(`[객관식 ${i}번] ${v}`);
+        }
+        
+        for(let i=1; i<=2; i++) {
+            const n = document.getElementById(`essay-num-${i}`).value.trim();
+            const a = document.getElementById(`essay-ans-${i}`).value.trim();
+            if(a) ans.push(`[서술형 ${n || i}번]\n${a}`);
+        }
+
+        if(!ans.length) return window.StudyApp.showToast("답안을 입력해 주세요. (객관식 또는 서술형)", "error");
+
+        const btn = document.getElementById('submit-omr-btn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin-custom"></i> 기록 중...`;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        try {
+            const userName = await getUserName();
+            const recordData = { week, workName, type: "답안", userAnswers: ans, userId: state.user.uid, userName, isDeleted: false, timestamp: Date.now() };
+            
+            const existing = state.allSubmissions.find(s => s.userId === state.user.uid && String(s.week) === String(week) && s.workName === workName && s.type === "답안");
+
+            if (state.editingDocId) {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', state.editingDocId), { ...recordData, isEdited: true, editedAt: Date.now() });
+                window.StudyApp.showToast("수정된 답안이 성공적으로 기록되었습니다.", "success");
+            } else if (existing) {
+                const mergedAnswers = [...existing.userAnswers, "\n[추가 제출]", ...ans];
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', existing.id), { userAnswers: mergedAnswers, isEdited: true, editedAt: Date.now() });
+                window.StudyApp.showToast("기존 답안에 새로운 답안이 추가로 병합되었습니다.", "success");
+            } else {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'submissions'), recordData);
+                window.StudyApp.showToast("답안 기록 완료! 이제 해설을 볼 수 있습니다.", "success");
+            }
+            
+            state.editingDocId = null; 
+            document.getElementById('editing-badge').classList.add('hidden');
+            
+            for(let i=1; i<=10; i++) document.getElementById(`omr-${i}`).value = '';
+            for(let i=1; i<=2; i++) {
+                document.getElementById(`essay-num-${i}`).value = '';
+                document.getElementById(`essay-ans-${i}`).value = '';
+            }
+            window.StudyApp.setMode('community');
+        } catch(e) {
+            window.StudyApp.showToast(`오류 발생: ${e.message}`, "error");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+      },
+
+      editSubmission: (docId, type) => {
+          const record = state.allSubmissions.find(s => s.id === docId);
+          if(!record) return;
+          state.editingDocId = docId; document.getElementById('editing-badge').classList.remove('hidden');
+          
+          document.getElementById('week-select').value = record.week;
+          document.getElementById('omr-work-name').value = record.workName;
+          
+          for(let i=1; i<=10; i++) document.getElementById(`omr-${i}`).value = '';
+          for(let i=1; i<=2; i++) {
+              document.getElementById(`essay-num-${i}`).value = '';
+              document.getElementById(`essay-ans-${i}`).value = '';
+          }
+
+          let essayCount = 1;
+          record.userAnswers.forEach(ans => {
+              if (ans === "\n[추가 제출]") return; 
+              
+              const omrMatch = ans.match(/^\[객관식 (\d+)번\]\s*(.*)$/);
+              if (omrMatch) {
+                  const el = document.getElementById(`omr-${omrMatch[1]}`);
+                  if (el) el.value = omrMatch[2];
+              }
+              
+              const essayMatch = ans.match(/^\[서술형 (.*?)번\]\n([\s\S]*)$/);
+              if (essayMatch && essayCount <= 2) {
+                  document.getElementById(`essay-num-${essayCount}`).value = essayMatch[1];
+                  document.getElementById(`essay-ans-${essayCount}`).value = essayMatch[2];
+                  essayCount++;
+              }
+          });
+
+          window.StudyApp.setMode('omr');
+          window.StudyApp.showToast("수정 모드로 전환되었습니다. 작성하셨던 답안을 복원했습니다.");
+      },
+
+      deleteSubmission: (docId) => {
+          const modal = document.getElementById('delete-modal');
+          document.getElementById('delete-modal-desc').textContent = "해당 기록을 영구적으로 삭제하시겠습니까?";
+          modal.classList.remove('hidden');
+          document.getElementById('confirm-delete-btn').onclick = async () => {
+              modal.classList.add('hidden');
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'submissions', docId));
+              window.StudyApp.showToast("삭제 완료");
+          };
+      },
+
+      renderCommunityRecords: () => {
+          const w = document.getElementById('comm-week-filter').value;
+          const work = document.getElementById('comm-work-filter').value;
+          const container = document.getElementById('community-container');
+          if(!w || !work) { container.innerHTML = `<p class="text-center py-10 text-[10px] text-slate-400">조회할 주차와 작품을 선택하세요.</p>`; return; }
+          const subs = state.allSubmissions.filter(s => String(s.week) === String(w) && s.workName === work);
+          
+          container.innerHTML = subs.map(r => `
+              <div class="bg-white dark:bg-slate-900 border ${r.userId === state.user.uid ? 'border-brand-400 shadow-sm' : 'border-slate-200 dark:border-slate-800'} rounded-xl overflow-hidden mb-2 transition-all">
+                  <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3.5 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30">
+                      <div class="flex items-center space-x-2">
+                          <span class="text-[11px] font-black">${r.userId === state.user.uid ? '🌟 나의 답안 (' + (r.userName || '익명') + ')' : (r.userName || '익명')}</span>
+                          <span class="text-[9px] font-bold text-slate-400 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase">${r.type}</span>
+                      </div>
+                      <div class="flex space-x-1">
+                          ${r.userId === state.user.uid ? `<button onclick="window.StudyApp.editSubmission('${r.id}', '${r.type}'); event.stopPropagation();" class="text-[9px] font-bold text-brand-500 bg-brand-50 px-2 py-1 rounded transition-all hover:bg-brand-100">수정</button>` : ''}
+                          <button onclick="window.StudyApp.deleteSubmission('${r.id}'); event.stopPropagation();" class="text-[9px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded transition-all hover:bg-red-100">삭제</button>
+                      </div>
+                  </div>
+                  <div class="hidden border-t p-4 bg-slate-50/30 dark:bg-slate-800/20 space-y-3 transition-all">
+                      <p class="text-xs font-medium text-slate-700 dark:text-slate-300 whitespace-pre-wrap pl-3 border-l-2 border-brand-400 leading-relaxed">${r.userAnswers.join('\n\n')}</p>
+                  </div>
+              </div>
+          `).join('');
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+      },
+
+      updateQAWorksDropdown: () => {
+          const w = document.getElementById('qa-week-filter')?.value;
+          let filteredQs = w ? state.qaQuestions.filter(q => String(q.week) === String(w)) : [];
+          const qWorks = [...new Set(filteredQs.map(q => q.workName))].sort();
+          
+          const select = document.getElementById('qa-work-filter');
+          if(!select) return;
+          const currentVal = select.value;
+          
+          let html = '<option value="">작품 선택</option>';
+          qWorks.forEach(work => { html += `<option value="${work}">${work}</option>`; });
+          
+          select.innerHTML = html;
+          
+          if (qWorks.includes(currentVal)) {
+              select.value = currentVal;
+          } else if (state.qaCurrentWork && qWorks.includes(state.qaCurrentWork)) {
+              select.value = state.qaCurrentWork;
+          } else {
+              select.value = "";
+              window.StudyApp.setQAWork(""); 
+          }
+      },
+
+      addQAWorkOption: (workName) => {
+          if(!workName) return;
+          const select = document.getElementById('qa-work-filter');
+          let exists = false;
+          for(let i=0; i<select.options.length; i++) {
+              if(select.options[i].value === workName) exists = true;
+          }
+          if(!exists) {
+              select.innerHTML += `<option value="${workName}">${workName}</option>`;
+          }
+      },
+
+      promptQAWork: (isEdit = false) => {
+          const w = document.getElementById('qa-week-filter').value;
+          if (!isEdit && !w) return window.StudyApp.showToast("주차를 먼저 선택해주세요.", "error");
+
+          const titleEl = document.getElementById('prompt-modal-title');
+          const descEl = document.getElementById('prompt-modal-desc');
+          const numEl = document.getElementById('prompt-num-input');
+          const inputEl = document.getElementById('prompt-input');
+          const btnEl = document.getElementById('prompt-confirm-btn');
+
+          if (isEdit) {
+              if (!state.qaCurrentWork) return window.StudyApp.showToast("선택된 작품이 없습니다.", "error");
+              titleEl.innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-blue-500 mr-2"></i> 작품명 수정`;
+              descEl.textContent = "수정할 작품의 번호와 이름을 입력하세요.";
+              
+              const match = state.qaCurrentWork.match(/^(\d{3})\.\s(.*)$/);
+              if(match) {
+                  numEl.value = parseInt(match[1], 10);
+                  inputEl.value = match[2];
+              } else {
+                  numEl.value = "";
+                  inputEl.value = state.qaCurrentWork;
+              }
+              btnEl.onclick = () => window.StudyApp.confirmEditQAWork();
+          } else {
+              titleEl.innerHTML = `<i data-lucide="folder-plus" class="w-5 h-5 text-blue-500 mr-2"></i> 모의 출제 새 작품 등록`;
+              descEl.textContent = "문제를 출제할 작품의 번호와 이름을 입력하세요.";
+              numEl.value = "";
+              inputEl.value = "";
+              btnEl.onclick = () => window.StudyApp.confirmPromptNewQAWork();
+          }
+          
+          document.getElementById('prompt-modal').classList.remove('hidden');
+          inputEl.focus();
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+      },
+
+      confirmPromptNewQAWork: () => {
+          const num = document.getElementById('prompt-num-input').value.trim();
+          const text = document.getElementById('prompt-input').value.trim();
+          if(!text) return window.StudyApp.showToast("작품명을 입력해주세요.", "error");
+          
+          const finalWorkName = num ? `${num.padStart(3, '0')}. ${text}` : text;
+          
+          document.getElementById('prompt-modal').classList.add('hidden');
+          window.StudyApp.addQAWorkOption(finalWorkName);
+          
+          const select = document.getElementById('qa-work-filter');
+          select.value = finalWorkName;
+          window.StudyApp.setQAWork(finalWorkName);
+      },
+
+      confirmEditQAWork: async () => {
+          const num = document.getElementById('prompt-num-input').value.trim();
+          const text = document.getElementById('prompt-input').value.trim();
+          if(!text) return window.StudyApp.showToast("작품명을 입력해주세요.", "error");
+          
+          const finalWorkName = num ? `${num.padStart(3, '0')}. ${text}` : text;
+          
+          if(finalWorkName === state.qaCurrentWork) {
+              document.getElementById('prompt-modal').classList.add('hidden');
+              return;
+          }
+
+          const oldName = state.qaCurrentWork;
+          document.getElementById('prompt-modal').classList.add('hidden');
+          window.StudyApp.showToast("작품명을 수정 중입니다...", "info");
+
+          try {
+              const qQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), where('workName', '==', oldName));
+              const qSnap = await getDocs(qQuery);
+              const qPromises = [];
+              qSnap.forEach(d => qPromises.push(updateDoc(d.ref, { workName: finalWorkName })));
+
+              const aQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers'), where('workName', '==', oldName));
+              const aSnap = await getDocs(aQuery);
+              const aPromises = [];
+              aSnap.forEach(d => aPromises.push(updateDoc(d.ref, { workName: finalWorkName })));
+
+              await Promise.all([...qPromises, ...aPromises]);
+
+              state.qaCurrentWork = finalWorkName;
+              window.StudyApp.updateQAWorksDropdown();
+              document.getElementById('qa-work-filter').value = finalWorkName;
+              window.StudyApp.showToast("작품명이 성공적으로 수정되었습니다.", "success");
+          } catch(e) {
+              window.StudyApp.showToast("작품명 수정 실패: " + e.message, "error");
+          }
+      },
+
+      deleteQAWork: () => {
+          if(!state.qaCurrentWork) return;
+          const modal = document.getElementById('delete-modal');
+          document.getElementById('delete-modal-desc').innerHTML = `<span class="font-bold text-red-500">[${state.qaCurrentWork}]</span> 작품과 관련된 <br>모든 문제 및 답안이 영구 삭제됩니다.`;
+          modal.classList.remove('hidden');
+
+          document.getElementById('confirm-delete-btn').onclick = async () => {
+              modal.classList.add('hidden');
+              window.StudyApp.showToast("작품을 삭제 중입니다...", "info");
+              try {
+                  const oldName = state.qaCurrentWork;
+
+                  const qQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), where('workName', '==', oldName));
+                  const qSnap = await getDocs(qQuery);
+                  const qPromises = [];
+                  qSnap.forEach(d => qPromises.push(deleteDoc(d.ref)));
+
+                  const aQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers'), where('workName', '==', oldName));
+                  const aSnap = await getDocs(aQuery);
+                  const aPromises = [];
+                  aSnap.forEach(d => aPromises.push(deleteDoc(d.ref)));
+
+                  await Promise.all([...qPromises, ...aPromises]);
+
+                  state.qaCurrentWork = "";
+                  window.StudyApp.updateQAWorksDropdown();
+                  window.StudyApp.setQAWork("");
+                  window.StudyApp.showToast("작품이 삭제되었습니다.", "success");
+              } catch(e) {
+                  window.StudyApp.showToast("작품 삭제 실패: " + e.message, "error");
+              }
+          };
+      },
+
+      setQAWork: (workName) => {
+          state.qaCurrentWork = workName;
+          const area = document.getElementById('qa-content-area');
+          const empty = document.getElementById('qa-empty-state');
+          const editBtn = document.getElementById('qa-work-edit-btn');
+          const deleteBtn = document.getElementById('qa-work-delete-btn');
+          
+          if(workName) {
+              area.classList.remove('hidden');
+              area.classList.add('flex');
+              empty.classList.add('hidden');
+              editBtn.classList.remove('hidden');
+              deleteBtn.classList.remove('hidden');
+              window.StudyApp.renderQAQuestions();
+          } else {
+              area.classList.add('hidden');
+              area.classList.remove('flex');
+              empty.classList.remove('hidden');
+              editBtn.classList.add('hidden');
+              deleteBtn.classList.add('hidden');
+          }
+      },
+
+      submitQAQuestion: async () => {
+          if(!state.user) return;
+          const textInput = document.getElementById('qa-new-q-text');
+          const text = textInput.value.trim();
+          const w = document.getElementById('qa-week-filter').value;
+          
+          if(!w) return window.StudyApp.showToast("주차를 먼저 선택해주세요.", "error");
+          if(!state.qaCurrentWork) return window.StudyApp.showToast("먼저 작품을 선택해주세요.", "error");
+          if(!text) return window.StudyApp.showToast("문제 내용을 입력해주세요.", "error");
+
+          try {
+              const userName = await getUserName();
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), {
+                  week: w,
+                  workName: state.qaCurrentWork,
+                  questionText: text,
+                  authorId: state.user.uid,
+                  authorName: userName,
+                  timestamp: Date.now()
+              });
+              
+              textInput.value = '';
+              window.StudyApp.showToast("새로운 문제가 등록되었습니다.", "success");
+          } catch(e) {
+              window.StudyApp.showToast("문제 등록 실패: " + e.message, "error");
+          }
+      },
+
+      deleteQAQuestion: (questionId) => {
+          const modal = document.getElementById('delete-modal');
+          document.getElementById('delete-modal-desc').textContent = "해당 문제를 영구적으로 삭제하시겠습니까?";
+          modal.classList.remove('hidden');
+          
+          document.getElementById('confirm-delete-btn').onclick = async () => {
+              modal.classList.add('hidden');
+              try {
+                  await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qa_questions', questionId));
+                  window.StudyApp.showToast("문제가 삭제되었습니다.");
+              } catch(e) {
+                  window.StudyApp.showToast("문제 삭제 실패: " + e.message, "error");
+              }
+          };
+      },
+
+      editQAAnswer: async (answerId, questionId) => {
+          const answer = state.qaAnswers.find(a => a.id === answerId);
+          if(!answer) return;
+          const text = answer.answerText;
+          try {
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qa_answers', answerId));
+              window.StudyApp.showToast("수정 모드: 작성하신 답안을 입력칸에 복원했습니다.");
+              setTimeout(() => {
+                  const ta = document.getElementById(`qa-ans-${questionId}`);
+                  if(ta) {
+                      ta.value = text;
+                      ta.focus();
+                  }
+              }, 300);
+          } catch(e) {
+              window.StudyApp.showToast("수정 모드 전환 실패", "error");
+          }
+      },
+
+      renderQAQuestions: () => {
+          if(state.mode !== 'qa' || !state.qaCurrentWork) return;
+          const container = document.getElementById('qa-list-container');
+          const w = document.getElementById('qa-week-filter').value;
+          
+          const currentInputs = {};
+          const textareas = container.querySelectorAll('textarea');
+          textareas.forEach(ta => currentInputs[ta.id] = ta.value);
+          const activeEl = document.activeElement;
+          const activeId = activeEl?.id;
+          let cursorStart = 0, cursorEnd = 0;
+          let shouldRestoreSelection = false;
+
+          if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT') && currentInputs[activeId] !== undefined) {
+              cursorStart = activeEl.selectionStart;
+              cursorEnd = activeEl.selectionEnd;
+              shouldRestoreSelection = true;
+          }
+          
+          const qs = state.qaQuestions.filter(q => String(q.week) === String(w) && q.workName === state.qaCurrentWork);
+          
+          if(qs.length === 0) {
+              container.innerHTML = `<div class="text-center py-6 text-[10px] text-slate-400 font-bold border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">아직 출제된 문제가 없습니다.<br>첫 번째 문제를 출제해 보세요!</div>`;
+              return;
+          }
+
+          container.innerHTML = qs.map(q => {
+              const allAnswers = state.qaAnswers.filter(a => a.questionId === q.id);
+              const myAnswer = allAnswers.find(a => a.userId === state.user.uid);
+              
+              let contentHtml = '';
+
+              if (myAnswer) {
+                  let answersHtml = allAnswers.map(a => `
+                      <div class="mt-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border ${a.userId === state.user.uid ? 'border-brand-300 dark:border-brand-700' : 'border-slate-100 dark:border-slate-800'} relative">
+                          <p class="text-[10px] text-slate-500 font-bold mb-1">${a.userId === state.user.uid ? '🌟 내 답안 (' + (a.userName || '익명') + ')' : (a.userName || '익명') + '님의 답안'}</p>
+                          <p class="text-xs text-slate-800 dark:text-slate-300 whitespace-pre-wrap">${a.answerText}</p>
+                          ${a.userId === state.user.uid ? `<button onclick="window.StudyApp.editQAAnswer('${a.id}', '${q.id}')" class="mt-2 text-[9px] font-bold text-blue-500 hover:text-blue-700 underline underline-offset-2 transition-colors">답안 수정하기</button>` : ''}
+                      </div>
+                  `).join('');
+
+                  contentHtml += `
+                      <div class="mt-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+                          <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 block">스터디원 답안 목록 (${allAnswers.length}명 제출)</span>
+                          ${answersHtml}
+                      </div>
+                  `;
+                  
+                  // 🌟 [추가] 서버 잠금 상태일 때 렌더링 변경
+                  if (q.isAIFetching) {
+                      contentHtml += `
+                          <div class="mt-4 text-center">
+                              <button disabled class="bg-slate-400 text-white text-[10px] font-black px-4 py-2.5 rounded-lg shadow-sm flex items-center justify-center cursor-not-allowed w-full sm:w-auto mx-auto transition-all">
+                                  <i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin"></i> 다른 스터디원이 AI 분석 요청 중...
+                              </button>
+                          </div>
+                      `;
+                  } else if (q.aiFeedback) {
+                      contentHtml += `
+                          <div class="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl relative overflow-hidden">
+                              <div class="flex items-center gap-2 mb-3">
+                                  <i data-lucide="bot" class="w-5 h-5 text-blue-600"></i>
+                                  <span class="font-black text-blue-900 dark:text-blue-300 text-xs">AI 선생님의 모범 답안 및 총평</span>
+                              </div>
+                              <div class="space-y-4">
+                                  <div>
+                                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-1"><i data-lucide="check-circle-2" class="w-3 h-3 inline mr-0.5"></i> 모범 답안</p>
+                                      <div class="prose prose-sm dark:prose-invert max-w-none text-xs text-blue-900 dark:text-blue-200 leading-relaxed font-medium">${marked.parse(q.aiFeedback.modelAnswer)}</div>
+                                  </div>
+                                  <div class="border-t border-blue-200/50 dark:border-blue-800/50 pt-3">
+                                      <p class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-2"><i data-lucide="message-square-text" class="w-3 h-3 inline mr-0.5"></i> 스터디원 학생별 평가 및 총평</p>
+                                      <div class="prose prose-sm dark:prose-invert max-w-none text-xs text-blue-800 dark:text-blue-200 leading-relaxed">${marked.parse(q.aiFeedback.generalFeedback)}</div>
+                                  </div>
+                              </div>
+                          </div>
+                      `;
+                  } else {
+                      contentHtml += `
+                          <div class="mt-4 text-center">
+                              <button id="req-ai-btn-${q.id}" onclick="window.StudyApp.requestAIFeedback('${q.id}')" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-2.5 rounded-lg shadow-sm transition-all inline-flex items-center">
+                                  <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1.5"></i> AI 학생별 코멘트 및 총평 요청하기
+                              </button>
+                          </div>
+                      `;
+                  }
+
+              } else {
+                  contentHtml += `
+                      <div class="mt-4 relative bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                          <p class="text-[10px] font-bold text-slate-500 mb-2 flex items-center"><i data-lucide="lock" class="w-3 h-3 mr-1"></i> 나의 답안을 등록해야 스터디원의 답안과 AI 피드백을 확인할 수 있습니다.</p>
+                          <textarea id="qa-ans-${q.id}" class="w-full text-[11px] p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none resize-none focus:border-blue-400 transition-all custom-scrollbar" rows="3" placeholder="문제에 대한 나의 답안을 작성해 보세요..."></textarea>
+                          <div class="flex justify-end mt-2">
+                              <button id="qa-btn-${q.id}" onclick="window.StudyApp.submitQAAnswer('${q.id}')" class="bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white text-[10px] font-black px-4 py-2 rounded-lg shadow-sm transition-all flex items-center">
+                                  <i data-lucide="pen-tool" class="w-3 h-3 mr-1.5"></i> 내 답안 등록하기
+                              </button>
+                          </div>
+                      </div>
+                  `;
+              }
+
+              return `
+                  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                      <div class="flex items-start justify-between space-x-3">
+                          <div class="flex items-start space-x-3 flex-1 min-w-0">
+                              <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 p-2 rounded-lg mt-0.5 shrink-0"><i data-lucide="help-circle" class="w-4 h-4"></i></div>
+                              <div class="flex-1 min-w-0 pt-0.5">
+                                  <p class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug">${q.questionText}</p>
+                                  <div class="flex items-center mt-2 space-x-2">
+                                      <span class="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-bold">출제: ${q.authorName}</span>
+                                      <span class="text-[9px] text-slate-400 font-bold">참여: ${allAnswers.length}명</span>
+                                  </div>
+                              </div>
+                          </div>
+                          <button onclick="window.StudyApp.deleteQAQuestion('${q.id}')" class="shrink-0 p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="문제 삭제">
+                              <i data-lucide="trash-2" class="w-4 h-4"></i>
+                          </button>
+                      </div>
+                      ${contentHtml}
+                  </div>
+              `;
+          }).join('');
+
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+
+          setTimeout(() => {
+              for (const [id, val] of Object.entries(currentInputs)) {
+                  const el = document.getElementById(id);
+                  if (el) el.value = val;
+              }
+              if (activeId && shouldRestoreSelection) {
+                  const el = document.getElementById(activeId);
+                  if (el && typeof el.setSelectionRange === 'function') {
+                      el.focus();
+                      el.setSelectionRange(cursorStart, cursorEnd);
+                  }
+              }
+          }, 0);
+      },
+
+      submitQAAnswer: async (questionId) => {
+          if(!state.user) return;
+          const textarea = document.getElementById(`qa-ans-${questionId}`);
+          const btn = document.getElementById(`qa-btn-${questionId}`);
+          const answerText = textarea.value.trim();
+
+          if(!answerText) return window.StudyApp.showToast("답안을 입력해주세요.", "error");
+
+          const originalHtml = btn.innerHTML;
+          textarea.disabled = true;
+          btn.disabled = true;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 mr-1.5 animate-spin-custom"></i> 등록 중...`;
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+
+          try {
+              const userName = await getUserName();
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers'), {
+                  questionId,
+                  workName: state.qaCurrentWork,
+                  userId: state.user.uid,
+                  userName: userName,
+                  answerText: answerText,
+                  timestamp: Date.now()
+              });
+              
+              window.StudyApp.showToast("답안이 성공적으로 등록되었습니다!", "success");
+          } catch(e) {
+              window.StudyApp.showToast("답안 등록 실패: " + e.message, "error");
+              textarea.disabled = false;
+              btn.disabled = false;
+              btn.innerHTML = originalHtml;
+              if(typeof lucide !== 'undefined') lucide.createIcons();
+          }
+      },
+
+      // 🌟 [추가] 서버 글로벌 잠금 및 프롬프트 다이어트 적용
+      requestAIFeedback: async (questionId) => {
+          if(!state.user) return;
+          const btn = document.getElementById(`req-ai-btn-${questionId}`);
+          if(!btn) return;
+          
+          const qRef = doc(db, 'artifacts', appId, 'public', 'data', 'qa_questions', questionId);
+          const qSnap = await getDoc(qRef);
+          
+          // 잠금 1단계 검사
+          if (qSnap.data().isAIFetching) {
+              return window.StudyApp.showToast("이미 다른 스터디원이 분석을 요청 중입니다.", "info");
+          }
+
+          // 잠금 실행 (서버에 깃발 꽂기)
+          await updateDoc(qRef, { isAIFetching: true });
+
+          const originalHtml = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin-custom"></i> AI 분석 요청 중...`;
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+
+          const questionDoc = state.qaQuestions.find(q => q.id === questionId);
+          const allAnswers = state.qaAnswers.filter(a => a.questionId === questionId);
+          
+          const answersPrompt = allAnswers.map(a => `- ${a.userName}: ${a.answerText}`).join('\n');
+
+          // 다이어트 프롬프트 (가장 뼈대만 남겨 토큰 대폭 절약)
+          const promptText = `
+작품: ${state.qaCurrentWork}
+문제: ${questionDoc.questionText}
+답안:
+${answersPrompt}
+
+국어교사로서 위 답안들을 평가하여 JSON으로 응답.
+1. modelAnswer: 명쾌한 모범 답안(Markdown)
+2. generalFeedback: 각 학생별(- **이름**:) 짧은 핵심 피드백(1~2줄) 및 전체 총평(Markdown)
+
+{"modelAnswer":"...","generalFeedback":"..."}`;
+
+          try {
+              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      contents: [{ parts: [{ text: promptText }] }],
+                      generationConfig: { responseMimeType: "application/json" }
+                  })
+              });
+
+              if (!response.ok) {
+                  if (response.status === 503 || response.status === 429) {
+                      throw new Error("현재 구글 AI 무료 서버의 하루 한도(20회)가 초과되었거나 사용자가 몰려있습니다. 잠시 후 다시 시도해주세요!");
+                  }
+                  throw new Error("AI 서버 통신 오류가 발생했습니다.");
+              }
+              
+              const data = await response.json();
+              const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
+
+              // 결과 저장 및 서버 잠금 해제 (깃발 뽑기)
+              await updateDoc(qRef, {
+                  aiFeedback: {
+                      modelAnswer: resultJson.modelAnswer,
+                      generalFeedback: resultJson.generalFeedback,
+                      requestedBy: state.user.uid,
+                      timestamp: Date.now()
+                  },
+                  isAIFetching: false
+              });
+
+              window.StudyApp.showToast("AI 선생님의 피드백이 도착했습니다!", "success");
+
+          } catch(e) {
+              // 에러 시 잠금 해제
+              await updateDoc(qRef, { isAIFetching: false });
+              window.StudyApp.showToast(e.message, "error");
+              btn.disabled = false;
+              btn.innerHTML = originalHtml;
+              if(typeof lucide !== 'undefined') lucide.createIcons();
+          }
+      },
+
+      updateMockView: () => {
+          const w = document.getElementById('mock-week-filter').value;
+          const empty = document.getElementById('mock-empty-state');
+          const container = document.getElementById('mock-list-container');
+          const info = document.getElementById('mock-works-info');
+
+          if (!w) {
+              empty.classList.remove('hidden');
+              container.innerHTML = '';
+              info.innerHTML = '';
+              return;
+          }
+
+          empty.classList.add('hidden');
+          const works = [...new Set(state.allSubmissions.filter(s => String(s.week) === String(w) && !s.isDeleted).map(s => s.workName))];
+          
+          if (works.length > 0) {
+              info.innerHTML = `<i data-lucide="book-open" class="w-3 h-3 inline mr-1"></i> 이번 주차 학습 작품: ${works.join(', ')}`;
+          } else {
+              info.innerHTML = `<i data-lucide="alert-circle" class="w-3 h-3 inline mr-1 text-amber-500"></i> 이 주차에 등록된 작품 기록이 없어 모의고사를 생성할 수 없습니다.`;
+          }
+
+          window.StudyApp.renderMockExams();
+      },
+
+      editMockAnswer: async (answerId, examId) => {
+          const answer = state.mockAnswers.find(a => a.id === answerId);
+          if(!answer) return;
+          const text = answer.answerText;
+          try {
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mock_answers', answerId));
+              window.StudyApp.showToast("수정 모드: 작성하신 답안을 입력칸에 복원했습니다.");
+              setTimeout(() => {
+                  const ta = document.getElementById(`mock-ans-${examId}`);
+                  if(ta) {
+                      ta.value = text;
+                      ta.focus();
+                  }
+              }, 300);
+          } catch(e) {
+              window.StudyApp.showToast("수정 모드 전환 실패", "error");
+          }
+      },
+
+      renderMockExams: () => {
+          const w = document.getElementById('mock-week-filter').value;
+          if (!w) return;
+          const container = document.getElementById('mock-list-container');
+          const mocks = state.mockExams.filter(m => String(m.week) === String(w));
+
+          if (mocks.length === 0) {
+              container.innerHTML = `<div class="text-center py-8 text-[10px] text-slate-400 font-bold border border-dashed border-emerald-200 dark:border-emerald-800 rounded-xl">생성된 기출 연계 모의고사가 없습니다.<br>위 버튼을 눌러 AI를 통해 새 모의고사를 출제해보세요.</div>`;
+              return;
+          }
+
+          container.innerHTML = mocks.map(m => {
+              const allAnswers = state.mockAnswers.filter(a => a.examId === m.id);
+              const myAnswer = allAnswers.find(a => a.userId === state.user.uid);
+              const isAuthor = m.requestedBy === state.user.uid;
+              
+              const examText = m.examText || m.examContent;
+              const rubricText = m.rubricText || "구버전 데이터입니다. 모범 답안이 분리되어 있지 않습니다.";
+
+              let contentHtml = '';
+
+              if (myAnswer) {
+                  contentHtml = `
+                      <div class="mt-4 border-t border-emerald-200 dark:border-emerald-800/50 pt-4">
+                          <h4 class="font-black text-emerald-800 dark:text-emerald-300 text-sm mb-3 flex items-center"><i data-lucide="check-circle" class="w-4 h-4 mr-1.5"></i> 출제 의도 및 모범 답안</h4>
+                          <div class="prose prose-slate prose-sm dark:prose-invert max-w-none text-xs break-words bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800/30">
+                              ${marked.parse(rubricText)}
+                          </div>
+                      </div>
+                      
+                      <div class="mt-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-emerald-300 dark:border-emerald-700 shadow-sm">
+                          <div class="flex items-center justify-between mb-3">
+                              <span class="text-[11px] text-slate-600 dark:text-slate-300 font-bold flex items-center"><i data-lucide="user" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i>🌟 내 제출 답안 및 결과</span>
+                              <span class="text-[11px] font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">AI 점수: ${myAnswer.score}점</span>
+                          </div>
+                          <p class="text-xs text-slate-800 dark:text-slate-300 whitespace-pre-wrap mb-4 pl-3 border-l-2 border-emerald-400 leading-relaxed">${myAnswer.answerText}</p>
+                          <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg text-[11px] text-emerald-800 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/50 leading-relaxed">
+                              <i data-lucide="bot" class="w-3.5 h-3.5 inline mb-0.5 mr-1 text-emerald-600"></i> ${myAnswer.feedback}
+                          </div>
+                          <div class="flex justify-end mt-3">
+                              <button onclick="window.StudyApp.editMockAnswer('${myAnswer.id}', '${m.id}')" class="text-[10px] font-bold text-emerald-500 hover:text-emerald-700 underline underline-offset-2 transition-colors">답안 수정하기</button>
+                          </div>
+                      </div>
+                  `;
+              } else {
+                  contentHtml = `
+                      <div class="mt-4 relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                          <p class="text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center"><i data-lucide="lock" class="w-3.5 h-3.5 mr-1 text-emerald-500"></i> 나의 답안을 제출해야 AI 모범 답안을 확인할 수 있습니다. (다른 사람의 답안은 보이지 않습니다.)</p>
+                          <textarea id="mock-ans-${m.id}" class="w-full text-xs p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 outline-none resize-none focus:border-emerald-500 transition-all custom-scrollbar" rows="5" placeholder="실제 시험처럼 답안을 작성해 보세요..."></textarea>
+                          <div class="flex justify-end mt-2">
+                              <button id="mock-btn-${m.id}" onclick="window.StudyApp.submitMockAnswer('${m.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black px-5 py-2.5 rounded-lg shadow-sm transition-all flex items-center">
+                                  <i data-lucide="pen-tool" class="w-3.5 h-3.5 mr-1.5"></i> 답안 제출 및 AI 자동 채점
+                              </button>
+                          </div>
+                      </div>
+                  `;
+              }
+
+              return `
+                  <div class="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 rounded-2xl p-5 shadow-md mb-4">
+                      <div class="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+                          <div class="flex items-center space-x-2">
+                              <div class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 p-1.5 rounded"><i data-lucide="graduation-cap" class="w-4 h-4"></i></div>
+                              <span class="font-black text-sm text-slate-800 dark:text-slate-100">AI 기출 연계 모의고사</span>
+                          </div>
+                          <div class="flex items-center space-x-2">
+                              <span class="text-[10px] text-slate-400 font-bold">${new Date(m.timestamp).toLocaleDateString()}</span>
+                              ${isAuthor ? `<button onclick="window.StudyApp.deleteMockExam('${m.id}')" class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="기출 삭제"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
+                          </div>
+                      </div>
+                      <div class="exam-paper prose prose-slate prose-sm dark:prose-invert max-w-none text-xs break-words mb-6">
+                          ${marked.parse(examText)}
+                      </div>
+                      ${contentHtml}
+                  </div>
+              `;
+          }).join('');
+          
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+      },
+
+      // 🌟 [추가] 모의고사 생성 서버 잠금 및 프롬프트 다이어트
+      generateMockExam: async () => {
+          if(!state.user) return;
+          const w = document.getElementById('mock-week-filter').value;
+          if(!w) return window.StudyApp.showToast("주차를 먼저 선택해주세요.", "error");
+
+          const works = [...new Set(state.allSubmissions.filter(s => String(s.week) === String(w) && !s.isDeleted).map(s => s.workName))];
+          if (works.length === 0) {
+              return window.StudyApp.showToast("이 주차에 등록된 작품이 없어 모의고사를 만들 수 없습니다.", "error");
+          }
+          
+          // 전역 잠금 확인
+          const lockRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'mockLock');
+          const lockSnap = await getDoc(lockRef);
+          if (lockSnap.exists() && lockSnap.data().isGenerating && (Date.now() - lockSnap.data().timestamp < 40000)) {
+              return window.StudyApp.showToast("현재 다른 스터디원이 모의고사를 출제 중입니다. 잠시만 기다려주세요.", "error");
+          }
+          await setDoc(lockRef, { isGenerating: true, timestamp: Date.now() });
+
+          const btn = document.getElementById('generate-mock-btn');
+          const originalHtml = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin-custom"></i> 출제 중...`;
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+
+          const promptText = `대상 작품: [${works.join(', ')}]
+위 작품을 활용하여 전공 국어 임용 서술형 모의고사(3~4문항) 출제 요망.
+
+[조건]
+1. 지문/보기는 마크다운 인용구(>) 사용
+2. 문항 제목은 "### [문제 n]" 형식
+3. 아래 JSON 형식으로 응답
+
+{"examText":"지문(> 사용) 및 문제","rubricText":"문제별 출제 의도, 모범답안, 채점기준"}`;
+
+          try {
+              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      contents: [{ parts: [{ text: promptText }] }],
+                      generationConfig: { responseMimeType: "application/json" }
+                  })
+              });
+
+              if (!response.ok) {
+                  if (response.status === 503 || response.status === 429) {
+                      throw new Error("현재 구글 AI 서버 무료 한도(하루 20회)를 모두 소진했거나 사용자가 몰려있습니다.");
+                  }
+                  throw new Error("AI 서버 통신 오류가 발생했습니다.");
+              }
+              const data = await response.json();
+              const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
+
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'mock_exams'), {
+                  week: w,
+                  works: works,
+                  examText: resultJson.examText,
+                  rubricText: resultJson.rubricText,
+                  requestedBy: state.user.uid,
+                  timestamp: Date.now()
+              });
+
+              window.StudyApp.showToast("AI 기출 연계 모의고사가 성공적으로 생성되었습니다!", "success");
+          } catch(e) {
+              window.StudyApp.showToast(e.message, "error");
+          } finally {
+              await setDoc(lockRef, { isGenerating: false, timestamp: Date.now() }); // 잠금 해제
+              btn.disabled = false;
+              btn.innerHTML = originalHtml;
+              if(typeof lucide !== 'undefined') lucide.createIcons();
+          }
+      },
+
+      // 🌟 [추가] 모의고사 채점 프롬프트 획기적 다이어트 적용 (긴 지문 삭제)
+      submitMockAnswer: async (examId) => {
+          if(!state.user) return;
+          const textarea = document.getElementById(`mock-ans-${examId}`);
+          const btn = document.getElementById(`mock-btn-${examId}`);
+          const answerText = textarea.value.trim();
+
+          if(!answerText) return window.StudyApp.showToast("답안을 입력해주세요.", "error");
+
+          const exam = state.mockExams.find(m => m.id === examId);
+          if(!exam) return;
+
+          const originalHtml = btn.innerHTML;
+          textarea.disabled = true;
+          btn.disabled = true;
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 mr-1.5 animate-spin-custom"></i> AI 채점 중...`;
+          if(typeof lucide !== 'undefined') lucide.createIcons();
+
+          const promptText = `
+[채점 기준]
+${exam.rubricText}
+
+[학생 답안]
+${answerText}
+
+위 채점 기준에 따라 학생 답안을 엄격히 평가하고 JSON으로 응답.
+{"score":정수(0~100),"feedback":"잘한 점과 부족한 점 피드백(3~4문장)"}`;
+
+          try {
+              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      contents: [{ parts: [{ text: promptText }] }],
+                      generationConfig: { responseMimeType: "application/json" }
+                  })
+              });
+
+              if (!response.ok) {
+                  if (response.status === 503 || response.status === 429) {
+                      throw new Error("구글 AI 하루 무료 제공 한도(20회)를 초과했거나 서버가 붐비고 있습니다.");
+                  }
+                  throw new Error("채점 API 오류가 발생했습니다.");
+              }
+              const data = await response.json();
+              const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
+              const userName = await getUserName();
+
+              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'mock_answers'), {
+                  examId: examId,
+                  userId: state.user.uid,
+                  userName: userName,
+                  answerText: answerText,
+                  score: resultJson.score,
+                  feedback: resultJson.feedback,
+                  timestamp: Date.now()
+              });
+              
+              window.StudyApp.showToast("답안 제출 및 채점이 완료되었습니다!", "success");
+          } catch(e) {
+              window.StudyApp.showToast(e.message, "error");
+              textarea.disabled = false;
+              btn.disabled = false;
+              btn.innerHTML = originalHtml;
+              if(typeof lucide !== 'undefined') lucide.createIcons();
+          }
+      },
+
+      deleteMockExam: (examId) => {
+          const modal = document.getElementById('delete-modal');
+          document.getElementById('delete-modal-desc').textContent = "이 모의고사와 관련된 모든 학생의 답안 기록이 함께 영구 삭제됩니다. 계속하시겠습니까?";
+          modal.classList.remove('hidden');
+          
+          document.getElementById('confirm-delete-btn').onclick = async () => {
+              modal.classList.add('hidden');
+              window.StudyApp.showToast("삭제 중입니다...", "info");
+              try {
+                  const ansQuery = query(collection(db, 'artifacts', appId, 'public', 'data', 'mock_answers'), where('examId', '==', examId));
+                  const ansSnap = await getDocs(ansQuery);
+                  const deletePromises = [];
+                  ansSnap.forEach(d => deletePromises.push(deleteDoc(d.ref)));
+                  
+                  deletePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mock_exams', examId)));
+                  await Promise.all(deletePromises);
+                  
+                  window.StudyApp.showToast("모의고사가 삭제되었습니다.", "success");
+              } catch(e) {
+                  window.StudyApp.showToast("삭제 실패: " + e.message, "error");
+              }
+          };
+      },
+
+      deleteMockAnswer: async (answerId) => {
+          try {
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mock_answers', answerId));
+              window.StudyApp.showToast("내 답안이 삭제되었습니다.");
+          } catch(e) {
+              window.StudyApp.showToast("답안 삭제 실패", "error");
+          }
+      }
+    };
+
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
         } else {
-            els.adminPanel.classList.add('hidden');
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth init error:", error);
+      }
+    };
+    initAuth();
+
+    async function scanGitHub() {
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.folder}?ref=${GITHUB_CONFIG.branch}`;
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`GitHub 오류 (${res.status})`);
+            const data = await res.json();
+            state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf') && !f.name.includes('정답'));
+            state.filteredFiles = [...state.allFiles]; renderFileList();
+        } catch (e) { 
+            document.getElementById('material-list').innerHTML = `<p class="text-[10px] text-amber-600 p-6 text-center font-bold break-words">${e.message}<br><br>번호/명을 수동 입력하면 정상 작동합니다.</p>`; 
         }
     }
 
-    function renderDayPickerGrid() {
-        let html = '';
-        DAY_MAP.forEach((range, i) => {
-            const day = i + 1;
-            const isSelected = state.tempSelectedDays.includes(day);
-            const status = getDayStatus(day); 
+    function renderFileList() {
+        const container = document.getElementById('material-list');
+        container.innerHTML = state.filteredFiles.map(f => `
+            <button onclick="window.StudyApp.loadMaterial('${f.name}', '${f.download_url}')" id="btn-${f.name.replace(/\s+/g, '')}" class="file-btn w-full flex items-center p-2.5 rounded-xl border border-slate-100 bg-white dark:bg-slate-900 text-left transition-all hover:bg-brand-50/10 shadow-sm">
+                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-2 text-slate-300"></i>
+                <div class="truncate font-bold text-[10px] uppercase">${f.name}</div>
+            </button>
+        `).join('');
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    async function loadGlobalAnswerKey() {
+        const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.folder}/${GITHUB_CONFIG.answerKeyFileName}`;
+        const badge = document.getElementById('answer-key-badge');
+        try {
+            const res = await fetch(url);
+            if(res.ok) {
+                const arrayBuffer = await res.arrayBuffer();
+                state.answerKeyPdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                badge.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Key Ready`;
+                badge.className = "hidden sm:flex items-center bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1 rounded text-[9px] font-black uppercase transition-all";
+            } else throw new Error();
+        } catch(e) {
+            badge.innerHTML = `<i data-lucide="x-circle" class="w-3 h-3 mr-1"></i> Key Load Failed`;
+            badge.className = "hidden sm:flex items-center bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded text-[9px] font-black uppercase transition-all";
+        }
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function fetchStudySchedule() {
+        if (!state.user) return;
+        onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
+            state.docWeeks = [];
+            state.scheduleWeeks = []; 
             
-            let classes = "bg-white dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-400 cursor-pointer";
-            if(isSelected) {
-                classes = "bg-indigo-600 border-indigo-600 text-white shadow-md transform scale-105 transition-transform z-10";
-            } else if(state.pickerMode === 'schedule' && status.status !== 'none') {
-                const currentEditingWeekNum = state.editScheduleForm.find(w => w.id === state.pickerEditingId)?.weekNum;
-                if (currentEditingWeekNum !== status.weekNum) {
-                    classes = "bg-slate-100 dark:bg-slate-900 text-slate-300 border-dashed cursor-not-allowed opacity-50";
+            if (snap.exists()) {
+                const data = snap.data();
+                const subjectData = data[SUBJECT_NAME];
+
+                if(subjectData && subjectData.weeks && Array.isArray(subjectData.weeks)) {
+                    state.scheduleWeeks = subjectData.weeks;
+                    subjectData.weeks.forEach(w => {
+                        let val = w.weekNum || w.week;
+                        if(val !== undefined && val !== null) {
+                            val = String(val).replace(/[^0-9]/g, '');
+                            if (val) state.docWeeks.push(val);
+                        }
+                    });
                 }
             }
-
-            html += `
-            <div onclick="${classes.includes('cursor-not-allowed') ? '' : `app.toggleDaySelection(${day})`}" 
-                 class="flex flex-col items-center py-2.5 rounded-xl border ${classes} transition-all select-none">
-                <span class="text-[11px] font-black tracking-tighter">D${day < 10 ? '0'+day : day}</span>
-                <span class="text-[9px] font-medium opacity-80 mt-0.5">${range}</span>
-            </div>`;
-        });
-        els.dayPickerGrid.innerHTML = html;
+            updateGlobalWeeks();
+        }, (error) => console.error("fetchStudySchedule Error:", error));
     }
 
-    function renderSchedule() {
-      if(!els.scheduleContainer) return;
-      const subj = state.currentScheduleTab;
-      let html = `
-        <div class="flex items-center justify-between mb-4 shrink-0">
-          <div class="flex items-center space-x-1 bg-indigo-50 dark:bg-indigo-900/30 p-1 rounded-lg border border-indigo-100 dark:border-indigo-800/50">
-             <button onclick="app.switchScheduleTab('prev')" class="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-800 rounded transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-             <h2 class="text-sm font-black text-indigo-700 dark:text-indigo-300 px-2 w-20 text-center tracking-tight">${subj}</h2>
-             <button onclick="app.switchScheduleTab('next')" class="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-800 rounded transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-          </div>
-          <button onclick="${state.isEditingSchedule?'app.saveSchedule()':'app.toggleEditSchedule()'}" class="text-slate-400 text-sm hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-700 p-2 rounded-lg border border-slate-200 dark:border-slate-600 shadow-sm"><i data-lucide="${state.isEditingSchedule?'save':'edit-2'}" class="w-4 h-4 ${state.isEditingSchedule?'text-emerald-500':''}"></i></button>
-        </div>`;
-
-      html += `<div class="grid grid-cols-7 gap-1 bg-slate-100 dark:bg-slate-900 p-2.5 rounded-2xl mb-4 border border-slate-200 dark:border-slate-800 shadow-inner shrink-0">`;
-      DAY_MAP.forEach((range, i) => {
-          const day = i + 1;
-          const status = getDayStatus(day);
-          let classes = "bg-white dark:bg-slate-800 text-slate-300 border-slate-200 dark:border-slate-700"; 
-          if(status.status === 'completed') classes = "bg-emerald-500 text-white shadow-sm border-emerald-600";
-          else if (status.status === 'planned') classes = "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700 font-bold";
-          
-          html += `<div class="flex flex-col items-center py-1.5 rounded-lg border ${classes}">
-              <span class="text-[9px] tracking-tighter ${status.status==='completed'?'font-black':'font-bold'}">D${day < 10 ? '0'+day : day}</span>
-              <span class="text-[7px] opacity-90">${range}</span>
-          </div>`;
-      });
-      html += `</div>`;
-
-      html += `<div class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">`;
-      if(state.isEditingSchedule) {
-        const sortedEditWeeks = [...state.editScheduleForm].sort((a,b) => b.weekNum - a.weekNum);
-        sortedEditWeeks.forEach((wk) => {
-          html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 relative">
-            <div class="flex justify-between items-center mb-3">
-              <span class="font-black text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-1 rounded-md">${wk.weekNum}주차</span>
-              <button onclick="app.removeScheduleWeek(${wk.id})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </div>
-            <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${wk.id},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
-            
-            <select onchange="app.updateScheduleField(${wk.id},'area',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="고전시가" ${wk.area === '고전시가' ? 'selected' : ''}>고전시가</option>
-                <option value="현대시" ${wk.area === '현대시' ? 'selected' : ''}>현대시</option>
-            </select>
-            
-            <button onclick="app.openDayPicker(${wk.id})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
-               <span><i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> ${getRangeText(wk.days)}</span>
-               <span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px]">진도 선택</span>
-            </button>
-          </div>`;
-        });
-        html += `<button onclick="app.addScheduleWeek()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors rounded-xl text-sm font-bold flex items-center justify-center text-slate-600 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-500"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> ${state.editScheduleForm.length + 1}주차 추가</button>`;
-      } else {
-        const weeks = state.scheduleData[subj]?.weeks || [];
-        if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다. 우측 상단 수정 버튼을 눌러보세요.</div>`;
-        const sortedWeeks = [...weeks].sort((a,b) => b.weekNum - a.weekNum);
-        sortedWeeks.forEach((wk) => {
-          html += `<div class="flex flex-col p-4 ${wk.isCompleted ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 opacity-80' : 'bg-white dark:bg-slate-800 border-indigo-100 dark:border-indigo-800/30 shadow-sm'} rounded-xl border relative transition-all">
-            <div class="flex justify-between items-start mb-2">
-              <div>
-                 <span class="font-black ${wk.isCompleted ? 'text-slate-500 bg-slate-200' : 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-900/50'} px-2 py-0.5 rounded-md text-[10px] uppercase mr-1">${wk.weekNum}주차</span>
-                 <span class="text-xs font-bold text-slate-500 dark:text-slate-400"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${wk.meetDate || '미정'}</span>
-              </div>
-              <button onclick="app.toggleWeekCompletion(${wk.id})" class="flex items-center text-[10px] font-black px-2 py-1 rounded border transition-colors ${wk.isCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}">
-                 ${wk.isCompleted ? '<i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> 진도 완료' : '<i data-lucide="circle" class="w-3 h-3 mr-1"></i> 마킹하기'}
-              </button>
-            </div>
-            <div class="font-black text-slate-800 dark:text-slate-200 text-sm mt-1 mb-1">${wk.area || '영역 미지정'}</div>
-            <div class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30 w-fit">📍 ${getRangeText(wk.days)}</div>
-          </div>`;
-        });
-      }
-      els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
+    function fetchPublicSubmissions() {
+        if (!state.user) return;
+        onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'submissions')), (snap) => {
+            const subs = []; snap.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
+            subs.sort((a, b) => b.timestamp - a.timestamp);
+            state.allSubmissions = subs; updateGlobalWeeks();
+        }, (error) => console.error("fetchPublicSubmissions Error:", error));
     }
 
-    // 🌟 개편된 진도 트래커 렌더링
-    function renderTodos() {
-      if(!state.appAccount || !els.todosContainer) return;
-      const isAdmin = checkIsAdmin();
-      const members = state.allMembers.length > 0 ? state.allMembers.map(m=>m.name) : [state.appAccount.name];
-      const isMyTab = state.activeTodoTab === state.appAccount.name;
-      
-      let html = `<div class="flex items-center justify-between mb-4 shrink-0"><h2 class="text-lg font-bold flex items-center text-emerald-600 dark:text-emerald-400"><i data-lucide="check-square" class="w-5 h-5 mr-2"></i> 출제 할당 & 진도 트래커</h2></div>`;
-      html += `<div class="flex space-x-2 overflow-x-auto hide-scrollbar mb-4 shrink-0 pb-1">`;
-      members.forEach(name => { 
-          html += `<button onclick="app.setActiveTodoTab('${name}')" class="px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${state.activeTodoTab === name ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}">${name}</button>`; 
-      });
-      html += `</div>`;
-      
-      const targetName = state.activeTodoTab;
-      const targetProg = state.progressData[targetName] || { '고전시가': 0, '현대시': 0 };
+    function fetchQAData() {
+        if (!state.user) return;
+        onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions')), (snap) => {
+            const qs = []; snap.forEach(doc => qs.push({ id: doc.id, ...doc.data() }));
+            state.qaQuestions = qs.sort((a,b) => b.timestamp - a.timestamp);
+            window.StudyApp.updateQAWorksDropdown();
+            if(state.mode === 'qa') window.StudyApp.renderQAQuestions();
+        }, (error) => console.error("fetchQAData (questions) Error:", error));
 
-      html += `<div class="mb-5 flex bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-inner shrink-0">
-        <div class="flex-1 text-center border-r border-slate-200 dark:border-slate-700">
-            <p class="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 mb-1 uppercase tracking-widest">고전시가 완료</p>
-            <p class="text-2xl font-black text-slate-800 dark:text-white">No. ${targetProg['고전시가'] || 0}</p>
-        </div>
-        <div class="flex-1 text-center">
-            <p class="text-[10px] font-bold text-blue-500 dark:text-blue-400 mb-1 uppercase tracking-widest">현대시 완료</p>
-            <p class="text-2xl font-black text-slate-800 dark:text-white">No. ${targetProg['현대시'] || 0}</p>
-        </div>
-      </div>`;
-
-      if(isMyTab) {
-          html += `
-          <div class="flex flex-col sm:flex-row items-center gap-2 mb-6 shrink-0 bg-white dark:bg-slate-700 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
-              <span class="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0"><i data-lucide="edit-3" class="w-4 h-4 inline pb-0.5"></i> 진도 기록:</span>
-              <select id="prog-subj-input" class="w-full sm:w-auto flex-1 p-2 rounded-lg border text-xs font-bold bg-slate-50 dark:bg-slate-800 dark:border-slate-500 dark:text-white outline-none">
-                  <option value="고전시가">고전시가</option>
-                  <option value="현대시">현대시</option>
-              </select>
-              <input type="number" id="prog-num-input" placeholder="번호 (예: 15)" class="w-full sm:w-24 p-2 rounded-lg border text-xs bg-slate-50 dark:bg-slate-800 dark:border-slate-500 dark:text-white outline-none font-bold text-center" />
-              <button onclick="app.updateProgress()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors">기록하기</button>
-          </div>`;
-      }
-
-      html += `<div class="flex items-center justify-between mb-2 shrink-0">
-         <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300"><i data-lucide="pin" class="w-4 h-4 inline pb-0.5"></i> 출제 범위 할당 현황</h3>
-      </div>`;
-
-      html += `<div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2">`;
-      const tasks = state.todos[state.activeTodoTab] || [];
-      const assignTasks = tasks.filter(t => t.type === 'assign');
-      
-      if(assignTasks.length === 0) {
-          html += `<div class="text-center text-slate-400 text-sm py-6">등록된 출제 할당이 없습니다.</div>`;
-      }
-      
-      assignTasks.forEach(t => {
-        html += `<div onclick="${isMyTab || isAdmin ? `app.toggleTodoTask(${t.id})` : ''}" class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 ${isMyTab || isAdmin ? 'cursor-pointer hover:border-emerald-300' : ''} transition-colors ${t.done?'opacity-50 bg-slate-50':''}">
-          <div class="flex items-center flex-1 pr-2 overflow-hidden">
-              <div class="w-4 h-4 rounded border-2 flex items-center justify-center mr-3 shrink-0 ${t.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}">
-                  ${t.done ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
-              </div>
-              <span class="text-xs font-bold dark:text-slate-200 truncate ${t.done?'line-through text-slate-400':''}">${t.desc}</span>
-          </div>
-          ${isMyTab || isAdmin ? `<button onclick="app.deleteTodoTask(${t.id}, event)" class="p-1 text-slate-300 hover:text-red-500 transition-colors shrink-0"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
-        </div>`;
-      });
-      html += `</div>`;
-
-      if(isMyTab || isAdmin) {
-         html += `<button onclick="app.openDayPickerForTodo()" class="w-full mt-3 py-2.5 border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 rounded-xl text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors shrink-0"><i data-lucide="plus" class="w-4 h-4 inline pb-0.5 mr-1"></i> 새 출제 할당 추가 (Day 선택)</button>`;
-      }
-      els.todosContainer.innerHTML = html; lucide.createIcons();
+        onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers')), (snap) => {
+            const ans = []; snap.forEach(doc => ans.push({ id: doc.id, ...doc.data() }));
+            state.qaAnswers = ans;
+            if(state.mode === 'qa') window.StudyApp.renderQAQuestions();
+        }, (error) => console.error("fetchQAData (answers) Error:", error));
     }
 
-    function renderChat() {
-      if(!els.chatContainer) return;
-      let html = `
-        <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
-          <h2 class="text-lg font-bold flex items-center text-emerald-600 dark:text-emerald-400"><i data-lucide="message-square" class="w-5 h-5 mr-2"></i> 스터디 커뮤니티</h2>
-        </div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50 dark:bg-slate-900">
-      `;
-      
-      if(state.chatMessages.length === 0) {
-        html += `<div class="flex h-full items-center justify-center text-slate-400 text-sm font-bold">첫 메시지를 남겨보세요!</div>`;
-      } else {
-        state.chatMessages.forEach(msg => {
-          const isMe = msg.userName === state.appAccount?.name;
-          const timeStr = new Date(msg.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-          
-          if(isMe) {
-            html += `
-              <div class="flex flex-col items-end">
-                <span class="text-[10px] text-slate-400 mb-0.5 mr-1">${msg.userName}</span>
-                <div class="flex items-end space-x-1.5">
-                  <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
-                  <div class="bg-indigo-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
-                </div>
-              </div>
-            `;
-          } else {
-            html += `
-              <div class="flex flex-col items-start">
-                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5 ml-1">${msg.userName}</span>
-                <div class="flex items-end space-x-1.5">
-                  <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm shadow-sm border border-slate-200 dark:border-slate-700 max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
-                  <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
-                </div>
-              </div>
-            `;
-          }
-        });
-      }
-      
-      html += `
-        </div>
-        <div class="p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
-          <form onsubmit="app.submitChat(event)" class="flex items-center space-x-2">
-            <input type="text" id="chat-input" placeholder="스터디원들과 대화해보세요..." class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all" autocomplete="off" />
-            <button type="submit" class="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition-colors"><i data-lucide="send" class="w-5 h-5"></i></button>
-          </form>
-        </div>
-      `;
-      els.chatContainer.innerHTML = html;
-      lucide.createIcons();
-      
-      const msgDiv = document.getElementById('chat-messages');
-      if(msgDiv) msgDiv.scrollTop = msgDiv.scrollHeight;
+    function fetchMockExams() {
+        if (!state.user) return;
+        onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'mock_exams')), (snap) => {
+            const mocks = []; snap.forEach(doc => mocks.push({ id: doc.id, ...doc.data() }));
+            state.mockExams = mocks.sort((a, b) => b.timestamp - a.timestamp);
+            if(state.mode === 'mock') window.StudyApp.renderMockExams();
+        }, (error) => console.error("fetchMockExams Error:", error));
     }
 
-    function renderDriveFiles() {
-      if(!els.driveContainer) return;
-      if(state.driveFiles.length === 0) { els.driveContainer.innerHTML = `<div class="py-8 text-slate-400 text-center text-sm">파일이 없습니다.</div>`; return; }
-      els.driveContainer.innerHTML = state.driveFiles.map(f => `
-        <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-700 group">
-          <div class="flex items-center overflow-hidden mr-2">
-            <i data-lucide="file" class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0"></i>
-            <div class="overflow-hidden"><p class="text-sm font-bold text-slate-800 dark:text-slate-200 truncate cursor-pointer hover:underline" onclick="app.downloadDriveFile('${f.id}')">${f.fileName}</p><p class="text-[10px] text-slate-400">${f.uploadedBy} · ${f.date}</p></div>
-          </div>
-          <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onclick="app.downloadDriveFile('${f.id}')" class="p-1.5 text-blue-500"><i data-lucide="download" class="w-4 h-4"></i></button>
-            <button onclick="app.deleteDriveFile('${f.id}')" class="p-1.5 text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-          </div>
-        </div>`).join(''); lucide.createIcons();
+    function fetchMockAnswers() {
+        if (!state.user) return;
+        onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'mock_answers')), (snap) => {
+            const ans = []; snap.forEach(doc => ans.push({ id: doc.id, ...doc.data() }));
+            state.mockAnswers = ans.sort((a, b) => b.timestamp - a.timestamp);
+            if(state.mode === 'mock') window.StudyApp.renderMockExams();
+        }, (error) => console.error("fetchMockAnswers Error:", error));
     }
 
-    function renderFines() {
-      if(!els.finesContainer) return;
-      const records = state.finesData.records || [];
-      const unpaid = {}; state.allMembers.forEach(m => unpaid[m.name] = 0);
-      records.forEach(r => { if(!r.isPaid) unpaid[r.memberName] = (unpaid[r.memberName]||0) + Number(r.amount); });
-      let html = `<div class="flex justify-between items-center mb-5"><h2 class="text-lg font-bold flex items-center"><i data-lucide="wallet" class="w-5 h-5 mr-2 text-rose-500"></i> 벌금 현황</h2><button onclick="app.toggleAddingFine()" class="text-xs bg-rose-50 text-rose-600 font-bold px-3 py-1.5 rounded-lg dark:bg-rose-900/30 dark:text-rose-400">+ 추가</button></div>`;
-      html += `<div class="flex flex-wrap gap-2 mb-5">`;
-      state.allMembers.forEach(m => { html += `<div class="text-xs font-bold bg-slate-50 dark:bg-slate-700 border dark:border-slate-600 p-2 rounded-lg flex items-center">${m.name}: <span class="ml-1 ${unpaid[m.name]>0?'text-rose-500':'text-slate-400'}">${unpaid[m.name].toLocaleString()}원</span></div>`; });
-      html += `</div>`;
-      
-      if(state.isAddingFine) {
-        let opts = `<option value="" disabled selected>대상자 선택</option>`; state.allMembers.forEach(m => opts+=`<option value="${m.name}">${m.name}</option>`);
-        html += `<form onsubmit="app.submitFine(event)" class="mb-4 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl flex flex-col gap-2">
-          <select required onchange="app.updateFineField('memberName', this.value)" class="p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">${opts}</select>
-          <div class="flex gap-2">
-            <input required type="text" placeholder="사유" onchange="app.updateFineField('reason', this.value)" class="flex-1 p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
-            <input required type="number" value="1000" onchange="app.updateFineField('amount', this.value)" class="w-24 p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
-          </div>
-          <button type="submit" class="w-full py-2 bg-rose-500 text-white rounded text-sm font-bold">등록</button>
-        </form>`;
-      }
-
-      html += `<div class="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">`;
-      if(records.length===0) html += `<div class="text-center text-slate-400 text-sm py-4">벌금 내역이 없습니다.</div>`;
-      records.forEach(r => {
-        html += `<div class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700 text-sm">
-          <div class="flex items-center overflow-hidden">
-            <input type="checkbox" ${r.isPaid?'checked':''} onchange="app.toggleFinePaid(${r.id})" class="mr-3 w-4 h-4 cursor-pointer accent-rose-500" /> 
-            <span class="truncate dark:text-slate-200 ${r.isPaid?'line-through text-slate-400 dark:text-slate-500':''}"><span class="font-bold mr-1">${r.memberName}</span>${r.reason} <span class="text-rose-500 font-bold ml-1">${Number(r.amount).toLocaleString()}원</span></span>
-          </div>
-          <button onclick="app.deleteFine(${r.id})" class="text-slate-300 hover:text-red-500 ml-2 flex-shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
-        </div>`;
-      });
-      els.finesContainer.innerHTML = html + '</div>'; lucide.createIcons();
-    }
-
-    init();
+    onAuthStateChanged(auth, (user) => {
+        if (user) { 
+            state.user = user; 
+            window.StudyApp.initUI(); 
+            scanGitHub(); 
+            loadGlobalAnswerKey(); 
+            fetchStudySchedule(); 
+            fetchPublicSubmissions(); 
+            fetchQAData(); 
+            fetchMockExams(); 
+            fetchMockAnswers(); 
+            window.StudyApp.setMode('omr'); 
+        }
+    });
   </script>
 </body>
 </html>
