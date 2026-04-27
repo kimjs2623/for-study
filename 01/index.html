@@ -1366,14 +1366,19 @@
           const container = document.getElementById('qa-list-container');
           const w = document.getElementById('qa-week-filter').value;
           
+          // 🌟 에러 수정: 포커스가 TEXTAREA나 INPUT에 있을 때만 백업 및 복원 진행
           const currentInputs = {};
           const textareas = container.querySelectorAll('textarea');
           textareas.forEach(ta => currentInputs[ta.id] = ta.value);
-          const activeId = document.activeElement?.id;
+          const activeEl = document.activeElement;
+          const activeId = activeEl?.id;
           let cursorStart = 0, cursorEnd = 0;
-          if (activeId && currentInputs[activeId] !== undefined) {
-              cursorStart = document.activeElement.selectionStart;
-              cursorEnd = document.activeElement.selectionEnd;
+          let shouldRestoreSelection = false;
+
+          if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT') && currentInputs[activeId] !== undefined) {
+              cursorStart = activeEl.selectionStart;
+              cursorEnd = activeEl.selectionEnd;
+              shouldRestoreSelection = true;
           }
           
           const qs = state.qaQuestions.filter(q => String(q.week) === String(w) && q.workName === state.qaCurrentWork);
@@ -1477,9 +1482,9 @@
                   const el = document.getElementById(id);
                   if (el) el.value = val;
               }
-              if (activeId) {
+              if (activeId && shouldRestoreSelection) {
                   const el = document.getElementById(activeId);
-                  if (el) {
+                  if (el && typeof el.setSelectionRange === 'function') {
                       el.focus();
                       el.setSelectionRange(cursorStart, cursorEnd);
                   }
@@ -1522,15 +1527,7 @@
           }
       },
 
-      deleteQAAnswer: async (answerId) => {
-          try {
-              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'qa_answers', answerId));
-              window.StudyApp.showToast("내 답안이 삭제되었습니다.");
-          } catch(e) {
-              window.StudyApp.showToast("답안 삭제 실패", "error");
-          }
-      },
-
+      // 🌟 API 초과 에러 시 친절한 안내 메시지 추가
       requestAIFeedback: async (questionId) => {
           if(!state.user) return;
           const btn = document.getElementById(`req-ai-btn-${questionId}`);
@@ -1575,9 +1572,10 @@ ${answersPrompt}
               });
 
               if (!response.ok) {
-                  const errData = await response.text();
-                  console.error("API Error Details:", errData);
-                  throw new Error(response.status + " 상태 코드 에러. (F12 콘솔 확인)");
+                  if (response.status === 503 || response.status === 429) {
+                      throw new Error("현재 구글 AI 서버에 사용자가 몰려있습니다. 1~2분 뒤에 다시 시도해주세요!");
+                  }
+                  throw new Error("AI 서버 통신 오류가 발생했습니다.");
               }
               const data = await response.json();
               const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
@@ -1594,7 +1592,7 @@ ${answersPrompt}
               window.StudyApp.showToast("AI 선생님의 피드백이 도착했습니다!", "success");
 
           } catch(e) {
-              window.StudyApp.showToast("AI 피드백 요청 중 오류가 발생했습니다: " + e.message, "error");
+              window.StudyApp.showToast(e.message, "error");
               btn.disabled = false;
               btn.innerHTML = originalHtml;
               if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -1726,6 +1724,7 @@ ${answersPrompt}
           if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
+      // 🌟 API 에러 핸들링 추가
       generateMockExam: async () => {
           if(!state.user) return;
           const w = document.getElementById('mock-week-filter').value;
@@ -1775,9 +1774,10 @@ ${answersPrompt}
               });
 
               if (!response.ok) {
-                  const errData = await response.text();
-                  console.error("API Error Details:", errData);
-                  throw new Error(response.status + " 상태 코드 에러. (F12 콘솔 확인)");
+                  if (response.status === 503 || response.status === 429) {
+                      throw new Error("현재 구글 AI 서버에 사용자가 몰려있습니다. 잠시 후 다시 시도해주세요.");
+                  }
+                  throw new Error("AI 서버 통신 오류가 발생했습니다.");
               }
               const data = await response.json();
               const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
@@ -1793,7 +1793,7 @@ ${answersPrompt}
 
               window.StudyApp.showToast("AI 기출 연계 모의고사가 성공적으로 생성되었습니다!", "success");
           } catch(e) {
-              window.StudyApp.showToast("모의고사 출제 실패: " + e.message, "error");
+              window.StudyApp.showToast(e.message, "error");
           } finally {
               btn.disabled = false;
               btn.innerHTML = originalHtml;
@@ -1801,6 +1801,7 @@ ${answersPrompt}
           }
       },
 
+      // 🌟 API 에러 핸들링 추가
       submitMockAnswer: async (examId) => {
           if(!state.user) return;
           const textarea = document.getElementById(`mock-ans-${examId}`);
@@ -1848,7 +1849,12 @@ ${answerText}
                   })
               });
 
-              if (!response.ok) throw new Error('채점 API 오류');
+              if (!response.ok) {
+                  if (response.status === 503 || response.status === 429) {
+                      throw new Error("현재 구글 AI 채점 서버가 붐비고 있습니다. 작성하신 답을 복사해두시고 잠시 후 다시 채점해주세요!");
+                  }
+                  throw new Error("채점 API 오류가 발생했습니다.");
+              }
               const data = await response.json();
               const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
               const userName = await getUserName();
@@ -1865,7 +1871,7 @@ ${answerText}
               
               window.StudyApp.showToast("답안 제출 및 채점이 완료되었습니다!", "success");
           } catch(e) {
-              window.StudyApp.showToast("답안 채점 실패: " + e.message, "error");
+              window.StudyApp.showToast(e.message, "error");
               textarea.disabled = false;
               btn.disabled = false;
               btn.innerHTML = originalHtml;
@@ -1907,7 +1913,6 @@ ${answerText}
       }
     };
 
-    // 🌟 Auth 초기화 시 signInWithCustomToken 및 signInAnonymously 올바르게 호출
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
