@@ -1579,10 +1579,11 @@
           
           const answersPrompt = allAnswers.map(a => `- ${a.userName}: ${a.answerText}`).join('\n');
 
-          // 🌟 몰래 저장했던 관련 작품 후보들을 꺼냅니다!
           const contextWorks = questionDoc.relatedWorks || [];
+          const labels = ['가', '나', '다', '라', '마', '바'];
+          const mapping = contextWorks.map((w, i) => `(${labels[i]})='${w}'`).join(', ');
           const contextHint = contextWorks.length > 0 
-              ? `\n[힌트: 이 문제는 다음 작품들 중 일부를 (가),(나) 등으로 지칭했을 확률이 매우 높음: ${contextWorks.join(', ')}]` 
+              ? `\n[※시스템 자동 매칭: 출제자 질문에 (가), (나), (다) 기호가 있다면 반드시 다음 순서대로 작품을 매칭하여 채점할 것: ${mapping}]` 
               : '';
 
           const promptText = `
