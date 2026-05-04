@@ -256,7 +256,6 @@
         </div>
     </section>
 
-    <!-- 작업창 영역 -->
     <section id="right-panel" class="w-full lg:w-[480px] shrink-0 flex flex-col h-auto min-h-[600px] lg:h-full z-10 transition-all duration-300">
         <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-full shadow-lg">
             
@@ -873,6 +872,24 @@
           window.StudyApp.findAndGoToWorkByString(workName);
       },
 
+      // 🌟 [핵심 로직] 현재 보고 있는 페이지에 해당하는 모든 작품 후보군 추출 (스마트 맵핑용)
+      getCurrentPageWorks: () => {
+          if (!state.pdfDoc) return [];
+          const currentFileName = document.getElementById('viewer-filename').textContent + '.pdf';
+          const offsetData = FILE_OFFSET_MAP[currentFileName];
+          if (!offsetData) return [];
+
+          const currentBookPage = state.pageNum - offsetData.pdfPage + offsetData.bookPage;
+          const worksOnPage = [];
+          
+          for (const [workName, data] of Object.entries(WORK_INDEX)) {
+              if (data.file === currentFileName && Math.abs(data.bookPage - currentBookPage) <= 2) {
+                  worksOnPage.push(workName);
+              }
+          }
+          return worksOnPage;
+      },
+
       onWeekChange: () => {
           const weekVal = document.getElementById('week-select').value;
           const infoEl = document.getElementById('week-days-info');
@@ -1296,6 +1313,7 @@
           }
       },
 
+      // 🌟 [핵심] 출제자가 문제를 낼 때, 현재 보고 있는 페이지의 작품 목록을 몰래 저장합니다.
       submitQAQuestion: async () => {
           if(!state.user) return;
           const textInput = document.getElementById('qa-new-q-text');
@@ -1306,12 +1324,16 @@
           if(!state.qaCurrentWork) return window.StudyApp.showToast("먼저 작품을 선택해주세요.", "error");
           if(!text) return window.StudyApp.showToast("문제 내용을 입력해주세요.", "error");
 
+          // 출제자가 뷰어를 열어놓고 있다면, 현재 페이지 주변의 작품 목록을 수집!
+          const relatedWorks = window.StudyApp.getCurrentPageWorks();
+
           try {
               const userName = await getUserName();
               await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'qa_questions'), {
                   week: w,
                   workName: state.qaCurrentWork,
                   questionText: text,
+                  relatedWorks: relatedWorks, // 🌟 저장 완료
                   authorId: state.user.uid,
                   authorName: userName,
                   timestamp: Date.now()
@@ -1407,7 +1429,6 @@
                       </div>
                   `;
                   
-                  // 🌟 [추가] 서버 잠금 상태일 때 렌더링 변경
                   if (q.isAIFetching) {
                       contentHtml += `
                           <div class="mt-4 text-center">
@@ -1533,7 +1554,7 @@
           }
       },
 
-      // 🌟 [추가] 서버 글로벌 잠금 및 프롬프트 다이어트 적용
+      // 🌟 [핵심] AI 피드백 요청 시 수집된 '관련 작품' 힌트를 같이 던져줍니다.
       requestAIFeedback: async (questionId) => {
           if(!state.user) return;
           const btn = document.getElementById(`req-ai-btn-${questionId}`);
@@ -1542,12 +1563,10 @@
           const qRef = doc(db, 'artifacts', appId, 'public', 'data', 'qa_questions', questionId);
           const qSnap = await getDoc(qRef);
           
-          // 잠금 1단계 검사
           if (qSnap.data().isAIFetching) {
               return window.StudyApp.showToast("이미 다른 스터디원이 분석을 요청 중입니다.", "info");
           }
 
-          // 잠금 실행 (서버에 깃발 꽂기)
           await updateDoc(qRef, { isAIFetching: true });
 
           const originalHtml = btn.innerHTML;
@@ -1560,9 +1579,14 @@
           
           const answersPrompt = allAnswers.map(a => `- ${a.userName}: ${a.answerText}`).join('\n');
 
-          // 다이어트 프롬프트 (가장 뼈대만 남겨 토큰 대폭 절약)
+          // 🌟 몰래 저장했던 관련 작품 후보들을 꺼냅니다!
+          const contextWorks = questionDoc.relatedWorks || [];
+          const contextHint = contextWorks.length > 0 
+              ? `\n[힌트: 이 문제는 다음 작품들 중 일부를 (가),(나) 등으로 지칭했을 확률이 매우 높음: ${contextWorks.join(', ')}]` 
+              : '';
+
           const promptText = `
-작품: ${state.qaCurrentWork}
+작품: ${state.qaCurrentWork}${contextHint}
 문제: ${questionDoc.questionText}
 답안:
 ${answersPrompt}
@@ -1593,7 +1617,6 @@ ${answersPrompt}
               const data = await response.json();
               const resultJson = JSON.parse(data.candidates[0].content.parts[0].text);
 
-              // 결과 저장 및 서버 잠금 해제 (깃발 뽑기)
               await updateDoc(qRef, {
                   aiFeedback: {
                       modelAnswer: resultJson.modelAnswer,
@@ -1607,7 +1630,6 @@ ${answersPrompt}
               window.StudyApp.showToast("AI 선생님의 피드백이 도착했습니다!", "success");
 
           } catch(e) {
-              // 에러 시 잠금 해제
               await updateDoc(qRef, { isAIFetching: false });
               window.StudyApp.showToast(e.message, "error");
               btn.disabled = false;
@@ -1741,7 +1763,6 @@ ${answersPrompt}
           if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
-      // 🌟 [추가] 모의고사 생성 서버 잠금 및 프롬프트 다이어트
       generateMockExam: async () => {
           if(!state.user) return;
           const w = document.getElementById('mock-week-filter').value;
@@ -1752,7 +1773,6 @@ ${answersPrompt}
               return window.StudyApp.showToast("이 주차에 등록된 작품이 없어 모의고사를 만들 수 없습니다.", "error");
           }
           
-          // 전역 잠금 확인
           const lockRef = doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'mockLock');
           const lockSnap = await getDoc(lockRef);
           if (lockSnap.exists() && lockSnap.data().isGenerating && (Date.now() - lockSnap.data().timestamp < 40000)) {
@@ -1808,14 +1828,13 @@ ${answersPrompt}
           } catch(e) {
               window.StudyApp.showToast(e.message, "error");
           } finally {
-              await setDoc(lockRef, { isGenerating: false, timestamp: Date.now() }); // 잠금 해제
+              await setDoc(lockRef, { isGenerating: false, timestamp: Date.now() }); 
               btn.disabled = false;
               btn.innerHTML = originalHtml;
               if(typeof lucide !== 'undefined') lucide.createIcons();
           }
       },
 
-      // 🌟 [추가] 모의고사 채점 프롬프트 획기적 다이어트 적용 (긴 지문 삭제)
       submitMockAnswer: async (examId) => {
           if(!state.user) return;
           const textarea = document.getElementById(`mock-ans-${examId}`);
