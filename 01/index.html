@@ -764,6 +764,31 @@
         setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
       },
 
+      startCooldown: (btnId, seconds, originalHtml) => {
+          const btn = document.getElementById(btnId);
+          if (!btn) return;
+          let timeLeft = seconds;
+          btn.disabled = true;
+          
+          const originalClasses = btn.className;
+          // 일시적으로 빨간색 경고 스타일로 변경
+          btn.className = btn.className.replace(/bg-\w+-\d00/g, 'bg-red-500').replace(/hover:bg-\w+-\d00/g, '');
+
+          const timer = setInterval(() => {
+              timeLeft--;
+              if (timeLeft <= 0) {
+                  clearInterval(timer);
+                  btn.disabled = false;
+                  btn.innerHTML = originalHtml;
+                  btn.className = originalClasses;
+                  if (typeof lucide !== 'undefined') lucide.createIcons();
+              } else {
+                  btn.innerHTML = `<i data-lucide="timer" class="w-3.5 h-3.5 mr-1.5"></i> 한도 초과: ${timeLeft}초 대기...`;
+                  if (typeof lucide !== 'undefined') lucide.createIcons();
+              }
+          }, 1000);
+      },
+
       initUI: () => {
         const omrGrid = document.getElementById('omr-grid-container');
         if(omrGrid) {
@@ -1739,7 +1764,7 @@ ${answersPrompt}
 
 국어교사로서 위 답안들을 평가하여 JSON으로 응답.
 1. modelAnswer: 명쾌한 모범 답안(Markdown)
-2. generalFeedback: 각 학생별(- **이름**:) 짧은 핵심 피드백(1~2줄) 및 전체 총평(Markdown)
+2. generalFeedback: 각 학생별(- **이름**:) 짧은 핵심 피드백(1~2줄) 작성. (주의: 토큰 낭비 방지를 위해 '전체 총평'은 절대 작성하지 말 것)
 
 {"modelAnswer":"...","generalFeedback":"..."}`;
 
@@ -1754,8 +1779,11 @@ ${answersPrompt}
               });
 
               if (!response.ok) {
-                  if (response.status === 503 || response.status === 429) {
-                      throw new Error("현재 구글 AI 무료 서버의 하루 한도(20회)가 초과되었거나 사용자가 몰려있습니다. 잠시 후 다시 시도해주세요!");
+                  if (response.status === 429) {
+                      window.StudyApp.startCooldown(`req-ai-btn-${questionId}`, 60, originalHtml);
+                      throw new Error("분당 요청 한도가 초과되었습니다. 60초 후에 자동으로 활성화됩니다.");
+                  } else if (response.status === 503) {
+                      throw new Error("구글 서버가 일시적으로 혼잡합니다. 잠시 후 다시 눌러주세요.");
                   }
                   throw new Error("AI 서버 통신 오류가 발생했습니다.");
               }
@@ -1953,8 +1981,11 @@ ${answersPrompt}
               });
 
               if (!response.ok) {
-                  if (response.status === 503 || response.status === 429) {
-                      throw new Error("현재 구글 AI 서버 무료 한도(하루 20회)를 모두 소진했거나 사용자가 몰려있습니다.");
+                  if (response.status === 429) {
+                      window.StudyApp.startCooldown('generate-mock-btn', 60, originalHtml);
+                      throw new Error("분당 요청 한도가 초과되었습니다. 60초 후에 자동으로 활성화됩니다.");
+                  } else if (response.status === 503) {
+                      throw new Error("구글 서버가 일시적으로 혼잡합니다. 잠시 후 다시 눌러주세요.");
                   }
                   throw new Error("AI 서버 통신 오류가 발생했습니다.");
               }
@@ -2019,8 +2050,11 @@ ${answerText}
               });
 
               if (!response.ok) {
-                  if (response.status === 503 || response.status === 429) {
-                      throw new Error("구글 AI 하루 무료 제공 한도(20회)를 초과했거나 서버가 붐비고 있습니다.");
+                  if (response.status === 429) {
+                      window.StudyApp.startCooldown(`mock-btn-${examId}`, 60, originalHtml);
+                      throw new Error("분당 요청 한도가 초과되었습니다. 60초 후에 자동으로 활성화됩니다.");
+                  } else if (response.status === 503) {
+                      throw new Error("구글 서버가 일시적으로 혼잡합니다. 잠시 후 다시 눌러주세요.");
                   }
                   throw new Error("채점 API 오류가 발생했습니다.");
               }
