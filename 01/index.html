@@ -1711,7 +1711,20 @@
           
           const answersPrompt = allAnswers.map(a => `- ${a.userName}: ${a.answerText}`).join('\n');
 
-          const contextWorks = questionDoc.relatedWorks || [];
+          // 🌟 [호환성 패치 추가] 예전에 출제해서 relatedWorks 데이터가 없는 문제들을 위한 실시간 추론 로직
+          let contextWorks = questionDoc.relatedWorks || [];
+          if (contextWorks.length === 0 && questionDoc.workName) {
+              const targetData = WORK_INDEX[questionDoc.workName];
+              if (targetData) {
+                  for (const [wName, wData] of Object.entries(WORK_INDEX)) {
+                      // 등록된 메인 작품과 같은 파일, 같은 페이지(±1)에 있는 작품들을 즉석에서 긁어모음
+                      if (wData.file === targetData.file && Math.abs(wData.bookPage - targetData.bookPage) <= 1) {
+                          contextWorks.push(wName);
+                      }
+                  }
+              }
+          }
+
           const labels = ['가', '나', '다', '라', '마', '바'];
           const mapping = contextWorks.map((w, i) => `(${labels[i]})='${w}'`).join(', ');
           const contextHint = contextWorks.length > 0 
