@@ -1296,6 +1296,12 @@
           if(!select) return;
           const currentVal = select.value;
           
+          // 🌟 방어 로직: 현재 선택해서 타이핑 중인 '로컬 새 작품'이 서버 데이터에 없더라도 강제로 보존합니다.
+          if (currentVal && state.qaCurrentWork === currentVal && !qWorks.includes(currentVal)) {
+              qWorks.push(currentVal);
+              qWorks.sort();
+          }
+          
           let html = '<option value="">작품 선택</option>';
           qWorks.forEach(work => { html += `<option value="${work}">${work}</option>`; });
           
