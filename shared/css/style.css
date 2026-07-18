@@ -1,0 +1,52 @@
+/* shared/css/style.css */
+
+/* 커스텀 애니메이션 */
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin-custom { animation: spin 1s linear infinite; }
+.fade-in { animation: fadeIn 0.3s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 스크롤바 디자인 */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* UI 요소 스타일 */
+.tab-active { border-bottom: 3px solid #4f46e5; color: #4f46e5; font-weight: 900 !important; }
+
+.viewer-fullscreen {
+    position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 100vw !important; height: 100dvh !important;
+    z-index: 99990 !important; border-radius: 0 !important; margin: 0 !important;
+    display: flex !important; flex-direction: column !important;
+}
+
+.fab-button {
+    position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+    z-index: 999999 !important; box-shadow: 0 10px 30px -5px rgba(79, 70, 229, 0.6);
+    border: 2px solid white;
+}
+
+/* PDF 캔버스 스타일 */
+canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+#pdf-canvas, #answer-pdf-canvas { max-width: none !important; transform-origin: top center; }
+
+/* Markdown 렌더링 (Prose) 커스텀 스타일 */
+.prose h1, .prose h2, .prose h3 { font-weight: 900; margin-top: 1.5em; margin-bottom: 0.5em; }
+.prose p { margin-bottom: 1em; line-height: 1.6; }
+.prose strong { font-weight: 900; color: #047857; }
+.dark .prose strong { color: #34d399; }
+.prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+
+.exam-paper { background-color: #ffffff; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 0.5rem; box-shadow: inset 0 0 0 1px #f1f5f9, 0 4px 6px -1px rgba(0, 0, 0, 0.05); color: #1e293b; }
+.dark .exam-paper { background-color: #0f172a; border-color: #334155; box-shadow: inset 0 0 0 1px #1e293b, 0 4px 6px -1px rgba(0, 0, 0, 0.5); color: #cbd5e1; }
+.prose blockquote { border: 2px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc; padding: 1.5rem; font-style: normal; margin: 1.5rem 0; color: #334155; }
+.dark .prose blockquote { border-color: #475569; background-color: #1e293b; color: #e2e8f0; }
+.prose h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 2rem; }
+.dark .prose h3 { color: #f8fafc; border-color: #334155; }
+
+/* 숫자 입력 필드 (Number Input) 스피너 숨김 */
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; 
+    appearance: textfield;}
