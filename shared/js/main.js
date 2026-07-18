@@ -4,14 +4,16 @@ import { state } from './state.js';
 import { initUI, toggleDarkMode, toggleSidebar, toggleFullScreen } from './ui.js';
 import { loadGlobalAnswerKey, prevPage, nextPage, zoomIn, zoomOut, jumpToPage, showOfficialAnswer, prevAnswerPage, nextAnswerPage, zoomInAnswer, zoomOutAnswer, jumpToAnswerPage, loadMaterial } from './pdfCore.js';
 import { scanGitHub, filterFiles, autoFillWorkName, findAndGoToWork, findAndGoToWorkByString, autoFillPromptWorkName } from './search.js';
-import { submitOMR, editSubmission, deleteSubmission, renderCommunityRecords, updateCommunityWorks, onWeekChange, updateGlobalWeeks } from './firebase.js';
+import { submitOMR, editSubmission, deleteSubmission, renderCommunityRecords, updateCommunityWorks, onWeekChange, updateGlobalWeeks, saveUserDay, loadUserDay } from './firebase.js';
 
-// 🌟 FIX: renderQAQuestions 함수를 상단 import에 명시적으로 추가함
 import { updateQAWorksDropdown, setQAWork, promptQAWork, confirmPromptNewQAWork, confirmEditQAWork, deleteQAWork, submitQAQuestion, deleteQAQuestion, submitQAAnswer, editQAAnswer, requestAIFeedback, submitMockAnswer, generateMockExam, updateMockView, editMockAnswer, deleteMockExam, renderQAQuestions } from './aiService.js';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, onSnapshot, doc, query, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// 🌟 추가: 범위 텍스트 생성을 위해 utils.js에서 가져옵니다.
+import { getRangeText } from './utils.js';
 
 // 모드 전환 함수
 function setMode(mode) {
@@ -126,6 +128,48 @@ function bindStaticEventListeners() {
     document.getElementById('generate-mock-btn')?.addEventListener('click', generateMockExam);
 }
 
+// 🌟 오늘의 학습 목표 렌더링 함수
+function renderTodayTarget() {
+    const bar = document.getElementById('week-selector-bar');
+    if(!bar) return;
+    
+    // Day 선택 UI와 뱃지가 이미 있다면 제거
+    const existing = document.getElementById('today-day-select');
+    if(existing) existing.remove();
+    
+    const existingInfo = document.getElementById('today-day-info');
+    if(existingInfo) existingInfo.remove();
+
+    // 1. Day 선택 <select> 태그 추가
+    const select = document.createElement('select');
+    select.id = 'today-day-select';
+    select.className = "bg-white dark:bg-slate-800 border border-brand-200 dark:border-brand-700 text-brand-700 dark:text-brand-300 text-[10px] font-black rounded-lg p-1.5 outline-none shadow-sm ml-2 cursor-pointer";
+    
+    // 과목의 전체 Day 수를 가져옴 (배열 길이 기준)
+    const maxDays = state.dayMap ? state.dayMap.length : 49;
+    for(let i = 1; i <= maxDays; i++) {
+        select.innerHTML += `<option value="${i}" ${state.myCurrentDay == i ? 'selected' : ''}>Day ${i}</option>`;
+    }
+    
+    // 값이 변경될 때마다 DB에 업데이트
+    select.onchange = (e) => saveUserDay(Number(e.target.value));
+    
+    // 2. 오늘의 범위 뱃지 추가
+    const info = document.createElement('div');
+    info.id = 'today-day-info';
+    info.className = "flex items-center text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 px-2 py-1 rounded-md ml-2 tracking-widest uppercase transition-all shadow-sm";
+    
+    const range = getRangeText([state.myCurrentDay || 1]); 
+    info.innerHTML = `<i data-lucide="target" class="w-3 h-3 mr-1"></i> 오늘: ${range}`;
+    
+    // bar 안에 삽입
+    const container = bar.querySelector('.flex.items-center');
+    container.appendChild(select);
+    container.appendChild(info);
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
 // 동적으로 생성되는 HTML 요소의 onclick 지원을 위한 브릿지 객체
 function exposeGlobalApp() {
     window.StudyApp = {
@@ -140,7 +184,8 @@ function exposeGlobalApp() {
         submitMockAnswer,
         editMockAnswer,
         deleteMockExam,
-        setMode
+        setMode,
+        renderTodayTarget // 🌟 모듈 함수를 전역에서 참조할 수 있도록 등록
     };
 }
 
@@ -185,7 +230,7 @@ function startFirebaseListeners() {
         const ans = []; snap.forEach(doc => ans.push({ id: doc.id, ...doc.data() }));
         state.qaAnswers = ans;
         if(state.mode === 'qa') {
-            renderQAQuestions(); // 🌟 FIX: 브라우저 에러를 유발하는 require() 삭제, 명시적 import 호출
+            renderQAQuestions();
         }
     });
 
@@ -231,6 +276,7 @@ export function initApp(config) {
             scanGitHub(); 
             loadGlobalAnswerKey(); 
             startFirebaseListeners();
+            await loadUserDay(); // 🌟 개인 진도(Day) 불러오기
             setMode('omr'); 
         }
     });

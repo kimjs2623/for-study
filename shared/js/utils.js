@@ -46,12 +46,13 @@ export function startCooldown(btnId, seconds, originalHtml) {
 export function getRangeText(daysArray) {
     if (!daysArray || daysArray.length === 0) return '진도 범위를 선택해주세요.';
     
-    const sortedDays = [...daysArray].map(Number).sort((a, b) => a - b);
+    // 입력된 값이 1개(숫자 하나)일 때도 대응
+    const sortedDays = (Array.isArray(daysArray) ? [...daysArray] : [daysArray]).map(Number).sort((a, b) => a - b);
     const first = sortedDays[0];
     const last = sortedDays[sortedDays.length - 1];
     
-    if (!state.dayMap[first - 1] || !state.dayMap[last - 1]) return `Day ${first}~${last} (진도 매핑 필요)`;
-
+    if (!state.dayMap[first - 1]) return `Day ${first} (데이터 없음)`;
+    
     const minWorks = state.dayMap[first - 1].split('-')[0];
     const maxWorks = state.dayMap[last - 1].split('-')[1] || state.dayMap[last - 1];
     

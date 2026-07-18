@@ -50,3 +50,12 @@ canvas { background-color: white; border-radius: 4px; box-shadow: 0 4px 20px rgb
 input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 input[type=number] { -moz-appearance: textfield; 
     appearance: textfield;}
+
+    /* --- 기존 style.css 내용 아래에 추가 --- */
+
+/* 랜딩 페이지 전용 추가 스타일 */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fade-in-down { animation: fadeInDown 0.4s ease-out forwards; }
+.modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); }

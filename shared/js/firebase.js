@@ -199,3 +199,44 @@ export function renderCommunityRecords() {
     
     if(typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+// ... 기존 코드 아래에 추가 ...
+
+// ... (이전 코드 유지) ...
+
+export async function saveUserDay(day) {
+    if(!state.user) return;
+    try {
+        await updateDoc(doc(state.db, 'artifacts', state.appId, 'users', state.user.uid, 'profile', 'data'), {
+            currentDay: day
+        });
+        state.myCurrentDay = day;
+        
+        // 🌟 전역으로 노출된 렌더링 함수 실행
+        if (window.StudyApp && window.StudyApp.renderTodayTarget) {
+            window.StudyApp.renderTodayTarget(); 
+        }
+    } catch(e) { 
+        showToast("개인 진도 저장 실패", "error"); 
+    }
+}
+
+export async function loadUserDay() {
+    if(!state.user) return;
+    try {
+        const docRef = doc(state.db, 'artifacts', state.appId, 'users', state.user.uid, 'profile', 'data');
+        const snap = await getDoc(docRef);
+        if(snap.exists() && snap.data().currentDay) {
+            state.myCurrentDay = snap.data().currentDay;
+        } else {
+            state.myCurrentDay = 1;
+        }
+    } catch(e) {
+        state.myCurrentDay = 1;
+    }
+    
+    // 🌟 데이터를 불러온 후 렌더링 실행
+    if(window.StudyApp && window.StudyApp.renderTodayTarget) {
+        window.StudyApp.renderTodayTarget();
+    }
+}
