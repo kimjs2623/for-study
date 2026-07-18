@@ -3,7 +3,7 @@
 import { state } from './state.js';
 import { initUI, toggleDarkMode, toggleSidebar, toggleFullScreen } from './ui.js';
 import { loadGlobalAnswerKey, prevPage, nextPage, zoomIn, zoomOut, jumpToPage, showOfficialAnswer, prevAnswerPage, nextAnswerPage, zoomInAnswer, zoomOutAnswer, jumpToAnswerPage, loadMaterial } from './pdfCore.js';
-import { scanGitHub, filterFiles, autoFillWorkName, findAndGoToWork, findAndGoToWorkByString } from './search.js';
+import { scanGitHub, filterFiles, autoFillWorkName, findAndGoToWork, findAndGoToWorkByString, autoFillPromptWorkName } from './search.js';
 import { submitOMR, editSubmission, deleteSubmission, renderCommunityRecords, updateCommunityWorks, onWeekChange, updateGlobalWeeks } from './firebase.js';
 
 // 🌟 FIX: renderQAQuestions 함수를 상단 import에 명시적으로 추가함
@@ -112,6 +112,7 @@ function bindStaticEventListeners() {
     document.getElementById('submit-qa-q-btn')?.addEventListener('click', submitQAQuestion);
     
     // Modal buttons
+    document.getElementById('prompt-num-input')?.addEventListener('input', autoFillPromptWorkName);
     document.getElementById('cancel-delete-btn')?.addEventListener('click', () => document.getElementById('delete-modal').classList.add('hidden'));
     document.getElementById('cancel-prompt-btn')?.addEventListener('click', () => document.getElementById('prompt-modal').classList.add('hidden'));
     document.getElementById('prompt-confirm-btn')?.addEventListener('click', () => {

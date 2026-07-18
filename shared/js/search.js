@@ -82,6 +82,19 @@ export function autoFillWorkName() {
     }
 }
 
+export function autoFillPromptWorkName() {
+    const numInput = document.getElementById('prompt-num-input').value.trim();
+    if(!numInput) return;
+    
+    const paddedNum = numInput.padStart(3, '0');
+    const targetKey = Object.keys(state.workIndex).find(k => k.startsWith(paddedNum + '.'));
+    
+    if(targetKey) {
+        const name = targetKey.replace(/^\d+\.\s*/, '');
+        document.getElementById('prompt-input').value = name;
+    }
+}
+
 export function findAndGoToWorkByString(workString) {
     if (!workString) return;
     const cleanInput = workString.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
