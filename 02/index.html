@@ -187,6 +187,7 @@
             </button>
           </div>
           <div class="relative">
+            <!-- 🌟 파일명 대신 작품명으로 검색하도록 유도 -->
             <input type="text" id="file-search" oninput="window.StudyApp.filterFiles()" placeholder="작품명 검색 (예: 진달래꽃)" class="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white shadow-sm transition-all">
             <i data-lucide="search" class="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400"></i>
           </div>
@@ -221,7 +222,7 @@
             <div id="pdf-controls" class="hidden bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 p-2 flex items-center justify-between z-50 shadow-sm shrink-0 relative min-h-[44px]">
                 
                 <div class="flex items-center relative mr-2 z-10">
-                    <input type="text" id="pdf-search-work" onkeypress="if(event.key==='Enter') window.StudyApp.findAndGoToWork('pdf-search-work')" placeholder="작품명 검색..." class="text-[10px] sm:text-xs w-28 sm:w-48 pl-3 pr-8 py-1.5 border border-brand-200 dark:border-brand-800/50 bg-brand-50/30 dark:bg-slate-800 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-bold">
+                    <input type="text" id="pdf-search-work" onkeypress="if(event.key==='Enter') window.StudyApp.findAndGoToWork('pdf-search-work')" placeholder="작품명 점프..." class="text-[10px] sm:text-xs w-28 sm:w-48 pl-3 pr-8 py-1.5 border border-brand-200 dark:border-brand-800/50 bg-brand-50/30 dark:bg-slate-800 rounded-lg outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all font-bold">
                     <button onclick="window.StudyApp.findAndGoToWork('pdf-search-work')" class="absolute right-1 top-1 bottom-1 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-slate-700 px-1.5 rounded transition-colors flex items-center justify-center">
                         <i data-lucide="search" class="w-3.5 h-3.5"></i>
                     </button>
@@ -401,9 +402,9 @@
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    // 🌟 API 키 Base64 난독화 적용
+    // 🌟 API 키 Base64 난독화
     const encodedKey = "QUl6YVN5RFhPcDVWSVFhdHNoendNNWswbHBOV1U5V2tuZ05zVWpV";
-    const apiKey = atob(encodedKey);
+    const apiKey = atob(encodedKey); 
 
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "02/pdf", answerKeyFileName: "정답해설.pdf" };
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
@@ -415,7 +416,6 @@
 
     const SUBJECT_NAME = "현대시";
 
-    // CSV 데이터 기반 49일차 진도 매핑
     const DAY_MAP = [
       "01-04", "05-08", "09-12", "13-16", "17-20", "21-24", "25-28",
       "29-32", "33-36", "37-40", "41-46", "47-51", "52-56", "57-59",
@@ -426,7 +426,6 @@
       "188-193", "194-199", "200-206", "207-213", "214-219", "220-227", "228-234"
     ];
 
-    // 🌟 목차 기반 234개 전체 작품 매핑 완료
     const WORK_INDEX = {
         "001. 애국하는 노래": { file: "01. 개화기_1910년대.pdf", bookPage: 32 },
         "002. 동심가": { file: "01. 개화기_1910년대.pdf", bookPage: 34 },
@@ -650,18 +649,18 @@
         "220. 쌀": { file: "05. 1990년대_이후.pdf", bookPage: 372 },
         "221. 신문지 밥상": { file: "05. 1990년대_이후.pdf", bookPage: 373 },
         "222. 지삿개에서": { file: "05. 1990년대_이후.pdf", bookPage: 373 },
-        "223. 동승": { file: "05. 1990년대_이후.pdf", bookPage: 374 },
-        "224. 신분": { file: "05. 1990년대_이후.pdf", bookPage: 374 },
-        "225. 나는 기쁘다": { file: "05. 1990년대_이후.pdf", bookPage: 375 },
-        "226. 평화 일기 4": { file: "05. 1990년대_이후.pdf", bookPage: 376 },
-        "227. 형제": { file: "05. 1990년대_이후.pdf", bookPage: 377 },
-        "228. 모든 첫 번째가 나를": { file: "05. 1990년대_이후.pdf", bookPage: 377 },
-        "229. 듣기": { file: "05. 1990년대_이후.pdf", bookPage: 378 },
-        "230. 첫사랑": { file: "05. 1990년대_이후.pdf", bookPage: 379 },
-        "231. 선풍기": { file: "05. 1990년대_이후.pdf", bookPage: 379 },
-        "232. 차심": { file: "05. 1990년대_이후.pdf", bookPage: 380 },
-        "233. 붉은 꽃, 흰 꽃": { file: "05. 1990년대_이후.pdf", bookPage: 380 },
-        "234. 등불": { file: "05. 1990년대_이후.pdf", bookPage: 381 },
+        "223. 동승": { file: "06. 세계_문학.pdf", bookPage: 374 },
+        "224. 신분": { file: "06. 세계_문학.pdf", bookPage: 374 },
+        "225. 나는 기쁘다": { file: "06. 세계_문학.pdf", bookPage: 375 },
+        "226. 평화 일기 4": { file: "06. 세계_문학.pdf", bookPage: 376 },
+        "227. 형제": { file: "06. 세계_문학.pdf", bookPage: 377 },
+        "228. 모든 첫 번째가 나를": { file: "06. 세계_문학.pdf", bookPage: 377 },
+        "229. 듣기": { file: "06. 세계_문학.pdf", bookPage: 378 },
+        "230. 첫사랑": { file: "06. 세계_문학.pdf", bookPage: 379 },
+        "231. 선풍기": { file: "06. 세계_문학.pdf", bookPage: 379 },
+        "232. 차심": { file: "06. 세계_문학.pdf", bookPage: 380 },
+        "233. 붉은 꽃, 흰 꽃": { file: "06. 세계_문학.pdf", bookPage: 380 },
+        "234. 등불": { file: "06. 세계_문학.pdf", bookPage: 381 },
         "235. 기탄잘리": { file: "06. 세계_문학.pdf", bookPage: 384 },
         "236. 가 보지 못한 길": { file: "06. 세계_문학.pdf", bookPage: 384 },
         "237. 슬픈 장례식": { file: "06. 세계_문학.pdf", bookPage: 385 },
@@ -861,16 +860,26 @@
 
       refreshFiles: () => scanGitHub(),
       
-      // 🌟 검색 로직 개편: 파일명 대신 WORK_INDEX의 작품명 기반 검색
+      // 🌟 검색 로직 개편: 파일명 대신 WORK_INDEX의 작품명 기반 검색 + 퍼지 매칭 적용
       filterFiles: () => {
-          const q = document.getElementById('file-search').value.toLowerCase();
+          const q = document.getElementById('file-search').value.toLowerCase().replace(/\s+/g, '');
           const container = document.getElementById('material-list');
           
           if (!q) {
               state.filteredFiles = [...state.allFiles];
               window.StudyApp.renderFileList();
           } else {
-              const matchedWorks = Object.keys(WORK_INDEX).filter(k => k.toLowerCase().includes(q));
+              const matchedWorks = Object.keys(WORK_INDEX).filter(k => {
+                  const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                  if (cleanKey.includes(q)) return true;
+                  // 퍼지 매칭 로직 (처음 두 글자와 끝 두 글자 일치)
+                  if (cleanKey.length >= 3 && q.length >= 3) {
+                      if (cleanKey.substring(0, 2) === q.substring(0, 2) && 
+                          cleanKey.substring(cleanKey.length - 2) === q.substring(q.length - 2)) return true;
+                  }
+                  return false;
+              });
+
               if (matchedWorks.length === 0) {
                   container.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-4 font-bold">검색 결과가 없습니다.</p>`;
                   return;
@@ -1017,41 +1026,54 @@
       zoomIn: () => { state.userZoomed = true; state.pdfScale += 0.25; window.StudyApp.renderPage(state.pageNum); },
       zoomOut: () => { if (state.pdfScale > 0.5) { state.userZoomed = true; state.pdfScale -= 0.25; window.StudyApp.renderPage(state.pageNum); } },
 
+      // 🌟 오타도 찰떡같이 찾아주는 퍼지 매칭(Fuzzy Match) 및 공백 제거 완벽 로직 적용
       findAndGoToWorkByString: (workString) => {
           if (!workString) return;
-          const cleanName = workString.replace(/^\d+\.\s*/, '').trim();
+          const cleanInput = workString.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
           
-          let target = WORK_INDEX[cleanName];
-          if (!target) {
-              const key = Object.keys(WORK_INDEX).find(k => k.includes(cleanName) || cleanName.includes(k));
-              if (key) target = WORK_INDEX[key];
-          }
+          let target = null;
+          let targetKey = Object.keys(WORK_INDEX).find(k => {
+              const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+              if (cleanKey === cleanInput) return true;
+              if (cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey)) return true;
+              // 퍼지 매칭: 처음 2글자와 끝 2글자가 같으면 오타가 있어도 일치로 간주
+              if (cleanKey.length >= 3 && cleanInput.length >= 3) {
+                  if (cleanKey.substring(0, 2) === cleanInput.substring(0, 2) && 
+                      cleanKey.substring(cleanKey.length - 2) === cleanInput.substring(cleanInput.length - 2)) {
+                      return true;
+                  }
+              }
+              return false;
+          });
+
+          if (targetKey) target = WORK_INDEX[targetKey];
 
           if (!target) {
-              return window.StudyApp.showToast(`목차에 [${cleanName}] 작품이 없습니다. 작품명 매핑을 확인해주세요.`, "error");
+              return window.StudyApp.showToast(`목차에 작품이 없습니다. 작품명 매핑을 확인해주세요.`, "error");
           }
 
           let calculatedPdfPage = 1;
           const offsetData = FILE_OFFSET_MAP[target.file];
-          
           if (offsetData) {
               calculatedPdfPage = target.bookPage - offsetData.bookPage + offsetData.pdfPage;
           }
           if (calculatedPdfPage < 1) calculatedPdfPage = 1; 
 
-          const currentFileName = document.getElementById('viewer-filename').textContent;
-          const targetFileNameClean = target.file.replace('.pdf', '');
+          // 🌟 파일명 대조 시 공백 싹 무시하는 로직 적용
+          const currentFileName = document.getElementById('viewer-filename').textContent.replace(/\s+/g, '');
+          const targetFileNameClean = target.file.replace('.pdf', '').replace(/\s+/g, '');
 
           if (currentFileName === targetFileNameClean && state.pdfDoc) {
               window.StudyApp.jumpToPage(calculatedPdfPage);
-              window.StudyApp.showToast(`[${cleanName}] 본문으로 이동했습니다.`, "success");
+              window.StudyApp.showToast(`[${targetKey}] 본문으로 이동했습니다.`, "success");
           } else {
-              const fileObj = state.allFiles.find(f => f.name === target.file);
+              // 🌟 allFiles 배열에서 찾을 때도 공백 싹 무시
+              const fileObj = state.allFiles.find(f => f.name.replace(/\s+/g, '') === target.file.replace(/\s+/g, ''));
               if (fileObj) {
                   window.StudyApp.showToast(`[${target.file}] 파일을 열고 본문으로 이동합니다...`, "info");
                   window.StudyApp.loadMaterial(fileObj.name, fileObj.download_url, calculatedPdfPage);
               } else {
-                  window.StudyApp.showToast(`[${target.file}] 파일을 라이브러리에서 찾을 수 없습니다.`, "error");
+                  window.StudyApp.showToast(`[${target.file}] 파일을 라이브러리에서 찾을 수 없습니다. 파일명을 확인해주세요.`, "error");
               }
           }
       },
@@ -1065,14 +1087,26 @@
       getCurrentPageWorks: () => {
           if (!state.pdfDoc) return [];
           const currentFileName = document.getElementById('viewer-filename').textContent + '.pdf';
-          const offsetData = FILE_OFFSET_MAP[currentFileName];
+          
+          // 공백 무시하고 offsetData 찾기
+          const cleanCurrentFileName = currentFileName.replace(/\s+/g, '');
+          let offsetData = null;
+          let matchedFileKey = null;
+          for (const key of Object.keys(FILE_OFFSET_MAP)) {
+              if (key.replace(/\s+/g, '') === cleanCurrentFileName) {
+                  offsetData = FILE_OFFSET_MAP[key];
+                  matchedFileKey = key;
+                  break;
+              }
+          }
+          
           if (!offsetData) return [];
 
           const currentBookPage = state.pageNum - offsetData.pdfPage + offsetData.bookPage;
           const worksOnPage = [];
           
           for (const [workName, data] of Object.entries(WORK_INDEX)) {
-              if (data.file === currentFileName && Math.abs(data.bookPage - currentBookPage) <= 1) {
+              if (data.file === matchedFileKey && Math.abs(data.bookPage - currentBookPage) <= 1) {
                   worksOnPage.push(workName);
               }
           }
@@ -1507,7 +1541,23 @@
           }
       },
 
-      // 🌟 문제 등록 시 외부 링크(externalLink) 포함
+      // 🌟 2. 일정 병합 버그 수정: { merge: true } 적용 완료
+      saveSchedule: async () => { 
+          const subj = state.currentScheduleTab;
+          state.editScheduleForm.sort((a,b) => a.weekNum - b.weekNum);
+          
+          await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), {
+              [subj]: { weeks: state.editScheduleForm }
+          }, { merge: true });
+
+          state.isEditingSchedule = false; 
+          if (!state.scheduleData[subj]) state.scheduleData[subj] = { weeks: [] };
+          state.scheduleData[subj].weeks = state.editScheduleForm;
+          
+          renderSchedule(); 
+          showToast(`[${subj}] 주차별 일정이 저장되었습니다.`, 'success'); 
+      },
+
       submitQAQuestion: async () => {
           if(!state.user) return;
           const textInput = document.getElementById('qa-new-q-text');
@@ -1581,7 +1631,6 @@
           }
       },
 
-      // 🌟 문제 목록 렌더링 시 링크/본문 열기 버튼 추가
       renderQAQuestions: () => {
           if(state.mode !== 'qa' || !state.qaCurrentWork) return;
           const container = document.getElementById('qa-list-container');
@@ -1612,7 +1661,6 @@
               const allAnswers = state.qaAnswers.filter(a => a.questionId === q.id);
               const myAnswer = allAnswers.find(a => a.userId === state.user.uid);
               
-              // 작품 본문 연계 버튼
               let linkButtons = `<button onclick="window.StudyApp.findAndGoToWorkByString('${q.workName}')" class="text-[9px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 transition-colors flex items-center shadow-sm"><i data-lucide="book-open" class="w-3 h-3 mr-1"></i>교재 본문 열기</button>`;
               
               if (q.externalLink) {
@@ -1731,7 +1779,7 @@
           }, 0);
       },
 
-      // 🌟 AI 해설 프롬프트 개선: 원문 텍스트 강제 인출 지시
+      // 🌟 1. AI 해설 오류: 강제 원문 탐색 지시어 삽입 (퍼지 매칭 연동)
       requestAIFeedback: async (questionId) => {
           if(!state.user) return;
           const btn = document.getElementById(`req-ai-btn-${questionId}`);
@@ -1758,7 +1806,14 @@
 
           let contextWorks = questionDoc.relatedWorks || [];
           if (contextWorks.length === 0 && questionDoc.workName) {
-              const targetData = WORK_INDEX[questionDoc.workName];
+              const cleanInput = questionDoc.workName.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+              let targetKey = Object.keys(WORK_INDEX).find(k => {
+                  const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                  if(cleanKey === cleanInput || cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey)) return true;
+                  if(cleanKey.length >= 3 && cleanInput.length >= 3 && cleanKey.substring(0,2) === cleanInput.substring(0,2) && cleanKey.substring(cleanKey.length-2) === cleanInput.substring(cleanInput.length-2)) return true;
+                  return false;
+              });
+              const targetData = targetKey ? WORK_INDEX[targetKey] : null;
               if (targetData) {
                   for (const [wName, wData] of Object.entries(WORK_INDEX)) {
                       if (wData.file === targetData.file && Math.abs(wData.bookPage - targetData.bookPage) <= 1) {
