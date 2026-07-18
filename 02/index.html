@@ -187,7 +187,7 @@
             </button>
           </div>
           <div class="relative">
-            <input type="text" id="file-search" oninput="window.StudyApp.filterFiles()" placeholder="문제지 검색..." class="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white shadow-sm transition-all">
+            <input type="text" id="file-search" oninput="window.StudyApp.filterFiles()" placeholder="작품명 검색 (예: 진달래꽃)" class="w-full pl-7 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-brand-500/20 dark:text-white shadow-sm transition-all">
             <i data-lucide="search" class="w-3 h-3 absolute left-2.5 top-2.5 text-slate-400"></i>
           </div>
         </div>
@@ -346,13 +346,17 @@
 
                     <div id="qa-content-area" class="hidden flex-col space-y-4 flex-1 overflow-hidden mt-2">
                         <div class="bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-xl p-3 shadow-sm shrink-0 focus-within:border-blue-400 transition-all group relative">
-                            <button onclick="window.StudyApp.findAndGoToWorkByString(state.qaCurrentWork)" class="absolute right-2 top-2 bg-blue-50 text-blue-600 hover:bg-blue-100 text-[9px] font-black px-2 py-1 rounded transition-colors flex items-center border border-blue-100 z-10">
-                                📖 이 작품 본문 찾기
-                            </button>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-black text-blue-600 dark:text-blue-400"><i data-lucide="pen-tool" class="w-3 h-3 inline mr-1 pb-0.5"></i>새로운 창작 문제</span>
+                                <button onclick="window.StudyApp.findAndGoToWorkByString(state.qaCurrentWork)" class="bg-blue-50 text-blue-600 hover:bg-blue-100 text-[9px] font-black px-2 py-1 rounded transition-colors flex items-center border border-blue-100">
+                                    📖 이 작품 본문 찾기
+                                </button>
+                            </div>
                             
-                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 새로운 모의 문제를 출제해 보세요..." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-14 pt-6 custom-scrollbar dark:text-slate-200 group-focus-within:h-20 transition-all" maxlength="300"></textarea>
-                            <div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-2 mt-1">
-                                <span class="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center"><i data-lucide="pen-tool" class="w-3 h-3 mr-1"></i>새로운 창작 문제</span>
+                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 모의 문제를 출제해 보세요. 교재 밖 외부 작품 텍스트를 길게 복사해서 붙여넣어도 좋습니다." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-20 custom-scrollbar dark:text-slate-200 transition-all mb-2" maxlength="5000"></textarea>
+                            <input type="text" id="qa-new-q-link" placeholder="🔗 외부 연계 작품 웹 링크가 있다면 여기에 붙여넣으세요 (선택)" class="w-full bg-slate-50 dark:bg-slate-800 text-[10px] p-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none mb-2 font-medium" />
+                            
+                            <div class="flex justify-end border-t border-slate-100 dark:border-slate-800 pt-2">
                                 <button onclick="window.StudyApp.submitQAQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center">
                                     <i data-lucide="send" class="w-3 h-3 mr-1"></i> 문제 등록
                                 </button>
@@ -399,7 +403,7 @@
     
     // 🌟 API 키 Base64 난독화 적용
     const encodedKey = "QUl6YVN5RFhPcDVWSVFhdHNoendNNWswbHBOV1U5V2tuZ05zVWpV";
-    const apiKey = atob(encodedKey); 
+    const apiKey = atob(encodedKey);
 
     const GITHUB_CONFIG = { username: "kimjs2623", repo: "for-study", branch: "main", folder: "02/pdf", answerKeyFileName: "정답해설.pdf" };
     const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyD2jQ_ElbhPq2ycvS_FTu3Uel5FFLoC8oA", projectId: "study-99725", appId: "1:850626154259:web:c3307473b7fbb09d9554e6" };
@@ -411,6 +415,7 @@
 
     const SUBJECT_NAME = "현대시";
 
+    // CSV 데이터 기반 49일차 진도 매핑
     const DAY_MAP = [
       "01-04", "05-08", "09-12", "13-16", "17-20", "21-24", "25-28",
       "29-32", "33-36", "37-40", "41-46", "47-51", "52-56", "57-59",
@@ -421,7 +426,7 @@
       "188-193", "194-199", "200-206", "207-213", "214-219", "220-227", "228-234"
     ];
 
-    // 🌟 목차 기반 245개 전체 작품 매핑 완료
+    // 🌟 목차 기반 234개 전체 작품 매핑 완료
     const WORK_INDEX = {
         "001. 애국하는 노래": { file: "01. 개화기_1910년대.pdf", bookPage: 32 },
         "002. 동심가": { file: "01. 개화기_1910년대.pdf", bookPage: 34 },
@@ -484,7 +489,7 @@
         "059. 교목": { file: "02. 1920년대_광복이전.pdf", bookPage: 127 },
         "060. 청노루": { file: "03. 광복이후_1950년대.pdf", bookPage: 132 },
         "061. 산도화": { file: "03. 광복이후_1950년대.pdf", bookPage: 134 },
-        "062. 산이 날 에워싸고": { file: "03. 광복이후_1950년대.pdf", bookPage: 136 },
+        "062. 산이 날 에워싸고 남령에게": { file: "03. 광복이후_1950년대.pdf", bookPage: 136 },
         "063. 하관": { file: "03. 광복이후_1950년대.pdf", bookPage: 138 },
         "064. 꽃덤불": { file: "03. 광복이후_1950년대.pdf", bookPage: 140 },
         "065. 낙화": { file: "03. 광복이후_1950년대.pdf", bookPage: 142 },
@@ -670,7 +675,6 @@
         "245. 파노리타케": { file: "06. 세계_문학.pdf", bookPage: 391 }
     };
 
-    // 직접 분할하신 파일의 교재 시작 페이지
     const FILE_START_PAGE = {
         "00. 현대시_핵심노트.pdf": 20, 
         "01. 개화기_1910년대.pdf": 30,
@@ -681,7 +685,6 @@
         "06. 세계_문학.pdf": 384
     };
 
-    // 분할된 PDF 자체의 1페이지가 실제 책의 몇 페이지인지 맞추는 오프셋 보정
     const FILE_OFFSET_MAP = {
         "00. 현대시_핵심노트.pdf": { pdfPage: 1, bookPage: 20 },
         "01. 개화기_1910년대.pdf": { pdfPage: 1, bookPage: 30 },
@@ -857,10 +860,44 @@
       },
 
       refreshFiles: () => scanGitHub(),
+      
+      // 🌟 검색 로직 개편: 파일명 대신 WORK_INDEX의 작품명 기반 검색
       filterFiles: () => {
-        const q = document.getElementById('file-search').value.toLowerCase();
-        state.filteredFiles = state.allFiles.filter(f => f.name.toLowerCase().includes(q));
-        renderFileList();
+          const q = document.getElementById('file-search').value.toLowerCase();
+          const container = document.getElementById('material-list');
+          
+          if (!q) {
+              state.filteredFiles = [...state.allFiles];
+              window.StudyApp.renderFileList();
+          } else {
+              const matchedWorks = Object.keys(WORK_INDEX).filter(k => k.toLowerCase().includes(q));
+              if (matchedWorks.length === 0) {
+                  container.innerHTML = `<p class="text-[10px] text-slate-400 text-center py-4 font-bold">검색 결과가 없습니다.</p>`;
+                  return;
+              }
+              container.innerHTML = matchedWorks.map(w => {
+                  const info = WORK_INDEX[w];
+                  return `<button onclick="window.StudyApp.findAndGoToWorkByString('${w}')" class="w-full flex flex-col p-2.5 rounded-xl border border-brand-100 bg-white dark:bg-slate-900 text-left transition-all hover:bg-brand-50 shadow-sm mb-1.5 dark:border-slate-800 dark:hover:bg-slate-800">
+                      <div class="flex items-center mb-1">
+                          <i data-lucide="search" class="w-3 h-3 mr-1.5 text-brand-500"></i>
+                          <div class="truncate font-black text-[11px] text-slate-700 dark:text-slate-200">${w}</div>
+                      </div>
+                      <div class="text-[9px] text-slate-400 ml-4.5 font-bold tracking-tight">📄 ${info.file.replace('.pdf','')} | ${info.bookPage}p</div>
+                  </button>`;
+              }).join('');
+              if(typeof lucide !== 'undefined') lucide.createIcons();
+          }
+      },
+
+      renderFileList: () => {
+          const container = document.getElementById('material-list');
+          container.innerHTML = state.filteredFiles.map(f => `
+              <button onclick="window.StudyApp.loadMaterial('${f.name}', '${f.download_url}')" id="btn-${f.name.replace(/\s+/g, '')}" class="file-btn w-full flex items-center p-2.5 rounded-xl border border-slate-100 bg-white dark:bg-slate-900 text-left transition-all hover:bg-brand-50/10 shadow-sm mb-1.5">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5 mr-2 text-slate-300"></i>
+                  <div class="truncate font-bold text-[10px] uppercase">${f.name}</div>
+              </button>
+          `).join('');
+          if(typeof lucide !== 'undefined') lucide.createIcons();
       },
 
       toggleSidebar: () => {
@@ -1470,10 +1507,13 @@
           }
       },
 
+      // 🌟 문제 등록 시 외부 링크(externalLink) 포함
       submitQAQuestion: async () => {
           if(!state.user) return;
           const textInput = document.getElementById('qa-new-q-text');
+          const linkInput = document.getElementById('qa-new-q-link');
           const text = textInput.value.trim();
+          const link = linkInput?.value.trim() || '';
           const w = document.getElementById('qa-week-filter').value;
           
           if(!w) return window.StudyApp.showToast("주차를 먼저 선택해주세요.", "error");
@@ -1489,6 +1529,7 @@
                   week: w,
                   workName: state.qaCurrentWork,
                   questionText: text,
+                  externalLink: link,
                   relatedWorks: relatedWorks, 
                   authorId: state.user.uid,
                   authorName: userName,
@@ -1496,6 +1537,7 @@
               });
               
               textInput.value = '';
+              if(linkInput) linkInput.value = '';
               
               const worksHint = relatedWorks.length > 0 ? `\n(연결된 작품: ${relatedWorks.join(', ')})` : '';
               window.StudyApp.showToast("새로운 문제가 등록되었습니다." + worksHint, "success");
@@ -1539,6 +1581,7 @@
           }
       },
 
+      // 🌟 문제 목록 렌더링 시 링크/본문 열기 버튼 추가
       renderQAQuestions: () => {
           if(state.mode !== 'qa' || !state.qaCurrentWork) return;
           const container = document.getElementById('qa-list-container');
@@ -1569,6 +1612,14 @@
               const allAnswers = state.qaAnswers.filter(a => a.questionId === q.id);
               const myAnswer = allAnswers.find(a => a.userId === state.user.uid);
               
+              // 작품 본문 연계 버튼
+              let linkButtons = `<button onclick="window.StudyApp.findAndGoToWorkByString('${q.workName}')" class="text-[9px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 transition-colors flex items-center shadow-sm"><i data-lucide="book-open" class="w-3 h-3 mr-1"></i>교재 본문 열기</button>`;
+              
+              if (q.externalLink) {
+                  let url = q.externalLink.startsWith('http') ? q.externalLink : 'https://' + q.externalLink;
+                  linkButtons += `<a href="${url}" target="_blank" class="text-[9px] font-bold bg-slate-50 text-slate-600 hover:bg-slate-100 px-2 py-1.5 rounded border border-slate-200 transition-colors flex items-center shadow-sm"><i data-lucide="external-link" class="w-3 h-3 mr-1"></i>외부 작품 링크</a>`;
+              }
+
               let contentHtml = '';
 
               if (myAnswer) {
@@ -1644,8 +1695,11 @@
                           <div class="flex items-start space-x-3 flex-1 min-w-0">
                               <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 p-2 rounded-lg mt-0.5 shrink-0"><i data-lucide="help-circle" class="w-4 h-4"></i></div>
                               <div class="flex-1 min-w-0 pt-0.5">
-                                  <p class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug whitespace-pre-wrap">${q.questionText}</p>
-                                  <div class="flex items-center mt-2 space-x-2">
+                                  <div class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug whitespace-pre-wrap">${q.questionText}</div>
+                                  <div class="mt-3 flex items-center gap-1.5 flex-wrap">
+                                      ${linkButtons}
+                                  </div>
+                                  <div class="flex items-center mt-3 space-x-2 border-t border-slate-100 dark:border-slate-800 pt-2">
                                       <span class="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-bold">출제: ${q.authorName}</span>
                                       <span class="text-[9px] text-slate-400 font-bold">참여: ${allAnswers.length}명</span>
                                   </div>
@@ -1677,41 +1731,7 @@
           }, 0);
       },
 
-      submitQAAnswer: async (questionId) => {
-          if(!state.user) return;
-          const textarea = document.getElementById(`qa-ans-${questionId}`);
-          const btn = document.getElementById(`qa-btn-${questionId}`);
-          const answerText = textarea.value.trim();
-
-          if(!answerText) return window.StudyApp.showToast("답안을 입력해주세요.", "error");
-
-          const originalHtml = btn.innerHTML;
-          textarea.disabled = true;
-          btn.disabled = true;
-          btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 mr-1.5 animate-spin-custom"></i> 등록 중...`;
-          if(typeof lucide !== 'undefined') lucide.createIcons();
-
-          try {
-              const userName = await getUserName();
-              await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'qa_answers'), {
-                  questionId,
-                  workName: state.qaCurrentWork,
-                  userId: state.user.uid,
-                  userName: userName,
-                  answerText: answerText,
-                  timestamp: Date.now()
-              });
-              
-              window.StudyApp.showToast("답안이 성공적으로 등록되었습니다!", "success");
-          } catch(e) {
-              window.StudyApp.showToast("답안 등록 실패: " + e.message, "error");
-              textarea.disabled = false;
-              btn.disabled = false;
-              btn.innerHTML = originalHtml;
-              if(typeof lucide !== 'undefined') lucide.createIcons();
-          }
-      },
-
+      // 🌟 AI 해설 프롬프트 개선: 원문 텍스트 강제 인출 지시
       requestAIFeedback: async (questionId) => {
           if(!state.user) return;
           const btn = document.getElementById(`req-ai-btn-${questionId}`);
@@ -1756,16 +1776,17 @@
 
           const promptText = `
 과목: 현대시
-작품: ${state.qaCurrentWork}${contextHint}
+메인 작품: ${state.qaCurrentWork}${contextHint}
 문제: ${questionDoc.questionText}
 답안:
 ${answersPrompt}
 
-국어교사로서 위 답안들을 평가하여 JSON으로 응답.
-1. modelAnswer: 명쾌한 모범 답안(Markdown)
-2. generalFeedback: 각 학생별(- **이름**:) 짧은 핵심 피드백(1~2줄) 작성. (주의: 토큰 낭비 방지를 위해 '전체 총평'은 절대 작성하지 말 것)
+[지시사항]
+1. 당신은 국어 임용고시 출제위원입니다.
+2. 위 '메인 작품' 및 문제에 제시된 '외부 연계 작품'의 **실제 원문 텍스트와 문학사적 맥락**을 당신의 지식 베이스에서 명확히 검색하고 파악해 낸 후, 이를 바탕으로 엄격히 채점하세요. (단순히 제목만 보고 유추하여 엉뚱한 해설을 하지 마십시오.)
+3. 학생들의 답안을 평가하여 JSON으로 응답하세요.
 
-{"modelAnswer":"...","generalFeedback":"..."}`;
+{"modelAnswer":"명쾌한 모범 답안(Markdown)","generalFeedback":"각 학생별(- **이름**:) 짧은 핵심 피드백(1~2줄)"}`;
 
           try {
               const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
@@ -2137,21 +2158,10 @@ ${answerText}
             if (!res.ok) throw new Error(`GitHub 오류 (${res.status})`);
             const data = await res.json();
             state.allFiles = data.filter(f => f.name.toLowerCase().endsWith('.pdf') && !f.name.includes('정답'));
-            state.filteredFiles = [...state.allFiles]; renderFileList();
+            state.filteredFiles = [...state.allFiles]; window.StudyApp.renderFileList();
         } catch (e) { 
             document.getElementById('material-list').innerHTML = `<p class="text-[10px] text-amber-600 p-6 text-center font-bold break-words">${e.message}<br><br>번호/명을 수동 입력하면 정상 작동합니다.</p>`; 
         }
-    }
-
-    function renderFileList() {
-        const container = document.getElementById('material-list');
-        container.innerHTML = state.filteredFiles.map(f => `
-            <button onclick="window.StudyApp.loadMaterial('${f.name}', '${f.download_url}')" id="btn-${f.name.replace(/\s+/g, '')}" class="file-btn w-full flex items-center p-2.5 rounded-xl border border-slate-100 bg-white dark:bg-slate-900 text-left transition-all hover:bg-brand-50/10 shadow-sm">
-                <i data-lucide="file-text" class="w-3.5 h-3.5 mr-2 text-slate-300"></i>
-                <div class="truncate font-bold text-[10px] uppercase">${f.name}</div>
-            </button>
-        `).join('');
-        if(typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     async function loadGlobalAnswerKey() {
