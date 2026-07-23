@@ -2,7 +2,7 @@
 
 import { state } from './state.js';
 import { showToast, getUserName, getRangeText } from './utils.js';
-import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 export function updateGlobalWeeks() {
     state.weeks = [...new Set([...state.docWeeks])].filter(w => w && w !== 'undefined');
@@ -238,5 +238,70 @@ export async function loadUserDay() {
     // 🌟 데이터를 불러온 후 렌더링 실행
     if(window.StudyApp && window.StudyApp.renderTodayTarget) {
         window.StudyApp.renderTodayTarget();
+    }
+}
+// --- 개인 진도 및 목표 관리 로직 (firebase.js 하단) ---
+export async function saveTodayTargets(daysArray) {
+    if(!state.user || !state.userName) return;
+    const docRef = doc(state.db, 'artifacts', state.appId, 'users', state.user.uid, 'profile', 'data');
+    
+    try {
+        await setDoc(docRef, {
+            todayTargets: {
+                [state.subjectName]: daysArray
+            }
+        }, { merge: true });
+    } catch(e) {
+        console.error("목표 저장 오류:", e);
+    }
+}
+
+export async function completeTodayTargets() {
+    if(!state.user || !state.userName) return;
+    const targets = state.myTodayTargets?.[state.subjectName] || [];
+    if(targets.length === 0) return showToast("선택된 오늘 분량이 없습니다.", "error");
+
+    let maxNum = 0;
+    targets.forEach(d => {
+        const rangeStr = state.dayMap[d - 1];
+        if(rangeStr) {
+            const parts = String(rangeStr).split('-');
+            const endNum = parseInt(parts[1] || parts[0], 10);
+            if(endNum > maxNum) maxNum = endNum;
+        }
+    });
+
+    await updateProgressToNum(maxNum);
+    await saveTodayTargets([]); // 달성 후 목표 초기화
+}
+
+// 🌟 드롭다운 팝업에서 호출되는 진도 강제 수정 (초기화 포함)
+export async function completeProgressToDay(dayNum) {
+    let newNum = 0;
+    if(dayNum > 0) {
+        const rangeStr = state.dayMap[dayNum - 1];
+        if(!rangeStr) return;
+        const parts = String(rangeStr).split('-');
+        newNum = parseInt(parts[1] || parts[0], 10);
+    }
+    await updateProgressToNum(newNum);
+}
+
+// 내부 헬퍼 함수
+async function updateProgressToNum(num) {
+    if(!state.user || !state.userName) return;
+    const currentData = { ...state.progressData };
+    if(!currentData[state.userName]) {
+        currentData[state.userName] = { '고전시가': 0, '현대시': 0, '고전산문': 0 };
+    }
+    
+    currentData[state.userName][state.subjectName] = num;
+
+    try {
+        await setDoc(doc(state.db, 'artifacts', state.appId, 'public', 'data', 'studyInfo', 'progress'), currentData, { merge: true });
+        if(num === 0) showToast("진도가 초기화되었습니다.", "info");
+        else showToast(`진도가 ${num}번으로 갱신되었습니다. 🎉`, "success");
+    } catch(e) {
+        showToast("진도 갱신에 실패했습니다.", "error");
     }
 }
