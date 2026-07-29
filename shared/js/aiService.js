@@ -52,7 +52,6 @@ export function addQAWorkOption(workName) {
 
 export function promptQAWork(isEdit = false) {
     const w = document.getElementById('qa-week-filter').value;
-    if (!isEdit && !w) return showToast("주차를 먼저 선택해주세요.", "error");
 
     const titleEl = document.getElementById('prompt-modal-title');
     const descEl = document.getElementById('prompt-modal-desc');
@@ -201,6 +200,8 @@ export async function submitQAQuestion() {
     if(!state.user) return;
     const textInput = document.getElementById('qa-new-q-text');
     const linkInput = document.getElementById('qa-new-q-link');
+    const manualWorksInput = document.getElementById('qa-related-works-input');
+    
     const text = textInput.value.trim();
     const link = linkInput?.value.trim() || '';
     const w = document.getElementById('qa-week-filter').value;
@@ -209,7 +210,55 @@ export async function submitQAQuestion() {
     if(!state.qaCurrentWork) return showToast("먼저 작품을 선택해주세요.", "error");
     if(!text) return showToast("문제 내용을 입력해주세요.", "error");
 
-    const relatedWorks = getCurrentPageWorks();
+    let manualWorks = [];
+    if (manualWorksInput && manualWorksInput.value.trim()) {
+        const rawWorks = manualWorksInput.value.split(',').map(s => s.trim()).filter(s => s);
+        
+        // [핵심] 사용자의 중구난방 입력을 정식 명칭으로 자동 정제 (Auto-Normalization)
+        manualWorks = rawWorks.map(workString => {
+            const cleanInput = workString.replace(/^[\d\.,\s]+/, '').replace(/\s+/g, '').toLowerCase();
+            const rawKeyNumMatch = workString.match(/^(\d+)/);
+            const rawKeyNumInput = rawKeyNumMatch ? rawKeyNumMatch[1] : null;
+
+            let targetKey = null;
+
+            // 1순위: 번호 일치
+            if (rawKeyNumInput) {
+                targetKey = Object.keys(state.workIndex).find(k => k.split('.')[0] === rawKeyNumInput.padStart(3, '0'));
+            }
+
+            // 2순위: 제목 + 작가명 동시 포함 (예: "김춘수 꽃")
+            if (!targetKey && cleanInput) {
+                targetKey = Object.keys(state.workIndex).find(k => {
+                    const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                    const author = (state.workIndex[k].author || '').replace(/\s+/g, '').toLowerCase();
+                    return cleanKey && author && cleanInput.includes(cleanKey) && cleanInput.includes(author);
+                });
+            }
+
+            // 3순위: 제목 정확히 일치
+            if (!targetKey && cleanInput) {
+                targetKey = Object.keys(state.workIndex).find(k => {
+                    const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                    return cleanKey === cleanInput;
+                });
+            }
+
+            // 4순위: 제목 부분 포함
+            if (!targetKey && cleanInput) {
+                targetKey = Object.keys(state.workIndex).find(k => {
+                    const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                    return cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey);
+                });
+            }
+
+            // 찾았으면 정식 명칭 반환, 못 찾았으면 사용자가 입력한 날것 그대로 반환(외부 작품)
+            return targetKey ? targetKey : workString;
+        });
+    }
+    
+    // 현재 보고 있는 페이지의 작품 자동 매핑 로직은 귀하의 이전 요청에 따라 삭제된 상태입니다.
+    const relatedWorks = [...new Set([...manualWorks])]; // 중복 제거
 
     try {
         const userName = await getUserName(state.db);
@@ -227,6 +276,7 @@ export async function submitQAQuestion() {
         
         textInput.value = '';
         if(linkInput) linkInput.value = '';
+        if(manualWorksInput) manualWorksInput.value = '';
         
         const worksHint = relatedWorks.length > 0 ? `\n(연결된 작품: ${relatedWorks.join(', ')})` : '';
         showToast("새로운 문제가 등록되었습니다." + worksHint, "success");
@@ -322,7 +372,14 @@ export function renderQAQuestions() {
         const allAnswers = state.qaAnswers.filter(a => a.questionId === q.id);
         const myAnswer = allAnswers.find(a => a.userId === state.user.uid);
         
-        let linkButtons = `<button onclick="window.StudyApp.findAndGoToWorkByString('${q.workName}')" class="text-[9px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 transition-colors flex items-center shadow-sm"><i data-lucide="book-open" class="w-3 h-3 mr-1"></i>교재 본문 열기</button>`;
+        // 수정 후
+const allLinkWorks = [...new Set([q.workName, ...(q.relatedWorks || [])])];
+let linkButtons = '';
+
+allLinkWorks.forEach(w => {
+    const displayName = w.replace(/^\d+\.\s*/, '');
+    linkButtons += `<button onclick="window.StudyApp.findAndGoToWorkByString('${w}')" class="text-[9px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 transition-colors flex items-center shadow-sm mr-1 mb-1"><i data-lucide="book-open" class="w-3 h-3 mr-1"></i>${displayName} 열기</button>`;
+});
         
         if (q.externalLink) {
             let url = q.externalLink.startsWith('http') ? q.externalLink : 'https://' + q.externalLink;
@@ -465,31 +522,26 @@ export async function requestAIFeedback(questionId) {
     const answersPrompt = allAnswers.map(a => `- ${a.userName}: ${a.answerText}`).join('\n');
 
     let contextWorks = questionDoc.relatedWorks || [];
-    let authorHint = "";
-
-    // 🌟 작가명 힌트 주입 로직
-    if (contextWorks.length === 0 && questionDoc.workName) {
-        const cleanInput = questionDoc.workName.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-        let targetKey = Object.keys(state.workIndex).find(k => {
+    
+    // 작가 추출 헬퍼 함수 (메인 및 연계 작품 모두 사용)
+    const getAuthorInfo = (workTitle) => {
+        if (!workTitle) return "정보 없음";
+        const cleanInput = workTitle.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+        const targetKey = Object.keys(state.workIndex).find(k => {
             const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
             const rawKeyNum = k.split('.')[0];
-            if(cleanKey === cleanInput || cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey)) return true;
-            if (rawKeyNum === cleanInput.padStart(3, '0')) return true;
-            if(cleanKey.length >= 3 && cleanInput.length >= 3 && cleanKey.substring(0,2) === cleanInput.substring(0,2) && cleanKey.substring(cleanKey.length-2) === cleanInput.substring(cleanInput.length-2)) return true;
-            return false;
+            return cleanKey === cleanInput || cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey) || rawKeyNum === cleanInput.padStart(3, '0');
         });
-        
         const targetData = targetKey ? state.workIndex[targetKey] : null;
-        
-        if (targetData) {
-            if (targetData.author) authorHint = `\n작가: ${targetData.author}`;
+        return (targetData && targetData.author) ? targetData.author : "작가 정보 없음/교재 외";
+    };
 
-            for (const [wName, wData] of Object.entries(state.workIndex)) {
-                if (wData.file === targetData.file && Math.abs(wData.bookPage - targetData.bookPage) <= 1) {
-                    contextWorks.push(wName);
-                }
-            }
-        }
+    const mainAuthor = getAuthorInfo(questionDoc.workName);
+    let relatedPrompt = "";
+    
+    if (contextWorks.length > 0) {
+        const relatedDetails = contextWorks.map(w => `${w} (작가: ${getAuthorInfo(w)})`);
+        relatedPrompt = `\n연계 작품: ${relatedDetails.join(', ')}`;
     }
 
     const labels = ['가', '나', '다', '라', '마', '바'];
@@ -500,14 +552,14 @@ export async function requestAIFeedback(questionId) {
 
     const promptText = `
 과목: ${state.subjectName}
-메인 작품: ${state.qaCurrentWork}${authorHint}${contextHint}
+출제 작품(메인): ${questionDoc.workName} (작가: ${mainAuthor})${relatedPrompt}${contextHint}
 문제: ${questionDoc.questionText}
 답안:
 ${answersPrompt}
 
 [지시사항]
 1. 당신은 국어 임용고시 출제위원입니다.
-2. 위 '메인 작품' 및 문제에 제시된 '외부 연계 작품'의 **실제 원문 텍스트와 문학사적 맥락**을 당신의 지식 베이스에서 명확히 검색하고 파악해 낸 후, 이를 바탕으로 엄격히 채점하세요. (단순히 제목만 보고 유추하여 엉뚱한 해설을 하지 마십시오.)
+2. 위 '출제 작품' 및 '연계 작품'의 실제 원문 텍스트와 문학사적 맥락을 당신의 지식 베이스에서 명확히 검색하고 파악해 낸 후, 이를 바탕으로 엄격히 채점하세요. (단순히 제목만 보고 유추하여 엉뚱한 해설을 하지 마십시오.)
 3. 학생들의 답안을 평가하여 JSON으로 응답하세요.
 
 {"modelAnswer":"명쾌한 모범 답안(Markdown)","generalFeedback":"각 학생별(- **이름**:) 짧은 핵심 피드백(1~2줄)"}`;

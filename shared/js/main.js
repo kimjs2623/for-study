@@ -154,6 +154,7 @@ function startFirebaseListeners() {
         const qs = []; snap.forEach(doc => qs.push({ id: doc.id, ...doc.data() }));
         state.qaQuestions = qs.sort((a,b) => b.timestamp - a.timestamp);
         updateQAWorksDropdown();
+        if(state.mode === 'qa') renderQAQuestions();
     });
 
     onSnapshot(query(collection(state.db, 'artifacts', state.appId, 'public', 'data', 'qa_answers')), (snap) => {

@@ -71,6 +71,27 @@ export function renderFileList() {
     if(typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+function getWeekByWorkNum(workNum) {
+    let targetDay = null;
+    for(let i = 0; i < state.dayMap.length; i++) {
+        const range = String(state.dayMap[i]).split('-');
+        const start = parseInt(range[0], 10);
+        const end = parseInt(range[1] || range[0], 10);
+        if(workNum >= start && workNum <= end) {
+            targetDay = i + 1;
+            break;
+        }
+    }
+    if(!targetDay) return null;
+    
+    for(const wk of state.scheduleWeeks) {
+        if(wk.days && wk.days.includes(targetDay)) {
+            return String(wk.weekNum || wk.week).replace(/[^0-9]/g, '');
+        }
+    }
+    return null;
+}
+
 export function autoFillWorkName() {
     const numInput = document.getElementById('omr-work-num').value.trim();
     if(!numInput) return;
@@ -79,6 +100,15 @@ export function autoFillWorkName() {
     if(targetKey) {
         const name = targetKey.replace(/^\d+\.\s*/, '');
         document.getElementById('omr-work-name').value = name;
+        
+        const week = getWeekByWorkNum(parseInt(paddedNum, 10));
+        if(week) {
+            const weekSelect = document.getElementById('week-select');
+            if(weekSelect && weekSelect.value !== week) {
+                weekSelect.value = week;
+                weekSelect.dispatchEvent(new Event('change'));
+            }
+        }
     }
 }
 
@@ -92,33 +122,59 @@ export function autoFillPromptWorkName() {
     if(targetKey) {
         const name = targetKey.replace(/^\d+\.\s*/, '');
         document.getElementById('prompt-input').value = name;
+        
+        const week = getWeekByWorkNum(parseInt(paddedNum, 10));
+        if(week) {
+            const qaWeekSelect = document.getElementById('qa-week-filter');
+            if(qaWeekSelect && qaWeekSelect.value !== week) {
+                qaWeekSelect.value = week;
+                qaWeekSelect.dispatchEvent(new Event('change'));
+            }
+        }
     }
 }
 
 export function findAndGoToWorkByString(workString) {
     if (!workString) return;
     const cleanInput = workString.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+    const rawKeyNumInput = workString.split('.')[0];
     
-    let target = null;
-    let targetKey = Object.keys(state.workIndex).find(k => {
-        const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-        const rawKeyNum = k.split('.')[0];
-        if (cleanKey === cleanInput) return true;
-        if (rawKeyNum === cleanInput.padStart(3, '0')) return true;
-        if (cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey)) return true;
-        if (cleanKey.length >= 3 && cleanInput.length >= 3) {
-            if (cleanKey.substring(0, 2) === cleanInput.substring(0, 2) && 
-                cleanKey.substring(cleanKey.length - 2) === cleanInput.substring(cleanInput.length - 2)) {
-                return true;
-            }
-        }
-        return false;
-    });
+    let targetKey = null;
 
-    if (targetKey) target = state.workIndex[targetKey];
+    // 1순위: 번호가 정확히 일치하는 경우 (동명이작 완벽 식별)
+    if (rawKeyNumInput && !isNaN(parseInt(rawKeyNumInput))) {
+        targetKey = Object.keys(state.workIndex).find(k => k.split('.')[0] === rawKeyNumInput.padStart(3, '0'));
+    }
+
+    // 2순위: 제목과 작가명이 사용자 입력에 동시 포함된 경우 (예: "김춘수 꽃")
+    if (!targetKey && cleanInput) {
+        targetKey = Object.keys(state.workIndex).find(k => {
+            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+            const author = (state.workIndex[k].author || '').replace(/\s+/g, '').toLowerCase();
+            return cleanKey && author && cleanInput.includes(cleanKey) && cleanInput.includes(author);
+        });
+    }
+
+    // 3순위: 제목이 정확히 일치하는 경우 (꽃 -> 꽃)
+    if (!targetKey && cleanInput) {
+        targetKey = Object.keys(state.workIndex).find(k => {
+            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+            return cleanKey === cleanInput;
+        });
+    }
+
+    // 4순위: 제목을 부분 포함하는 경우 (꽃 -> 꽃덤불)
+    if (!targetKey && cleanInput) {
+        targetKey = Object.keys(state.workIndex).find(k => {
+            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+            return cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey);
+        });
+    }
+
+    const target = targetKey ? state.workIndex[targetKey] : null;
 
     if (!target) {
-        return showToast(`목차에 작품이 없습니다. 작품명/번호를 확인해주세요.`, "error");
+        return showToast(`[${workString}] 교재 목차에 등록되지 않은 외부 작품입니다.`, "error");
     }
 
     let calculatedPdfPage = 1;
@@ -144,7 +200,6 @@ export function findAndGoToWorkByString(workString) {
         }
     }
 }
-
 export function findAndGoToWork(inputId) {
     const workName = document.getElementById(inputId).value.trim();
     if(!workName) return showToast("작품명이나 번호를 입력하고 검색을 눌러주세요.", "error");
