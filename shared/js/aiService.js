@@ -372,18 +372,22 @@ export function renderQAQuestions() {
         const allAnswers = state.qaAnswers.filter(a => a.questionId === q.id);
         const myAnswer = allAnswers.find(a => a.userId === state.user.uid);
         
-        // 수정 후
-const allLinkWorks = [...new Set([q.workName, ...(q.relatedWorks || [])])];
-let linkButtons = '';
+        const allLinkWorks = [...new Set([q.workName, ...(q.relatedWorks || [])])];
+        let linkButtons = '';
 
-allLinkWorks.forEach(w => {
-    const displayName = w.replace(/^\d+\.\s*/, '');
-    linkButtons += `<button onclick="window.StudyApp.findAndGoToWorkByString('${w}')" class="text-[9px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 transition-colors flex items-center shadow-sm mr-1 mb-1"><i data-lucide="book-open" class="w-3 h-3 mr-1"></i>${displayName} 열기</button>`;
-});
+        allLinkWorks.forEach(w => {
+            const displayName = w.replace(/^\d+\.\s*/, '');
+            // 교재 목차에 있는 작품만 하이퍼링크 버튼 생성, 없으면 일반 뱃지로 표시
+            if (state.workIndex[w]) {
+                linkButtons += `<button onclick="window.StudyApp.findAndGoToWorkByString('${w}')" class="text-[9px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 transition-colors flex items-center shadow-sm mr-1 mb-1"><i data-lucide="book-open" class="w-3 h-3 mr-1"></i>${displayName} 열기</button>`;
+            } else {
+                linkButtons += `<span class="text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1.5 rounded border border-slate-200 dark:border-slate-700 flex items-center shadow-sm mr-1 mb-1"><i data-lucide="link" class="w-3 h-3 mr-1"></i>외부: ${displayName}</span>`;
+            }
+        });
         
         if (q.externalLink) {
             let url = q.externalLink.startsWith('http') ? q.externalLink : 'https://' + q.externalLink;
-            linkButtons += `<a href="${url}" target="_blank" class="text-[9px] font-bold bg-slate-50 text-slate-600 hover:bg-slate-100 px-2 py-1.5 rounded border border-slate-200 transition-colors flex items-center shadow-sm"><i data-lucide="external-link" class="w-3 h-3 mr-1"></i>외부 작품 링크</a>`;
+            linkButtons += `<a href="${url}" target="_blank" class="text-[9px] font-bold bg-slate-50 text-slate-600 hover:bg-slate-100 px-2 py-1.5 rounded border border-slate-200 transition-colors flex items-center shadow-sm mr-1 mb-1"><i data-lucide="external-link" class="w-3 h-3 mr-1"></i>외부 링크</a>`;
         }
 
         let contentHtml = '';
@@ -518,22 +522,44 @@ export async function requestAIFeedback(questionId) {
 
     const questionDoc = state.qaQuestions.find(q => q.id === questionId);
     const allAnswers = state.qaAnswers.filter(a => a.questionId === questionId);
-    
     const answersPrompt = allAnswers.map(a => `- ${a.userName}: ${a.answerText}`).join('\n');
 
     let contextWorks = questionDoc.relatedWorks || [];
     
-    // 작가 추출 헬퍼 함수 (메인 및 연계 작품 모두 사용)
+    // [수정 완료] 최신 4단계 작가 맵핑 알고리즘 적용
     const getAuthorInfo = (workTitle) => {
-        if (!workTitle) return "정보 없음";
+        if (!workTitle) return "작자 미상";
         const cleanInput = workTitle.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-        const targetKey = Object.keys(state.workIndex).find(k => {
-            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-            const rawKeyNum = k.split('.')[0];
-            return cleanKey === cleanInput || cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey) || rawKeyNum === cleanInput.padStart(3, '0');
-        });
+        const rawKeyNumMatch = workTitle.match(/^(\d+)/);
+        const rawKeyNumInput = rawKeyNumMatch ? rawKeyNumMatch[1] : null;
+
+        let targetKey = null;
+
+        if (rawKeyNumInput) {
+            targetKey = Object.keys(state.workIndex).find(k => k.split('.')[0] === rawKeyNumInput.padStart(3, '0'));
+        }
+        if (!targetKey && cleanInput) {
+            targetKey = Object.keys(state.workIndex).find(k => {
+                const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                const author = (state.workIndex[k].author || '').replace(/\s+/g, '').toLowerCase();
+                return cleanKey && author && cleanInput.includes(cleanKey) && cleanInput.includes(author);
+            });
+        }
+        if (!targetKey && cleanInput) {
+            targetKey = Object.keys(state.workIndex).find(k => {
+                const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                return cleanKey === cleanInput;
+            });
+        }
+        if (!targetKey && cleanInput) {
+            targetKey = Object.keys(state.workIndex).find(k => {
+                const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
+                return cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey);
+            });
+        }
+
         const targetData = targetKey ? state.workIndex[targetKey] : null;
-        return (targetData && targetData.author) ? targetData.author : "작가 정보 없음/교재 외";
+        return (targetData && targetData.author) ? targetData.author : "교재 외 외부 작품";
     };
 
     const mainAuthor = getAuthorInfo(questionDoc.workName);
@@ -541,28 +567,32 @@ export async function requestAIFeedback(questionId) {
     
     if (contextWorks.length > 0) {
         const relatedDetails = contextWorks.map(w => `${w} (작가: ${getAuthorInfo(w)})`);
-        relatedPrompt = `\n연계 작품: ${relatedDetails.join(', ')}`;
+        relatedPrompt = `\n- 연계 작품: ${relatedDetails.join(', ')}`;
     }
 
     const labels = ['가', '나', '다', '라', '마', '바'];
     const mapping = contextWorks.map((w, i) => `(${labels[i]})='${w}'`).join(', ');
     const contextHint = contextWorks.length > 0 
-        ? `\n[※시스템 자동 매칭: 출제자 질문에 (가), (나), (다) 기호가 있다면 반드시 다음 순서대로 작품을 매칭하여 채점할 것: ${mapping}]` 
+        ? `\n[※시스템 매칭: 출제자 질문에 (가), (나), (다) 기호가 있다면 다음 순서대로 매칭: ${mapping}]` 
         : '';
 
+    // [수정 완료] 학생 답안 의존 및 억까 환각 방지용 철통 프롬프트
     const promptText = `
-과목: ${state.subjectName}
-출제 작품(메인): ${questionDoc.workName} (작가: ${mainAuthor})${relatedPrompt}${contextHint}
-문제: ${questionDoc.questionText}
-답안:
+[평가 대상 정보]
+- 과목: ${state.subjectName}
+- 출제 작품(메인): ${questionDoc.workName} (작가: ${mainAuthor})${relatedPrompt}${contextHint}
+- 출제 문제: ${questionDoc.questionText}
+
+[학생 답안 목록]
 ${answersPrompt}
 
-[지시사항]
-1. 당신은 국어 임용고시 출제위원입니다.
-2. 위 '출제 작품' 및 '연계 작품'의 실제 원문 텍스트와 문학사적 맥락을 당신의 지식 베이스에서 명확히 검색하고 파악해 낸 후, 이를 바탕으로 엄격히 채점하세요. (단순히 제목만 보고 유추하여 엉뚱한 해설을 하지 마십시오.)
-3. 학생들의 답안을 평가하여 JSON으로 응답하세요.
+[지시사항 - 매우 엄격함]
+1. 당신은 국어 임용고시 출제위원이자 채점관입니다.
+2. 반드시 당신의 지식 베이스를 바탕으로 위 '출제 작품'과 '연계 작품'의 실제 원문과 문학사적 팩트를 먼저 검색·확정하십시오. (절대 학생 답안에 의존하여 모범 답안을 생성하지 마십시오.)
+3. 학생 답안을 평가할 때, 학생이 언급하지 않은 내용(예: "작가를 잘못 썼다" 등)을 지어내어 비판하는 환각(Hallucination) 오류를 절대 금지합니다. 오직 학생이 서술한 내용 자체의 타당성만 평가하십시오.
+4. 아래 JSON 형식으로만 응답하세요.
 
-{"modelAnswer":"명쾌한 모범 답안(Markdown)","generalFeedback":"각 학생별(- **이름**:) 짧은 핵심 피드백(1~2줄)"}`;
+{"modelAnswer":"작품들의 실제 문학적 팩트에 기반한 명쾌한 모범 답안(Markdown)","generalFeedback":"각 학생별(- **이름**:) 평가. 학생이 쓰지도 않은 말을 지어내어 비판하지 말 것(1~2줄)"}`;
 
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`, {
