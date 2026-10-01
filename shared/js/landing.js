@@ -9,6 +9,7 @@ import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot, addDoc, del
 import { DAY_MAP as map01 } from '../../01/config.js';
 import { DAY_MAP as map02 } from '../../02/config.js';
 import { DAY_MAP as map03 } from '../../03/config.js';
+import { DAY_MAP as map04 } from '../../04/config.js';
 
 // 🚨 2. 환경 설정 변수 (추후 유지보수 시 여기서만 수정하세요)
 const ADMIN_ID = "kimjs2623"; 
@@ -17,7 +18,8 @@ const EXAM_DATE_STRING = '2027-11-20T00:00:00';
 const DAY_MAPS = {
     '고전시가': map01,
     '현대시': map02,
-    '고전산문': map03
+    '고전산문': map03,
+    '현대소설': map04
 };
 
 const state = {
@@ -343,14 +345,38 @@ window.app = {
     submitChat: async (e) => {
         e.preventDefault();
         const input = document.getElementById('chat-input');
+        const editIdInput = document.getElementById('chat-edit-id');
         const text = input.value.trim();
+        const editId = editIdInput.value;
         if(!text) return;
+        
         input.value = '';
+        editIdInput.value = '';
+        
         try {
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), {
-                text, userName: state.appAccount.name, timestamp: Date.now()
-            });
-        } catch(err) { showToast('메시지 전송 실패', 'error'); }
+            if (editId) {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chatMessages', editId), { text });
+                showToast('메시지가 수정되었습니다.', 'success');
+            } else {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), {
+                    text, userName: state.appAccount.name, timestamp: Date.now()
+                });
+            }
+        } catch(err) { showToast('메시지 처리 실패', 'error'); }
+    },
+    
+    editChat: (id, text) => {
+        document.getElementById('chat-input').value = text;
+        document.getElementById('chat-edit-id').value = id;
+        document.getElementById('chat-input').focus();
+    },
+    
+    deleteChat: async (id) => {
+        if(!confirm('메시지를 삭제하시겠습니까?')) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'chatMessages', id));
+            showToast('삭제되었습니다.', 'success');
+        } catch(err) { showToast('삭제 실패', 'error'); }
     },
 
     toggleAddingFine: () => { state.isAddingFine = !state.isAddingFine; if(state.isAddingFine) state.newFine = { memberName: '', reason: '', amount: 1000 }; renderFines(); },
@@ -644,6 +670,7 @@ function renderTodos() {
     els.todosContainer.innerHTML = html; lucide.createIcons();
 }
 
+// 1. renderChat 함수 교체 (날짜 구분선 및 시간, 수정/삭제 UI 추가)
 function renderChat() {
     if(!els.chatContainer) return;
     let html = `
@@ -654,42 +681,58 @@ function renderChat() {
     `;
     
     if(state.chatMessages.length === 0) {
-    html += `<div class="flex h-full items-center justify-center text-slate-400 text-sm font-bold">첫 메시지를 남겨보세요!</div>`;
+        html += `<div class="flex h-full items-center justify-center text-slate-400 text-sm font-bold">첫 메시지를 남겨보세요!</div>`;
     } else {
-    state.chatMessages.forEach(msg => {
-        const isMe = msg.userName === state.appAccount?.name;
-        const timeStr = new Date(msg.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-        
-        if(isMe) {
-        html += `
-            <div class="flex flex-col items-end">
-            <span class="text-[10px] text-slate-400 mb-0.5 mr-1">${msg.userName}</span>
-            <div class="flex items-end space-x-1.5">
-                <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
-                <div class="bg-indigo-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
-            </div>
-            </div>
-        `;
-        } else {
-        html += `
-            <div class="flex flex-col items-start">
-            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5 ml-1">${msg.userName}</span>
-            <div class="flex items-end space-x-1.5">
-                <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm shadow-sm border border-slate-200 dark:border-slate-700 max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
-                <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
-            </div>
-            </div>
-        `;
-        }
-    });
+        let lastDate = '';
+        state.chatMessages.forEach(msg => {
+            const isMe = msg.userName === state.appAccount?.name;
+            const msgDate = new Date(msg.timestamp).toLocaleDateString('ko-KR');
+            const timeStr = new Date(msg.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            
+            // 일자별 구분선 추가
+            if (msgDate !== lastDate) {
+                html += `
+                <div class="flex items-center justify-center my-4">
+                    <div class="border-b border-slate-200 dark:border-slate-700 flex-1"></div>
+                    <span class="px-3 text-[10px] font-bold text-slate-400">${msgDate}</span>
+                    <div class="border-b border-slate-200 dark:border-slate-700 flex-1"></div>
+                </div>`;
+                lastDate = msgDate;
+            }
+            
+            if(isMe) {
+                html += `
+                <div class="flex flex-col items-end group">
+                    <span class="text-[10px] text-slate-400 mb-0.5 mr-1">${msg.userName}</span>
+                    <div class="flex items-end space-x-1.5">
+                        <div class="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 mb-1">
+                            <button onclick="app.editChat('${msg.id}', \`${msg.text.replace(/`/g, '\\`')}\`)" class="text-[9px] text-slate-400 hover:text-blue-500">수정</button>
+                            <button onclick="app.deleteChat('${msg.id}')" class="text-[9px] text-slate-400 hover:text-red-500">삭제</button>
+                        </div>
+                        <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
+                        <div class="bg-indigo-500 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
+                    </div>
+                </div>`;
+            } else {
+                html += `
+                <div class="flex flex-col items-start">
+                    <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5 ml-1">${msg.userName}</span>
+                    <div class="flex items-end space-x-1.5">
+                        <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm shadow-sm border border-slate-200 dark:border-slate-700 max-w-[250px] sm:max-w-[400px] break-words leading-relaxed">${msg.text}</div>
+                        <span class="text-[9px] text-slate-400 mb-1">${timeStr}</span>
+                    </div>
+                </div>`;
+            }
+        });
     }
     
     html += `
     </div>
     <div class="p-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
         <form onsubmit="app.submitChat(event)" class="flex items-center space-x-2">
-        <input type="text" id="chat-input" placeholder="스터디원들과 대화해보세요..." class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all" autocomplete="off" />
-        <button type="submit" class="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition-colors"><i data-lucide="send" class="w-5 h-5"></i></button>
+            <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." class="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all" autocomplete="off" />
+            <input type="hidden" id="chat-edit-id" value="">
+            <button type="submit" class="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-sm transition-colors"><i data-lucide="send" class="w-5 h-5"></i></button>
         </form>
     </div>
     `;
