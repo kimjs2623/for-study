@@ -25,7 +25,7 @@ const DAY_MAPS = {
 const state = {
     isDarkMode: false, user: null, appAccount: null, allMembers: [],
     currentScheduleTab: '고전시가',
-    scheduleData: { '고전시가': { weeks: [] }, '현대시': { weeks: [] }, '고전산문': { weeks: [] } },
+    scheduleData: { '고전시가': { weeks: [] }, '현대시': { weeks: [] }, '고전산문': { weeks: [] }, '현대소설': { weeks: [] } },
     isEditingSchedule: false, editScheduleForm: [],
     
     pickerMode: 'schedule',
@@ -111,11 +111,12 @@ function setupListeners(uid) {
         state.scheduleData = { 
             '고전시가': data['고전시가'] || { weeks: [] }, 
             '현대시': data['현대시'] || { weeks: [] },
-            '고전산문': data['고전산문'] || { weeks: [] }
+            '고전산문': data['고전산문'] || { weeks: [] },
+            '현대소설': data['현대소설'] || { weeks: [] }
         };
         if(data.weeks && !data['고전시가']) { state.scheduleData['고전시가'].weeks = data.weeks; } 
     } else { 
-        state.scheduleData = { '고전시가': { weeks: [] }, '현대시': { weeks: [] }, '고전산문': { weeks: [] } }; 
+        state.scheduleData = { '고전시가': { weeks: [] }, '현대시': { weeks: [] }, '고전산문': { weeks: [] }, '현대소설': { weeks: [] } }; 
     }
     renderSchedule();
     });
@@ -214,7 +215,7 @@ window.app = {
     deleteDriveFile: async (id) => { if(confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sharedDrive', id)); },
 
     switchScheduleTab: (dir) => {
-        const tabs = ['고전시가', '현대시', '고전산문'];
+        const tabs = ['고전시가', '현대시', '고전산문', '현대소설'];
         let idx = tabs.indexOf(state.currentScheduleTab);
         if (dir === 'next') idx = (idx + 1) % tabs.length;
         else idx = (idx - 1 + tabs.length) % tabs.length;
@@ -335,7 +336,7 @@ window.app = {
         if(num === '' || Number(num) < 0) return showToast('올바른 작품 번호를 입력하세요.', 'error');
         
         const currentData = { ...state.progressData };
-        if(!currentData[state.appAccount.name]) currentData[state.appAccount.name] = { '고전시가': 0, '현대시': 0, '고전산문': 0 };
+        if(!currentData[state.appAccount.name]) currentData[state.appAccount.name] = { '고전시가': 0, '현대시': 0, '고전산문': 0, '현대소설': 0 };
         currentData[state.appAccount.name][subj] = Number(num);
         
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'progress'), currentData);
@@ -443,7 +444,7 @@ function getRangeText(daysArray) {
 
 function renderHeaderProgress() {
     if(!els.headerProgressContainer || !state.appAccount) return;
-    const myProg = state.progressData[state.appAccount.name] || { '고전시가': 0, '현대시': 0, '고전산문': 0 };
+    const myProg = state.progressData[state.appAccount.name] || { '고전시가': 0, '현대시': 0, '고전산문': 0, '현대소설': 0 };
     els.headerProgressContainer.innerHTML = `
         <div class="flex space-x-4 sm:space-x-6 items-center justify-center w-full px-2">
             <div class="text-center">
@@ -459,6 +460,11 @@ function renderHeaderProgress() {
             <div class="text-center">
                 <p class="text-emerald-200 text-[10px] font-bold mb-1"><i data-lucide="book-open-check" class="w-3 h-3 inline pb-0.5"></i> 고전산문</p>
                 <div class="text-xl sm:text-2xl font-black text-white">No.${myProg['고전산문'] || 0}</div>
+            </div>
+            <div class="w-px h-10 bg-white/20"></div>
+            <div class="text-center">
+                <p class="text-orange-200 text-[10px] font-bold mb-1"><i data-lucide="book-text" class="w-3 h-3 inline pb-0.5"></i> 현대소설</p>
+                <div class="text-xl sm:text-2xl font-black text-white">No.${myProg['현대소설'] || 0}</div>
             </div>
         </div>
     `;
@@ -562,6 +568,7 @@ function renderSchedule() {
             <option value="고전시가" ${wk.area === '고전시가' ? 'selected' : ''}>고전시가</option>
             <option value="현대시" ${wk.area === '현대시' ? 'selected' : ''}>현대시</option>
             <option value="고전산문" ${wk.area === '고전산문' ? 'selected' : ''}>고전산문</option>
+            <option value="현대소설" ${wk.area === '현대소설' ? 'selected' : ''}>현대소설</option>
         </select>
         
         <button onclick="app.openDayPicker(${wk.id})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
@@ -608,7 +615,7 @@ function renderTodos() {
     html += `</div>`;
     
     const targetName = state.activeTodoTab;
-    const targetProg = state.progressData[targetName] || { '고전시가': 0, '현대시': 0, '고전산문': 0 };
+    const targetProg = state.progressData[targetName] || { '고전시가': 0, '현대시': 0, '고전산문': 0, '현대소설': 0 };
 
     html += `<div class="mb-5 flex bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-inner shrink-0 gap-2">
     <div class="flex-1 text-center border-r border-slate-200 dark:border-slate-700">
@@ -623,6 +630,10 @@ function renderTodos() {
         <p class="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-1 uppercase tracking-widest">고전산문</p>
         <p class="text-xl font-black text-slate-800 dark:text-white">No. ${targetProg['고전산문'] || 0}</p>
     </div>
+    <div class="flex-1 text-center">
+        <p class="text-[10px] font-bold text-orange-500 dark:text-orange-400 mb-1 uppercase tracking-widest">현대소설</p>
+        <p class="text-xl font-black text-slate-800 dark:text-white">No. ${targetProg['현대소설'] || 0}</p>
+    </div>
     </div>`;
 
     if(isMyTab) {
@@ -633,6 +644,7 @@ function renderTodos() {
                 <option value="고전시가">고전시가</option>
                 <option value="현대시">현대시</option>
                 <option value="고전산문">고전산문</option>
+                <option value="현대소설">현대소설</option>
             </select>
             <input type="number" id="prog-num-input" placeholder="작품번호" class="w-full sm:w-24 p-2 rounded-lg border text-xs bg-slate-50 dark:bg-slate-800 dark:border-slate-500 dark:text-white outline-none font-bold text-center" />
             <button onclick="app.updateProgress()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors">기록하기</button>
