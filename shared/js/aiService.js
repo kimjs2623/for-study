@@ -280,6 +280,12 @@ export async function submitQAQuestion() {
         
         const worksHint = relatedWorks.length > 0 ? `\n(연결된 작품: ${relatedWorks.join(', ')})` : '';
         showToast("새로운 문제가 등록되었습니다." + worksHint, "success");
+        
+        // 👈 등록 완료 시 폼 자동 접기
+        if (window.StudyApp && window.StudyApp.toggleQAForm) {
+            window.StudyApp.toggleQAForm(true);
+        }
+        
     } catch(e) {
         showToast("문제 등록 실패: " + e.message, "error");
     }
@@ -377,7 +383,6 @@ export function renderQAQuestions() {
 
         allLinkWorks.forEach(w => {
             const displayName = w.replace(/^\d+\.\s*/, '');
-            // 교재 목차에 있는 작품만 하이퍼링크 버튼 생성, 없으면 일반 뱃지로 표시
             if (state.workIndex[w]) {
                 linkButtons += `<button onclick="window.StudyApp.findAndGoToWorkByString('${w}')" class="text-[9px] font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 transition-colors flex items-center shadow-sm mr-1 mb-1"><i data-lucide="book-open" class="w-3 h-3 mr-1"></i>${displayName} 열기</button>`;
             } else {
@@ -459,13 +464,16 @@ export function renderQAQuestions() {
             `;
         }
 
+        // 🌟 수정된 반환 코드: 중복된 HTML 태그가 말끔히 제거되었습니다.
         return `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
                 <div class="flex items-start justify-between space-x-3">
                     <div class="flex items-start space-x-3 flex-1 min-w-0">
-                        <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 p-2 rounded-lg mt-0.5 shrink-0"><i data-lucide="help-circle" class="w-4 h-4"></i></div>
+                        <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 p-2 rounded-lg mt-0.5 shrink-0">
+                            <i data-lucide="help-circle" class="w-4 h-4"></i>
+                        </div>
                         <div class="flex-1 min-w-0 pt-0.5">
-                            <div class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug whitespace-pre-wrap">${q.questionText}</div>
+                            <div id="q-text-container-${q.id}" class="w-full text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug whitespace-pre-wrap">${q.questionText}</div>
                             <div class="mt-3 flex items-center gap-1.5 flex-wrap">
                                 ${linkButtons}
                             </div>
@@ -475,9 +483,16 @@ export function renderQAQuestions() {
                             </div>
                         </div>
                     </div>
-                    <button onclick="window.StudyApp.deleteQAQuestion('${q.id}')" class="shrink-0 p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="문제 삭제">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
+                    <div class="flex shrink-0 space-x-1">
+                        ${q.authorId === state.user.uid ? `
+                        <button onclick="window.StudyApp.toggleEditQAQuestion('${q.id}')" class="p-1.5 text-slate-400 hover:text-blue-500 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" title="문제 수정">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        ` : ''}
+                        <button onclick="window.StudyApp.deleteQAQuestion('${q.id}')" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="문제 삭제">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
                 ${contentHtml}
             </div>
@@ -934,4 +949,39 @@ export function deleteMockExam(examId) {
             showToast("삭제 실패: " + e.message, "error");
         }
     };
+}
+
+export function toggleEditQAQuestion(questionId) {
+    const q = state.qaQuestions.find(x => x.id === questionId);
+    if(!q) return;
+
+    const textContainer = document.getElementById(`q-text-container-${questionId}`);
+    if(!textContainer || document.getElementById(`edit-q-text-${questionId}`)) return;
+
+    const currentText = q.questionText;
+    textContainer.innerHTML = `
+        <textarea id="edit-q-text-${questionId}" class="w-full text-sm p-3 rounded-lg border border-blue-400 bg-white dark:bg-slate-900 outline-none resize-none custom-scrollbar mb-2 focus:ring-2 focus:ring-blue-500/20" rows="4">${currentText}</textarea>
+        <div class="flex justify-end space-x-2">
+            <button onclick="window.StudyApp.renderQAQuestions()" class="text-[10px] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors">취소</button>
+            <button onclick="window.StudyApp.saveEditedQAQuestion('${questionId}')" class="text-[10px] font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm">저장</button>
+        </div>
+    `;
+    document.getElementById(`edit-q-text-${questionId}`).focus();
+}
+
+export async function saveEditedQAQuestion(questionId) {
+    const textarea = document.getElementById(`edit-q-text-${questionId}`);
+    if(!textarea) return;
+    
+    const newText = textarea.value.trim();
+    if(!newText) return showToast("문제 내용을 입력해주세요.", "error");
+
+    try {
+        const qRef = doc(state.db, 'artifacts', state.appId, 'public', 'data', 'qa_questions', questionId);
+        await updateDoc(qRef, { questionText: newText });
+        showToast("문제가 수정되었습니다.", "success");
+        // Firestore onSnapshot 리스너가 즉시 화면을 갱신합니다.
+    } catch(e) {
+        showToast("문제 수정 실패: " + e.message, "error");
+    }
 }

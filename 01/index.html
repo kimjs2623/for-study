@@ -35,16 +35,16 @@
 
   <div id="toast-container" class="fixed top-6 right-6 z-[100000] flex flex-col gap-3 pointer-events-none"></div>
 
-  <!-- [기록 삭제 모달] -->
+  <!-- [기록 삭제 모달] (정상 복원됨) -->
   <div id="delete-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[1000000] flex items-center justify-center p-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 fade-in">
           <h3 class="text-base font-black text-slate-900 dark:text-white mb-2 flex items-center">
-              <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i> 기록 삭제
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mr-2"></i> 기록 삭제 확인
           </h3>
           <p id="delete-modal-desc" class="text-xs text-slate-500 dark:text-slate-400 mb-6">해당 기록을 영구적으로 삭제하시겠습니까?</p>
           <div class="flex space-x-3">
               <button id="cancel-delete-btn" class="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold transition-colors">취소</button>
-              <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors shadow-sm">영구 삭제</button>
+              <button id="confirm-delete-btn" class="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors shadow-sm">삭제</button>
           </div>
       </div>
   </div>
@@ -283,7 +283,7 @@
                     <div id="community-container" class="flex-1 overflow-y-auto space-y-3 pb-10 custom-scrollbar mt-2 transition-all"></div>
                 </div>
 
-                <!-- Q&A (모의 출제) 섹터 -->
+                <!-- 🌟 2. 아코디언 토글 적용 및 빨간 줄 문제 해결된 Q&A (모의 출제) 섹터 -->
                 <div id="view-qa" class="hidden space-y-4 fade-in h-full flex flex-col pb-4">
                     <div class="flex space-x-2 shrink-0">
                         <select id="qa-week-filter" class="w-24 bg-white dark:bg-slate-950 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 text-[11px] font-black outline-none rounded-lg p-2.5 shadow-sm uppercase transition-all focus:ring-2 focus:ring-blue-500/20">
@@ -306,21 +306,29 @@
                     </div>
 
                     <div id="qa-content-area" class="hidden flex-col space-y-4 flex-1 overflow-hidden mt-2">
-                        <div class="bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-xl p-3 shadow-sm shrink-0 focus-within:border-blue-400 transition-all group relative">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-black text-blue-600 dark:text-blue-400"><i data-lucide="pen-tool" class="w-3 h-3 inline mr-1 pb-0.5"></i>새로운 창작 문제</span>
-                                <button id="qa-find-work-btn" class="bg-blue-50 text-blue-600 hover:bg-blue-100 text-[9px] font-black px-2 py-1 rounded transition-colors flex items-center border border-blue-100">
-                                    📖 이 작품 본문 찾기
-                                </button>
-                            </div>
+                        <!-- ✨ 안전하게 변경된 아코디언 토글 출제 폼 -->
+                        <div class="bg-white dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-xl shadow-sm transition-all overflow-hidden shrink-0">
+                            <button type="button" onclick="window.StudyApp.toggleQAForm()" class="w-full p-3 flex justify-between items-center hover:bg-blue-50/80 dark:hover:bg-slate-800/80 transition-colors outline-none">
+                                <span class="text-[10px] font-black text-blue-600 dark:text-blue-400 flex items-center">
+                                    <i data-lucide="plus-circle" class="w-3.5 h-3.5 mr-1.5 pb-0.5"></i>새 모의 문제 출제하기
+                                </span>
+                                <i data-lucide="chevron-down" id="qa-form-chevron" class="w-4 h-4 text-blue-400 transition-transform duration-300"></i>
+                            </button>
                             
-                            <textarea id="qa-new-q-text" placeholder="이 작품에 대해 모의 문제를 출제해 보세요. 교재 밖 외부 작품 텍스트를 길게 복사해서 붙여넣어도 좋습니다." class="w-full bg-transparent text-xs font-medium outline-none resize-none h-20 custom-scrollbar dark:text-slate-200 transition-all mb-2" maxlength="5000"></textarea>
-                            <input type="text" id="qa-new-q-link" placeholder="🔗 외부 연계 작품 웹 링크가 있다면 여기에 붙여넣으세요 (선택)" class="w-full bg-slate-50 dark:bg-slate-800 text-[10px] p-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none mb-2 font-medium" />
-                            <input type="text" id="qa-related-works-input" placeholder="연계할 타 작품명 (쉼표로 구분. 예: 001. 관동별곡, 사미인곡)" class="w-full bg-slate-50 dark:bg-slate-800 text-[10px] p-2 rounded-lg border border-slate-200 dark:border-slate-700 outline-none mb-2 font-medium" />
-                            <div class="flex justify-end border-t border-slate-100 dark:border-slate-800 pt-2">
-                                <button id="submit-qa-q-btn" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-1.5 rounded-lg shadow-sm transition-all flex items-center">
-                                    <i data-lucide="send" class="w-3 h-3 mr-1"></i> 문제 등록
-                                </button>
+                            <div id="qa-new-form-body" class="hidden p-3 border-t border-blue-50 dark:border-slate-800 space-y-2 bg-white dark:bg-slate-900">
+                                <div class="flex justify-end">
+                                    <button id="qa-find-work-btn" type="button" class="bg-blue-50 text-blue-600 hover:bg-blue-100 text-[9px] font-black px-2 py-1 rounded transition-colors flex items-center border border-blue-100">
+                                        📖 이 작품 본문 찾기
+                                    </button>
+                                </div>
+                                <textarea id="qa-new-q-text" placeholder="이 작품에 대해 모의 문제를 출제해 보세요. 교재 밖 외부 작품 텍스트를 길게 복사해서 붙여넣어도 좋습니다." class="w-full bg-slate-50 dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-medium outline-none resize-none h-20 custom-scrollbar dark:text-slate-200 transition-all" maxlength="5000"></textarea>
+                                <input type="text" id="qa-new-q-link" placeholder="🔗 외부 연계 작품 웹 링크가 있다면 여기에 붙여넣으세요 (선택)" class="w-full bg-slate-50 dark:bg-slate-950 text-[10px] p-2 rounded-lg border border-slate-200 dark:border-slate-800 outline-none font-medium dark:text-slate-200" />
+                                <input type="text" id="qa-related-works-input" placeholder="연계할 타 작품명 (쉼표로 구분. 예: 001. 관동별곡, 사미인곡)" class="w-full bg-slate-50 dark:bg-slate-950 text-[10px] p-2 rounded-lg border border-slate-200 dark:border-slate-800 outline-none font-medium dark:text-slate-200" />
+                                <div class="flex justify-end pt-1">
+                                    <button id="submit-qa-q-btn" type="button" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black px-4 py-2 rounded-lg shadow-sm transition-all flex items-center">
+                                        <i data-lucide="send" class="w-3 h-3 mr-1"></i> 문제 등록
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div id="qa-list-container" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-4"></div>
@@ -359,7 +367,7 @@
 
   <!-- 🌟 모듈화된 진입점 스크립트 하나만 남습니다 -->
   <script type="module">
-    import * as config from './config.js'; // 🟢 정상 코드
+    import * as config from './config.js';
     import { initApp } from '../shared/js/main.js';
 
     initApp(config);

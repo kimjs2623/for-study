@@ -5,7 +5,7 @@ import { initUI, toggleDarkMode, toggleSidebar, toggleFullScreen, renderProgress
 import { loadGlobalAnswerKey, prevPage, nextPage, zoomIn, zoomOut, jumpToPage, showOfficialAnswer, prevAnswerPage, nextAnswerPage, zoomInAnswer, zoomOutAnswer, jumpToAnswerPage, loadMaterial } from './pdfCore.js';
 import { scanGitHub, filterFiles, autoFillWorkName, findAndGoToWork, findAndGoToWorkByString, autoFillPromptWorkName } from './search.js';
 import { submitOMR, editSubmission, deleteSubmission, renderCommunityRecords, updateCommunityWorks, onWeekChange, updateGlobalWeeks } from './firebase.js';
-import { updateQAWorksDropdown, setQAWork, promptQAWork, confirmPromptNewQAWork, confirmEditQAWork, deleteQAWork, submitQAQuestion, deleteQAQuestion, submitQAAnswer, editQAAnswer, requestAIFeedback, submitMockAnswer, generateMockExam, updateMockView, editMockAnswer, deleteMockExam, renderQAQuestions } from './aiService.js';
+import { updateQAWorksDropdown, setQAWork, promptQAWork, confirmPromptNewQAWork, confirmEditQAWork, deleteQAWork, submitQAQuestion, deleteQAQuestion, submitQAAnswer, editQAAnswer, requestAIFeedback, submitMockAnswer, generateMockExam, updateMockView, editMockAnswer, deleteMockExam, renderQAQuestions, toggleEditQAQuestion, saveEditedQAQuestion } from './aiService.js';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -118,7 +118,8 @@ function exposeGlobalApp() {
     window.StudyApp = {
         loadMaterial, findAndGoToWorkByString, editSubmission, deleteSubmission,
         submitQAAnswer, editQAAnswer, requestAIFeedback, deleteQAQuestion,
-        submitMockAnswer, editMockAnswer, deleteMockExam, setMode 
+        submitMockAnswer, editMockAnswer, deleteMockExam, setMode,
+        toggleEditQAQuestion, saveEditedQAQuestion, renderQAQuestions, toggleQAForm
     };
 }
 
@@ -222,4 +223,21 @@ export function initApp(config) {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) signInWithCustomToken(state.auth, __initial_auth_token);
         else signInAnonymously(state.auth);
     } catch(e) { console.error("Auth init error:", e); }
+    
 }
+
+export function toggleQAForm(forceClose = false) {
+    const body = document.getElementById('qa-new-form-body');
+    const chevron = document.getElementById('qa-form-chevron');
+    if (!body || !chevron) return;
+    
+    if (forceClose || !body.classList.contains('hidden')) {
+        body.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+    } else {
+        body.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+        document.getElementById('qa-new-q-text').focus();
+    }
+}
+
