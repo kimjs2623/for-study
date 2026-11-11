@@ -365,12 +365,84 @@
     </section>
   </main>
 
-  <!-- 🌟 모듈화된 진입점 스크립트 하나만 남습니다 -->
-  <script type="module">
+<!-- 🌟 기존 진입점 스크립트 무조건 유지! -->
+<script type="module">
     import * as config from './config.js';
     import { initApp } from '../shared/js/main.js';
 
     initApp(config);
+  </script>
+
+  <!-- ✨ 모의출제 내 담당 파트 배너 (100% 보장형 직접 삽입 스크립트) -->
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+      
+      const renderQALadderBanner = () => {
+          const viewQa = document.getElementById('view-qa');
+          if (!viewQa) return;
+
+          let banner = document.getElementById('qa-ladder-banner');
+          if (!banner) {
+              banner = document.createElement('div');
+              banner.id = 'qa-ladder-banner';
+              banner.className = 'mb-4 p-3.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-2xl text-xs flex items-center justify-between shadow-sm shrink-0 w-full';
+              // #view-qa 영역의 최상단에 무조건 강제 삽입
+              viewQa.prepend(banner);
+          }
+
+          const dataStr = localStorage.getItem('sharedLadderResult');
+          if (!dataStr) {
+              banner.innerHTML = `
+                  <div class="flex items-center text-slate-500 font-bold w-full">
+                      <i data-lucide="alert-circle" class="w-4 h-4 mr-2 text-amber-500 shrink-0"></i>
+                      <span>[사다리타기 미완료] 메인 대시보드에서 결과를 먼저 공유해주세요.</span>
+                  </div>
+              `;
+          } else {
+              try {
+                  const data = JSON.parse(dataStr);
+                  const myName = window.currentUser?.name || localStorage.getItem('study_username') || '김진성';
+                  const myAssignment = data.assignments.find(a => a.name === myName);
+
+                  if (myAssignment) {
+                      banner.innerHTML = `
+                          <div class="flex items-center text-indigo-900 dark:text-indigo-200 w-full">
+                              <i data-lucide="target" class="w-4 h-4 mr-2 text-indigo-600 shrink-0"></i>
+                              <span class="font-bold">사다리타기 내 담당 파트:</span>
+                              <strong class="ml-1.5 font-black text-indigo-600 dark:text-indigo-400 truncate">${data.subject} ${data.weekNum}주차 (${myAssignment.rangeText})</strong>
+                          </div>
+                      `;
+                  } else {
+                      banner.innerHTML = `
+                          <div class="flex items-center text-slate-500 font-bold w-full">
+                              <i data-lucide="info" class="w-4 h-4 mr-2 shrink-0"></i>
+                              <span class="truncate">${data.subject} ${data.weekNum}주차 - 할당된 내 파트가 없습니다.</span>
+                          </div>
+                      `;
+                  }
+              } catch(e) {
+                  banner.innerHTML = `<div class="text-red-500 text-xs">배정 데이터 파싱 오류</div>`;
+              }
+          }
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+      };
+
+      // 모의 출제 탭 클릭 시 실행
+      document.getElementById('tab-qa')?.addEventListener('click', () => {
+          setTimeout(renderQALadderBanner, 100);
+      });
+
+      // 1초마다 모니터링하며 배너가 누락되지 않도록 강제 유지
+      setInterval(() => {
+          const viewQa = document.getElementById('view-qa');
+          if (viewQa && !viewQa.classList.contains('hidden') && !document.getElementById('qa-ladder-banner')) {
+              renderQALadderBanner();
+          }
+      }, 1000);
+
+      // 초기 실행
+      setTimeout(renderQALadderBanner, 1000);
+  });
   </script>
 </body>
 </html>

@@ -145,7 +145,7 @@
       <div class="grid grid-cols-2 gap-2">
           <div>
               <label class="block text-xs font-bold text-slate-500 mb-1">과목 선택</label>
-              <!-- ✨ 실제 파이어베이스 데이터 기반으로 자동 생성됨 -->
+              <!-- ✨ 하드코딩 제거: 자바스크립트에서 동적으로 과목 목록을 채웁니다 -->
               <select id="ladder-subject-select" onchange="window.app.onLadderSubjectChange()" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
                   <option value="">데이터 로딩 중...</option>
               </select>
@@ -180,7 +180,7 @@
     </div>
 
     <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 shrink-0 flex gap-2">
-      <!-- ✨ 임의 배정과 수동 배정 버튼 분리 유지 -->
+      <!-- ✨ 임의 배정과 수동 배정 버튼 분리 -->
       <button onclick="window.app.runLadder(true)" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-sm transition-colors flex justify-center items-center shadow-sm">
           <i data-lucide="shuffle" class="w-4 h-4 mr-1.5"></i> 임의 배정
       </button>
@@ -191,7 +191,7 @@
   </div>
 </div>
 
-    <!-- 메인 대시보드 구조 -->
+    <!-- 메인 대시보드 구조 (유지) -->
     <header class="bg-indigo-600 dark:bg-indigo-900 text-white py-10 px-4 relative overflow-hidden">
       <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:opacity-5"></div>
       <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('ladder-modal').classList.remove('hidden');
         document.getElementById('ladder-result-area').classList.add('hidden');
 
-        // ✨ 과목 목록 동적 생성 (하드코딩 완전 제거)
+        // ✨ 핵심: 과목명 하드코딩 제거 및 실제 데이터 기반 동적 로드
         const subjSelect = document.getElementById('ladder-subject-select');
         const weekSelect = document.getElementById('ladder-week-select');
         
@@ -386,7 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSelectedSubj = '';
     let currentSelectedWeek = '';
 
-    // ✨ 임의 배정(true) 또는 수동 배정(false) 처리 유지
+    // ✨ 임의 배정(true) 또는 수동 배정(false) 처리
     window.app.runLadder = function(isRandom = true) {
         const subj = document.getElementById('ladder-subject-select').value;
         const weekNum = document.getElementById('ladder-week-select').value;
@@ -413,14 +413,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const assignedDays = daysList.slice(idx * chunkSize, Math.min((idx + 1) * chunkSize, daysList.length));
                 const rangeText = assignedDays.length > 0 
                     ? (assignedDays.length === 1 ? `Day ${assignedDays[0]}` : `Day ${assignedDays[0]}~${assignedDays[assignedDays.length - 1]}`)
-                    : "";
+                    : "범위 없음";
                 latestAssignments.push({ name, rangeText });
             });
         } else {
             shuffled.forEach((name, idx) => latestAssignments.push({ name, rangeText: `파트 #${idx + 1}` }));
         }
 
-        // ✨ 텍스트 직접 수정 가능한 Input 폼
+        // ✨ 모달창 안에서 직접 이름/텍스트 수정 가능하도록 Input 폼으로 렌더링
         const resultHtml = latestAssignments.map((item, idx) => `
             <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 gap-2 mb-2">
                 <div class="flex items-center w-1/3 border-b border-slate-200 dark:border-slate-600 focus-within:border-indigo-500">
@@ -448,6 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.app.publishLadderResult = async function() {
         if (!latestAssignments.length) return;
         
+        // Input에서 수정된 값 가져오기
         latestAssignments = latestAssignments.map((item, idx) => ({
             name: document.getElementById(`assign-name-${idx}`).value.trim() || item.name,
             rangeText: document.getElementById(`assign-range-${idx}`).value.trim() || item.rangeText
@@ -465,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.app.closeLadderModal();
     };
 
-    // ✨ 메인 대시보드 위젯 (수정 버튼 완전 제거됨 - 조회만 가능)
+    // ✨ 메인 대시보드 위젯 (조회 전용 - 수정 버튼 제거됨)
     window.app.renderMainAssignmentWidget = function(payload) {
         const data = payload || JSON.parse(localStorage.getItem('sharedLadderResult'));
         const targetContainer = document.getElementById('todos-container'); 

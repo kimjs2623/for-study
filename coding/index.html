@@ -373,105 +373,75 @@
     initApp(config);
   </script>
 
-  <!-- ✨ 앱 충돌 없는 안전한 탭 전환 & 모의 출제 강제 데이터 연동 -->
+  <!-- ✨ 모의출제 내 담당 파트 배너 (100% 보장형 직접 삽입 스크립트) -->
   <script>
   document.addEventListener('DOMContentLoaded', () => {
       
-      // 1. 순수 UI 탭 토글 (기존 앱 방해 없음)
-      const tabs = ['omr', 'community', 'qa', 'mock'];
-      tabs.forEach(tab => {
-          const btn = document.getElementById(`tab-${tab}`);
-          if (btn) {
-              btn.addEventListener('click', () => {
-                  tabs.forEach(t => {
-                      const b = document.getElementById(`tab-${t}`);
-                      const v = document.getElementById(`view-${t}`);
-                      if (b) {
-                          b.classList.remove('tab-active', 'text-brand-500', 'text-indigo-600', 'text-blue-500', 'text-emerald-600');
-                          b.classList.add('text-slate-500');
-                      }
-                      if (v) v.classList.add('hidden');
-                  });
-                  btn.classList.remove('text-slate-500');
-                  btn.classList.add('tab-active');
-                  
-                  if(tab === 'community') btn.classList.add('text-brand-500');
-                  if(tab === 'qa') btn.classList.add('text-blue-500');
-                  if(tab === 'mock') btn.classList.add('text-emerald-600');
-                  
-                  const view = document.getElementById(`view-${tab}`);
-                  if (view) view.classList.remove('hidden');
-              });
-          }
-      });
-
-      // 2. 모의 출제 탭 사다리 배정 범위 표시
       const renderQALadderBanner = () => {
-          const qaContentArea = document.getElementById('qa-content-area');
-          const dataStr = localStorage.getItem('sharedLadderResult');
-          if (!qaContentArea || !dataStr) return;
+          const viewQa = document.getElementById('view-qa');
+          if (!viewQa) return;
 
-          const data = JSON.parse(dataStr);
-          const myName = window.currentUser?.name || localStorage.getItem('study_username') || '김진성';
-          const myAssignment = data.assignments.find(a => a.name === myName);
-
-          if (myAssignment && !document.getElementById('qa-ladder-banner')) {
-              const banner = document.createElement('div');
+          let banner = document.getElementById('qa-ladder-banner');
+          if (!banner) {
+              banner = document.createElement('div');
               banner.id = 'qa-ladder-banner';
-              banner.className = 'mb-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl text-xs flex items-center justify-between shadow-sm';
+              banner.className = 'mb-4 p-3.5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-2xl text-xs flex items-center justify-between shadow-sm shrink-0 w-full';
+              // #view-qa 영역의 최상단에 무조건 강제 삽입
+              viewQa.prepend(banner);
+          }
+
+          const dataStr = localStorage.getItem('sharedLadderResult');
+          if (!dataStr) {
               banner.innerHTML = `
-                  <div class="flex items-center text-blue-700 dark:text-blue-300">
-                      <i data-lucide="pen-tool" class="w-4 h-4 mr-2"></i>
-                      <span class="font-medium">나의 모의 출제 담당 범위: </span>
-                      <strong class="ml-1 font-black">${data.subject} ${data.weekNum}주차 - ${myAssignment.rangeText}</strong>
+                  <div class="flex items-center text-slate-500 font-bold w-full">
+                      <i data-lucide="alert-circle" class="w-4 h-4 mr-2 text-amber-500 shrink-0"></i>
+                      <span>[사다리타기 미완료] 메인 대시보드에서 결과를 먼저 공유해주세요.</span>
                   </div>
               `;
-              qaContentArea.prepend(banner);
-              if (typeof lucide !== 'undefined') lucide.createIcons();
-          }
-      };
+          } else {
+              try {
+                  const data = JSON.parse(dataStr);
+                  const myName = window.currentUser?.name || localStorage.getItem('study_username') || '김진성';
+                  const myAssignment = data.assignments.find(a => a.name === myName);
 
-      // 3. ✨ 강력한 주차 정보 꽂아넣기 (데이터가 불러와질 때까지 0.5초마다 체크)
-      const populateWeeksPersistent = () => {
-          const tryPopulate = setInterval(() => {
-              const state = window.StudyApp?.state || window.app?.state || window.studyState;
-              const scheduleData = state?.scheduleData;
-              
-              if (scheduleData && Object.keys(scheduleData).length > 0) {
-                  // 현재 있는 라운지의 과목 추적
-                  let subj = '고전시가'; 
-                  const path = window.location.pathname;
-                  if (path.includes('/01/')) subj = '고전시가';
-                  else if (path.includes('/02/')) subj = '현대시';
-                  else if (path.includes('/03/')) subj = '고전산문';
-                  else if (path.includes('/04/')) subj = '현대소설';
-                  else if (state.currentSubject) subj = state.currentSubject;
-
-                  const weeks = scheduleData[subj]?.weeks || [];
-                  if (weeks.length > 0) {
-                      ['qa-week-filter', 'mock-week-filter', 'comm-week-filter'].forEach(id => {
-                          const select = document.getElementById(id);
-                          if (select && select.options.length <= 1) { // 텅 비어있다면
-                              let html = `<option value="">주차 선택</option>`;
-                              weeks.sort((a,b) => a.weekNum - b.weekNum).forEach(w => {
-                                  html += `<option value="${w.weekNum}">${w.weekNum}주차</option>`;
-                              });
-                              select.innerHTML = html;
-                          }
-                      });
-                      clearInterval(tryPopulate); // 데이터 주입 완료 시 멈춤
+                  if (myAssignment) {
+                      banner.innerHTML = `
+                          <div class="flex items-center text-indigo-900 dark:text-indigo-200 w-full">
+                              <i data-lucide="target" class="w-4 h-4 mr-2 text-indigo-600 shrink-0"></i>
+                              <span class="font-bold">사다리타기 내 담당 파트:</span>
+                              <strong class="ml-1.5 font-black text-indigo-600 dark:text-indigo-400 truncate">${data.subject} ${data.weekNum}주차 (${myAssignment.rangeText})</strong>
+                          </div>
+                      `;
+                  } else {
+                      banner.innerHTML = `
+                          <div class="flex items-center text-slate-500 font-bold w-full">
+                              <i data-lucide="info" class="w-4 h-4 mr-2 shrink-0"></i>
+                              <span class="truncate">${data.subject} ${data.weekNum}주차 - 할당된 내 파트가 없습니다.</span>
+                          </div>
+                      `;
                   }
+              } catch(e) {
+                  banner.innerHTML = `<div class="text-red-500 text-xs">배정 데이터 파싱 오류</div>`;
               }
-          }, 500);
-
-          // 무한루프 방지용 (10초 뒤엔 강제 종료)
-          setTimeout(() => clearInterval(tryPopulate), 10000);
+          }
+          if (typeof lucide !== 'undefined') lucide.createIcons();
       };
 
-      // 초기 실행들
-      populateWeeksPersistent();
+      // 모의 출제 탭 클릭 시 실행
+      document.getElementById('tab-qa')?.addEventListener('click', () => {
+          setTimeout(renderQALadderBanner, 100);
+      });
+
+      // 1초마다 모니터링하며 배너가 누락되지 않도록 강제 유지
+      setInterval(() => {
+          const viewQa = document.getElementById('view-qa');
+          if (viewQa && !viewQa.classList.contains('hidden') && !document.getElementById('qa-ladder-banner')) {
+              renderQALadderBanner();
+          }
+      }, 1000);
+
+      // 초기 실행
       setTimeout(renderQALadderBanner, 1000);
-      document.getElementById('tab-qa')?.addEventListener('click', renderQALadderBanner);
   });
   </script>
 </body>
