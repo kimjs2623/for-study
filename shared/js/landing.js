@@ -40,6 +40,8 @@ const state = {
     driveFiles: [], authMode: 'login'
 };
 
+window.studyState = state;
+
 const els = {
     loading: document.getElementById('loading-screen'), auth: document.getElementById('auth-screen'),
     dashboard: document.getElementById('dashboard-screen'), authNameContainer: document.getElementById('auth-name-container'),
@@ -99,6 +101,7 @@ function setupListeners(uid) {
     });
     onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), (snap) => {
     state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
+    window.studyMembers = state.allMembers;
     if(state.appAccount && !state.activeTodoTab) state.activeTodoTab = state.appAccount.name;
     renderTodos(); renderFines(); renderAdminPanel();
     });
@@ -563,13 +566,6 @@ function renderSchedule() {
             <button onclick="app.removeScheduleWeek(${wk.id})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>
         <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${wk.id},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
-        
-        <select onchange="app.updateScheduleField(${wk.id},'area',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="고전시가" ${wk.area === '고전시가' ? 'selected' : ''}>고전시가</option>
-            <option value="현대시" ${wk.area === '현대시' ? 'selected' : ''}>현대시</option>
-            <option value="고전산문" ${wk.area === '고전산문' ? 'selected' : ''}>고전산문</option>
-            <option value="현대소설" ${wk.area === '현대소설' ? 'selected' : ''}>현대소설</option>
-        </select>
         
         <button onclick="app.openDayPicker(${wk.id})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
             <span><i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> ${getRangeText(wk.days)}</span>

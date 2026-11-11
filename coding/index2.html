@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가온길 문학 스터디 허브</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Pretendard', 'Apple SD Gothic Neo', 'sans-serif'] } } }
+    }
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- 🌟 외부 CSS 연결 -->
+  <link rel="stylesheet" href="./shared/css/style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 transition-colors duration-300 font-sans">
+
+  <div id="toast-container" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+  <div id="loading-screen" class="min-h-screen flex flex-col items-center justify-center dark:bg-slate-900 dark:text-white z-50">
+    <i data-lucide="loader-2" class="w-10 h-10 animate-spin-custom text-indigo-500 mb-4"></i>
+    <p class="font-bold">데이터를 동기화하는 중입니다...</p>
+  </div>
+
+  <div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4 dark:bg-slate-900">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-200 dark:border-slate-700 animate-fade-in-down">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="book-open" class="w-8 h-8 text-indigo-600 dark:text-indigo-400"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">가온길 스터디 허브</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">스터디원 전용 공간에 오신 것을 환영합니다.</p>
+      </div>
+      <div class="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl mb-6">
+        <button id="tab-login" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" onclick="app.setAuthMode('login')">로그인</button>
+        <button id="tab-signup" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" onclick="app.setAuthMode('signup')">스터디원 가입</button>
+      </div>
+      <form id="auth-form" class="space-y-4">
+        <div id="auth-error" class="hidden p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl text-center"></div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">아이디</label>
+          <input required type="text" id="auth-id" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">비밀번호</label>
+          <input required type="password" id="auth-pw" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div id="auth-name-container" class="hidden">
+          <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 ml-1">사용할 이름 (스터디용)</label>
+          <input type="text" id="auth-name" placeholder="예: 김국어, 이교육" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <button type="submit" id="auth-submit-btn" class="w-full py-3.5 mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center disabled:opacity-70">
+          <i data-lucide="log-in" class="w-5 h-5 mr-2" id="auth-submit-icon"></i> <span id="auth-submit-text">로그인</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard-screen" class="hidden min-h-screen pb-20 dark:bg-slate-900 dark:text-slate-200">
+    <nav class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
+      <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="book-open" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
+          <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white hidden sm:block">가온길 문학 스터디</span>
+        </div>
+        <div class="flex items-center space-x-3 sm:space-x-6">
+            <button onclick="window.app.openLadderModal()" class="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-indigo-100 transition-colors border border-indigo-100 dark:border-indigo-800">
+                <i data-lucide="dices" class="w-4 h-4 text-indigo-500"></i>
+                <span class="text-indigo-600 dark:text-indigo-400 font-bold hidden sm:inline">파트 배정</span>
+            </button>
+          <button onclick="app.openProfileModal()" class="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-indigo-100 transition-colors group border border-indigo-100 dark:border-indigo-800">
+            <span id="nav-username" class="text-indigo-600 dark:text-indigo-400 font-bold"></span>
+            <i data-lucide="settings" class="w-4 h-4 text-indigo-400 group-hover:text-indigo-600"></i>
+          </button>
+          <button onclick="app.logout()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors" title="로그아웃"><i data-lucide="log-out" class="w-5 h-5"></i></button>
+          <button onclick="app.toggleDarkMode()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-all"><i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5"></i></button>
+        </div>
+      </div>
+    </nav>
+
+    <div id="profile-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay hidden">
+      <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center shrink-0">
+          <h2 class="text-lg font-bold flex items-center"><i data-lucide="user-cog" class="w-5 h-5 mr-2 text-indigo-500"></i> 정보 수정</h2>
+          <button onclick="app.closeProfileModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="p-5 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">이름 변경</label>
+            <input type="text" id="edit-profile-name" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1 ml-1">비밀번호 변경</label>
+            <input type="password" id="edit-profile-pw" placeholder="변경할 경우에만 입력" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+          </div>
+          <button onclick="app.updateProfile()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-colors">저장하기</button>
+          
+          <div class="pt-5 border-t border-slate-100 dark:border-slate-700 mt-2">
+            <button onclick="app.withdrawAccount()" class="w-full py-2.5 border border-red-200 text-red-500 hover:bg-red-50 font-bold rounded-xl text-sm transition-colors dark:border-red-900/50 dark:hover:bg-red-900/20">내 스터디 탈퇴 (데이터 삭제)</button>
+          </div>
+
+          <div id="admin-panel" class="hidden pt-5 border-t border-slate-200 dark:border-slate-700 mt-4">
+            <h3 class="text-sm font-black text-rose-500 mb-3 flex items-center"><i data-lucide="shield-alert" class="w-4 h-4 mr-1.5"></i> 스터디장 전용 관리 메뉴</h3>
+            <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">아래에서 스터디원을 강제 탈퇴시킬 수 있습니다. (더미 계정 삭제용)</p>
+            <div id="admin-member-list" class="space-y-2 bg-rose-50 dark:bg-rose-900/10 p-3 rounded-xl border border-rose-100 dark:border-rose-900/30 max-h-[150px] overflow-y-auto custom-scrollbar">
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="day-picker-modal" class="fixed inset-0 z-[150] flex items-center justify-center p-4 modal-overlay hidden">
+      <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-between items-center">
+          <div>
+            <h2 class="text-lg font-black flex items-center text-slate-800 dark:text-white"><i data-lucide="calendar-check" class="w-5 h-5 mr-2 text-indigo-500"></i> 진도(Day) 다중 선택</h2>
+            <p id="day-picker-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-bold">진행할 Day를 여러 개 터치할 수 있습니다.</p>
+          </div>
+          <button onclick="app.closeDayPicker()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+        </div>
+        <div class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-white dark:bg-slate-900">
+          <div id="day-picker-grid" class="grid grid-cols-7 gap-1.5"></div>
+        </div>
+        <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
+          <button onclick="app.confirmDaySelection()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-sm transition-colors">선택 완료</button>
+        </div>
+      </div>
+    </div>
+
+<!-- ✨ 사다리타기 모달 -->
+<div id="ladder-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay hidden bg-slate-900/50 backdrop-blur-sm">
+  <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-fade-in-down flex flex-col max-h-[90vh]">
+    <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center shrink-0">
+      <h2 class="text-lg font-black flex items-center text-slate-800 dark:text-white">
+        <i data-lucide="dices" class="w-5 h-5 mr-2 text-indigo-500"></i> 주차·테마별 파트 배정
+      </h2>
+      <button onclick="window.app.closeLadderModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    
+    <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+      <div class="grid grid-cols-2 gap-2">
+          <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">과목 선택</label>
+              <!-- ✨ 실제 파이어베이스 데이터 기반으로 자동 생성됨 -->
+              <select id="ladder-subject-select" onchange="window.app.onLadderSubjectChange()" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                  <option value="">데이터 로딩 중...</option>
+              </select>
+          </div>
+          <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">주차 선택</label>
+              <select id="ladder-week-select" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                  <option value="">과목을 먼저 선택</option>
+              </select>
+          </div>
+      </div>
+
+      <div>
+          <label class="block text-xs font-bold text-slate-500 mb-2">참여 인원 선택</label>
+          <div id="ladder-members-container" class="grid grid-cols-2 gap-2 mb-2"></div>
+      </div>
+
+      <div class="flex space-x-2">
+         <input type="text" id="new-member-input" placeholder="새 스터디원 이름 입력" class="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+         <button onclick="window.app.addLadderMember()" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors shadow-sm whitespace-nowrap">추가</button>
+      </div>
+
+      <div id="ladder-result-area" class="hidden">
+         <div class="h-px w-full bg-slate-100 dark:bg-slate-700 my-2"></div>
+         <div class="flex justify-between items-center mb-3">
+             <h3 class="text-sm font-black text-indigo-600 dark:text-indigo-400">🎉 배정 결과 (수정 가능)</h3>
+             <span class="text-[10px] text-slate-400 font-bold bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">직접 수정 가능</span>
+         </div>
+         <div id="ladder-result-list" class="space-y-2 bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+         </div>
+      </div>
+    </div>
+
+    <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 shrink-0 flex gap-2">
+      <!-- ✨ 임의 배정과 수동 배정 버튼 분리 유지 -->
+      <button onclick="window.app.runLadder(true)" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-sm transition-colors flex justify-center items-center shadow-sm">
+          <i data-lucide="shuffle" class="w-4 h-4 mr-1.5"></i> 임의 배정
+      </button>
+      <button onclick="window.app.runLadder(false)" class="flex-1 py-3 bg-slate-600 hover:bg-slate-700 text-white font-black rounded-xl text-sm transition-colors flex justify-center items-center shadow-sm">
+          <i data-lucide="edit-3" class="w-4 h-4 mr-1.5"></i> 수동 분할
+      </button>
+    </div>
+  </div>
+</div>
+
+    <!-- 메인 대시보드 구조 -->
+    <header class="bg-indigo-600 dark:bg-indigo-900 text-white py-10 px-4 relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] dark:opacity-5"></div>
+      <div class="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <div class="inline-flex items-center space-x-2 bg-indigo-500/50 dark:bg-indigo-800/50 px-3 py-1 rounded-full text-sm font-medium mb-4">
+            <i data-lucide="target" class="w-4 h-4"></i><span>정확한 키워드, 치밀한 작품 분석.</span>
+          </div>
+          <h1 class="text-3xl md:text-4xl font-bold mb-2">가온길 스터디 허브</h1>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div id="header-progress-container" class="hidden bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shadow-lg flex items-center justify-center min-w-[280px]"></div>
+          
+          <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-center shadow-lg min-w-[140px] flex flex-col justify-center">
+            <p class="text-indigo-100 text-xs font-bold mb-1">내년 중등임용 1차 D-Day</p>
+            <div class="text-3xl font-black tracking-tight" id="d-day-display">D-0</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1">
+          <div id="schedule-container" class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col max-h-[600px]">
+            </div>
+        </div>
+        <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col max-h-[600px]">
+          <div id="todos-container" class="flex-1 flex flex-col h-full overflow-hidden"></div>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[400px]">
+          <div id="chat-container" class="flex flex-col h-full"></div>
+        </div>
+        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 lg:gap-6">
+          <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-6 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white min-h-[200px]">
+            <h2 class="text-xl lg:text-2xl font-bold mb-4 flex items-center justify-center"><i data-lucide="book-open" class="w-5 h-5 lg:w-6 lg:h-6 mr-2 text-indigo-200"></i> 고전시가</h2>
+            <a href="./01/index.html" class="inline-flex items-center justify-center px-6 py-2.5 bg-white text-indigo-700 font-black rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto text-sm">라운지 입장 <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i></a>
+          </div>
+          <div class="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-6 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white min-h-[200px]">
+            <h2 class="text-xl lg:text-2xl font-bold mb-4 flex items-center justify-center"><i data-lucide="feather" class="w-5 h-5 lg:w-6 lg:h-6 mr-2 text-blue-200"></i> 현대시</h2>
+            <a href="./02/index.html" class="inline-flex items-center justify-center px-6 py-2.5 bg-white text-blue-700 font-black rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto text-sm">라운지 입장 <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i></a>
+          </div>
+          <div class="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl p-6 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white min-h-[200px]">
+            <h2 class="text-xl lg:text-2xl font-bold mb-4 flex items-center justify-center"><i data-lucide="book-open-check" class="w-5 h-5 lg:w-6 lg:h-6 mr-2 text-emerald-200"></i> 고전산문</h2>
+            <a href="./03/index.html" class="inline-flex items-center justify-center px-6 py-2.5 bg-white text-emerald-700 font-black rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto text-sm">라운지 입장 <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i></a>
+          </div>
+          <div class="bg-gradient-to-br from-orange-600 to-amber-600 rounded-2xl p-6 shadow-lg text-center transform transition duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-center h-full text-white min-h-[200px]">
+            <h2 class="text-xl lg:text-2xl font-bold mb-4 flex items-center justify-center"><i data-lucide="book-text" class="w-5 h-5 lg:w-6 lg:h-6 mr-2 text-orange-200"></i> 현대소설</h2>
+            <a href="./04/index.html" class="inline-flex items-center justify-center px-6 py-2.5 bg-white text-orange-700 font-black rounded-xl shadow-sm hover:bg-slate-50 transition-colors w-max mx-auto text-sm">라운지 입장 <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-12">
+        <div id="fines-container" class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full"></div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full flex flex-col">
+          <h2 class="text-lg font-bold flex items-center mb-4 text-blue-600 dark:text-blue-400"><i data-lucide="folder-open" class="w-5 h-5 mr-2"></i> 공유 드라이브</h2>
+          <div class="mb-4">
+            <input type="file" id="drive-upload" class="hidden" onchange="app.handleDriveUpload(this)" />
+            <label for="drive-upload" class="cursor-pointer w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 text-sm font-bold rounded-xl transition-colors flex items-center justify-center border border-blue-200 dark:border-blue-800/50 shadow-sm">
+              <i data-lucide="upload" class="w-4 h-4 mr-2"></i> 파일 업로드 (최대 2MB)
+            </label>
+          </div>
+          <div id="drive-files-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[250px] custom-scrollbar"></div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 h-full">
+          <h2 class="text-lg font-bold flex items-center mb-4 text-rose-600 dark:text-rose-400"><i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i> 스터디 벌금 규칙</h2>
+          <ul class="space-y-3">
+            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">발제문 지각 (전날 24시)</span><span class="text-sm font-bold text-rose-500">2,000원</span></li>
+            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">스터디 지각 (10분 당)</span><span class="text-sm font-bold text-rose-500">1,000원</span></li>
+            <li class="flex justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg"><span class="text-sm font-medium text-slate-700 dark:text-slate-300">과제 미수행</span><span class="text-sm font-bold text-rose-500">5,000원</span></li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="./shared/js/landing.js"></script>
+  
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = window.app || {};
+    window.ladderState = { members: [], selected: [] };
+
+    window.app.openLadderModal = function() {
+        // 명단 동기화
+        let autoMembers = [];
+        const possibleMemberSources = [
+            window.studyState?.allMembers, window.studyState?.users,
+            window.studyMembers, window.app?.state?.users, window.state?.users
+        ];
+
+        for (const source of possibleMemberSources) {
+            if (Array.isArray(source) && source.length > 0) {
+                autoMembers = source.map(u => u.name || u.displayName || u.userName).filter(Boolean);
+                break;
+            }
+        }
+
+        window.ladderState.members = autoMembers.length > 0 ? [...new Set(autoMembers)] : ['김진성'];
+        window.ladderState.selected = [...window.ladderState.members];
+
+        document.getElementById('ladder-modal').classList.remove('hidden');
+        document.getElementById('ladder-result-area').classList.add('hidden');
+
+        // ✨ 과목 목록 동적 생성 (하드코딩 완전 제거)
+        const subjSelect = document.getElementById('ladder-subject-select');
+        const weekSelect = document.getElementById('ladder-week-select');
+        
+        if (subjSelect) {
+            const scheduleData = window.studyState?.scheduleData || window.app?.scheduleData || {};
+            const subjects = Object.keys(scheduleData);
+            
+            if (subjects.length > 0) {
+                let subjHtml = `<option value="">과목을 선택하세요</option>`;
+                subjects.forEach(s => {
+                    subjHtml += `<option value="${s}">${s}</option>`;
+                });
+                subjSelect.innerHTML = subjHtml;
+            } else {
+                subjSelect.innerHTML = `<option value="">등록된 과목 없음</option>`;
+            }
+        }
+        
+        if (weekSelect) weekSelect.innerHTML = `<option value="">먼저 과목을 선택하세요</option>`;
+
+        window.app.renderLadderMembers();
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    window.app.onLadderSubjectChange = function() {
+        const subj = document.getElementById('ladder-subject-select').value;
+        const weekSelect = document.getElementById('ladder-week-select');
+        if (!weekSelect) return;
+        if (!subj) return weekSelect.innerHTML = `<option value="">먼저 과목을 선택하세요</option>`;
+
+        const scheduleData = window.studyState?.scheduleData || window.app?.scheduleData || {};
+        const weeksData = scheduleData[subj]?.weeks || [];
+        if (weeksData.length === 0) return weekSelect.innerHTML = `<option value="">등록된 주차가 없습니다</option>`;
+
+        let html = `<option value="">주차 선택</option>`;
+        weeksData.sort((a,b) => a.weekNum - b.weekNum).forEach(w => {
+            html += `<option value="${w.weekNum}">${w.weekNum}주차 (${w.meetDate || '미정'})</option>`;
+        });
+        weekSelect.innerHTML = html;
+    };
+
+    window.app.closeLadderModal = function() { document.getElementById('ladder-modal').classList.add('hidden'); };
+
+    window.app.renderLadderMembers = function() {
+        const container = document.getElementById('ladder-members-container');
+        if(!container) return;
+        container.innerHTML = window.ladderState.members.map(m => `
+            <label class="flex items-center space-x-2 p-2 border border-slate-200 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 shadow-sm bg-white dark:bg-slate-800">
+                <input type="checkbox" value="${m}" onchange="window.app.toggleLadderMember(this)" ${window.ladderState.selected.includes(m) ? 'checked' : ''} class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate flex-1">${m}</span>
+                <button type="button" onclick="window.app.removeLadderMember(event, '${m}')" class="text-slate-300 hover:text-red-500 p-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+            </label>
+        `).join('');
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    window.app.toggleLadderMember = function(checkbox) {
+        if(checkbox.checked && !window.ladderState.selected.includes(checkbox.value)) {
+            window.ladderState.selected.push(checkbox.value);
+        } else if (!checkbox.checked) {
+            window.ladderState.selected = window.ladderState.selected.filter(m => m !== checkbox.value);
+        }
+    };
+
+    window.app.addLadderMember = function() {
+        const input = document.getElementById('new-member-input');
+        const name = input.value.trim();
+        if(name && !window.ladderState.members.includes(name)) {
+            window.ladderState.members.push(name);
+            window.ladderState.selected.push(name);
+        }
+        input.value = '';
+        window.app.renderLadderMembers();
+    };
+
+    window.app.removeLadderMember = function(e, name) {
+        e.preventDefault(); e.stopPropagation();
+        window.ladderState.members = window.ladderState.members.filter(m => m !== name);
+        window.ladderState.selected = window.ladderState.selected.filter(m => m !== name);
+        window.app.renderLadderMembers();
+    };
+
+    let latestAssignments = [];
+    let currentSelectedSubj = '';
+    let currentSelectedWeek = '';
+
+    // ✨ 임의 배정(true) 또는 수동 배정(false) 처리 유지
+    window.app.runLadder = function(isRandom = true) {
+        const subj = document.getElementById('ladder-subject-select').value;
+        const weekNum = document.getElementById('ladder-week-select').value;
+
+        if (!subj || !weekNum) return alert('과목과 주차를 모두 선택해주세요.');
+        if (window.ladderState.selected.length < 1) return alert('참여 인원을 1명 이상 체크하세요.');
+
+        const scheduleData = window.studyState?.scheduleData || window.app?.scheduleData || {};
+        const targetWeekObj = (scheduleData[subj]?.weeks || []).find(w => String(w.weekNum) === String(weekNum));
+        if (!targetWeekObj) return alert('해당 주차 데이터를 찾을 수 없습니다.');
+
+        currentSelectedSubj = subj;
+        currentSelectedWeek = weekNum;
+
+        const daysList = targetWeekObj.days ? [...targetWeekObj.days].sort((a, b) => a - b) : [];
+        const shuffled = isRandom 
+            ? [...window.ladderState.selected].sort(() => Math.random() - 0.5) 
+            : [...window.ladderState.selected];
+        
+        latestAssignments = [];
+        if (daysList.length > 0) {
+            const chunkSize = Math.ceil(daysList.length / shuffled.length);
+            shuffled.forEach((name, idx) => {
+                const assignedDays = daysList.slice(idx * chunkSize, Math.min((idx + 1) * chunkSize, daysList.length));
+                const rangeText = assignedDays.length > 0 
+                    ? (assignedDays.length === 1 ? `Day ${assignedDays[0]}` : `Day ${assignedDays[0]}~${assignedDays[assignedDays.length - 1]}`)
+                    : "";
+                latestAssignments.push({ name, rangeText });
+            });
+        } else {
+            shuffled.forEach((name, idx) => latestAssignments.push({ name, rangeText: `파트 #${idx + 1}` }));
+        }
+
+        // ✨ 텍스트 직접 수정 가능한 Input 폼
+        const resultHtml = latestAssignments.map((item, idx) => `
+            <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 gap-2 mb-2">
+                <div class="flex items-center w-1/3 border-b border-slate-200 dark:border-slate-600 focus-within:border-indigo-500">
+                    <i data-lucide="user-check" class="w-4 h-4 mr-1 text-indigo-400 shrink-0"></i>
+                    <input type="text" id="assign-name-${idx}" value="${item.name}" class="w-full text-xs font-bold text-slate-700 dark:text-slate-200 bg-transparent outline-none py-1 truncate">
+                </div>
+                <div class="flex-1">
+                    <input type="text" id="assign-range-${idx}" value="${item.rangeText}" class="w-full text-[11px] font-black bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-1.5 rounded-md outline-none border border-transparent focus:border-indigo-400 transition-colors">
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('ladder-result-list').innerHTML = `
+            ${resultHtml}
+            <div class="pt-3">
+                <button onclick="window.app.publishLadderResult()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-xl shadow-sm transition-all flex items-center justify-center">
+                    <i data-lucide="share-2" class="w-4 h-4 mr-2"></i> 결과 최종 공유하기
+                </button>
+            </div>
+        `;
+        document.getElementById('ladder-result-area').classList.remove('hidden');
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    window.app.publishLadderResult = async function() {
+        if (!latestAssignments.length) return;
+        
+        latestAssignments = latestAssignments.map((item, idx) => ({
+            name: document.getElementById(`assign-name-${idx}`).value.trim() || item.name,
+            rangeText: document.getElementById(`assign-range-${idx}`).value.trim() || item.rangeText
+        }));
+
+        const payload = { subject: currentSelectedSubj, weekNum: currentSelectedWeek, assignments: latestAssignments, timestamp: Date.now() };
+        localStorage.setItem('sharedLadderResult', JSON.stringify(payload));
+        
+        if (window.db && window.doc && window.setDoc && window.appId) {
+            try { await window.setDoc(window.doc(window.db, 'artifacts', window.appId, 'public', 'data', 'studyInfo', 'ladderResult'), payload); } 
+            catch (e) { console.error("DB 저장 실패", e); }
+        }
+        window.app.renderMainAssignmentWidget(payload);
+        alert('배정 결과가 성공적으로 공유되었습니다!');
+        window.app.closeLadderModal();
+    };
+
+    // ✨ 메인 대시보드 위젯 (수정 버튼 완전 제거됨 - 조회만 가능)
+    window.app.renderMainAssignmentWidget = function(payload) {
+        const data = payload || JSON.parse(localStorage.getItem('sharedLadderResult'));
+        const targetContainer = document.getElementById('todos-container'); 
+        if (!data || !targetContainer) return;
+
+        const myName = window.currentUser?.name || localStorage.getItem('study_username') || '김진성';
+        const myAssignment = data.assignments.find(a => a.name === myName);
+
+        targetContainer.innerHTML = `
+            <div class="p-5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-2xl shadow-sm h-full flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-black text-indigo-700 dark:text-indigo-300 flex items-center">
+                        <i data-lucide="target" class="w-4 h-4 mr-2"></i> 이번 주 내 할당 파트
+                    </h3>
+                    <span class="text-[10px] bg-white px-2 py-1 rounded-md font-bold text-slate-500 shadow-sm">${data.subject} ${data.weekNum}주차</span>
+                </div>
+                <div class="flex-1 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 dark:border-indigo-900 mb-4 p-4 text-center">
+                    ${myAssignment 
+                        ? `<span class="text-xl font-black text-indigo-600 dark:text-indigo-400 break-words">${myAssignment.rangeText}</span>` 
+                        : `<span class="text-sm font-bold text-slate-400">이번 주 배정 내역이 없습니다.</span>`}
+                </div>
+                <div class="text-xs font-bold text-slate-500 mb-2">전체 배정 현황</div>
+                <div class="space-y-1.5 overflow-y-auto custom-scrollbar">
+                    ${data.assignments.map(a => `
+                        <div class="flex justify-between text-[11px] bg-white dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-100">
+                            <span class="font-bold text-slate-700 dark:text-slate-300 truncate mr-2 w-1/3">${a.name}</span>
+                            <span class="font-black text-indigo-500 text-right break-words flex-1">${a.rangeText}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    setTimeout(() => window.app.renderMainAssignmentWidget(), 1000);
+});
+  </script>
+</body>
+</html>
