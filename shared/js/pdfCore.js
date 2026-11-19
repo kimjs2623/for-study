@@ -4,6 +4,8 @@ import { state } from './state.js';
 import { showToast } from './utils.js';
 import { toggleSidebar } from './ui.js';
 
+const pdfDocCache = new Map();
+
 export async function loadGlobalAnswerKey() {
     const config = state.githubConfig;
     const url = `https://raw.githubusercontent.com/${config.username}/${config.repo}/${config.branch}/${config.folder}/${config.answerKeyFileName}`;
@@ -26,33 +28,43 @@ export async function loadGlobalAnswerKey() {
 export async function loadMaterial(name, url, targetPage = 1) {
     if (state.isFetching) return;
     state.isFetching = true;
-    
-    const cleanName = name.replace('.pdf', '');
-    document.getElementById('viewer-filename').textContent = cleanName;
-    document.getElementById('viewer-placeholder').classList.add('hidden');
-    document.querySelectorAll('.file-btn').forEach(b => b.classList.remove('border-brand-500', 'bg-brand-50/30'));
-    
-    const targetBtn = document.getElementById(`btn-${name.replace(/\s+/g, '')}`);
-    if (targetBtn) targetBtn.classList.add('border-brand-500', 'bg-brand-50/30');
-
-    if (state.sidebarOpen) toggleSidebar();
 
     try {
-        const loadingTask = pdfjsLib.getDocument(url);
-        state.pdfDoc = await loadingTask.promise;
-        
+        let doc = pdfDocCache.get(url);
+        if (!doc) {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const arrayBuffer = await res.arrayBuffer();
+            doc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            pdfDocCache.set(url, doc);
+        }
+
+        state.pdfDoc = doc;
+
+        const cleanName = name.replace(/\.pdf$/i, '');
+        document.getElementById('viewer-filename').textContent = cleanName;
+        document.getElementById('viewer-placeholder').classList.add('hidden');
+        document.querySelectorAll('.file-btn').forEach(b => b.classList.remove('border-brand-500', 'bg-brand-50/30'));
+
+        const targetBtn = document.getElementById(`btn-${name.replace(/\s+/g, '')}`);
+        if (targetBtn) targetBtn.classList.add('border-brand-500', 'bg-brand-50/30');
+
+        if (state.sidebarOpen) toggleSidebar();
+
         document.getElementById('page_count').textContent = state.pdfDoc.numPages;
         document.getElementById('pdf-controls').classList.remove('hidden');
         document.getElementById('pdf-canvas-container').classList.remove('hidden');
-        
-        state.pageNum = targetPage; 
+
+        const validPage = Math.min(Math.max(1, parseInt(targetPage, 10) || 1), state.pdfDoc.numPages);
+        state.pageNum = validPage;
         state.userZoomed = false;
         renderPage(state.pageNum);
-        showToast(`${cleanName} 로드 완료`);
-    } catch (e) { 
-        showToast("PDF 로드 실패: " + e.message, "error"); 
-    } finally { 
-        state.isFetching = false; 
+        showToast(`${cleanName} (${validPage}p) 로드 완료`);
+    } catch (e) {
+        console.error('[PDF 로드 실패 URL]', url, e);
+        showToast(`PDF 로드 실패 (${name}): ${e.message}`, "error");
+    } finally {
+        state.isFetching = false;
     }
 }
 
@@ -73,7 +85,7 @@ export function renderPage(num) {
         }
         
         const viewport = page.getViewport({scale: state.pdfScale});
-        const outputScale = window.devicePixelRatio || 2;
+        const outputScale = Math.min(window.devicePixelRatio || 1.5, 1.5);
         
         canvas.width = Math.floor(viewport.width * outputScale);
         canvas.height = Math.floor(viewport.height * outputScale);
@@ -123,7 +135,7 @@ export function renderAnswerPage(num) {
         const ctx = canvas.getContext('2d');
         const viewport = page.getViewport({scale: state.answerPdfScale});
         
-        const outputScale = window.devicePixelRatio || 2;
+        const outputScale = Math.min(window.devicePixelRatio || 1.5, 1.5);
         canvas.width = Math.floor(viewport.width * outputScale);
         canvas.height = Math.floor(viewport.height * outputScale);
         canvas.style.width = Math.floor(viewport.width) + "px";

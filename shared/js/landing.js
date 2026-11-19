@@ -3,15 +3,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot, addDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { initGameHub, updateGameRanks } from './game/hub.js';
 
-// 🌟 1. 각 과목의 config.js에서 진도 데이터(DAY_MAP)를 불러와 하나로 합칩니다.
-// (※ 01 폴더에도 config.js가 반드시 존재하고 DAY_MAP을 export 해야 합니다.)
 import { DAY_MAP as map01 } from '../../01/config.js';
 import { DAY_MAP as map02 } from '../../02/config.js';
 import { DAY_MAP as map03 } from '../../03/config.js';
 import { DAY_MAP as map04 } from '../../04/config.js';
 
-// 🚨 2. 환경 설정 변수 (추후 유지보수 시 여기서만 수정하세요)
 const ADMIN_ID = "kimjs2623"; 
 const EXAM_DATE_STRING = '2027-11-20T00:00:00';
 
@@ -33,8 +31,8 @@ const state = {
     tempSelectedDays: [], 
     chatMessages: [],
     
-    todos: {}, activeTodoTab: '',
-    progressData: {},
+    ladderResult: null,
+    gameRanks: {},
 
     finesData: { records: [] }, isAddingFine: false, newFine: { memberName: '', reason: '지각', amount: 1000 },
     driveFiles: [], authMode: 'login'
@@ -56,7 +54,7 @@ const els = {
     dayPickerModal: document.getElementById('day-picker-modal'), dayPickerGrid: document.getElementById('day-picker-grid'),
     dayPickerSubtitle: document.getElementById('day-picker-subtitle'), chatContainer: document.getElementById('chat-container'),
     todosContainer: document.getElementById('todos-container'), adminPanel: document.getElementById('admin-panel'),
-    adminMemberList: document.getElementById('admin-member-list'), headerProgressContainer: document.getElementById('header-progress-container')
+    adminMemberList: document.getElementById('admin-member-list')
 };
 
 function showToast(message, type = 'info') {
@@ -83,67 +81,119 @@ async function init() {
     document.documentElement.classList.toggle('dark', state.isDarkMode); updateDarkModeIcon();
 
     try {
-    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-    else await signInAnonymously(auth);
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+        else await signInAnonymously(auth);
     } catch (error) { showToast("인증 오류", "error"); }
 
     onAuthStateChanged(auth, (user) => {
-    state.user = user;
-    if (user) setupListeners(user.uid);
-    else updateView();
+        state.user = user;
+        if (user) setupListeners(user.uid);
+        else updateView();
     });
 }
 
 function setupListeners(uid) {
     onSnapshot(doc(db, 'artifacts', appId, 'users', uid, 'profile', 'data'), (snap) => {
-    if (snap.exists() && snap.data().appAccountId) { state.appAccount = snap.data(); } 
-    else { state.appAccount = null; } updateView();
+        if (snap.exists() && snap.data().appAccountId) { 
+            state.appAccount = snap.data(); 
+            if (state.appAccount.name) localStorage.setItem('study_username', state.appAccount.name);
+        } else { 
+            state.appAccount = null; 
+        } 
+        updateView();
     });
+
+    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'ladderResult'), (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            state.ladderResult = data;
+            localStorage.setItem('sharedLadderResult', JSON.stringify(data));
+            renderTodos();
+        }
+    });
+
+    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'gameRanks'), (snap) => {
+        if (snap.exists()) {
+            state.gameRanks = snap.data();
+            updateGameRanks(state.gameRanks);
+        }
+    });
+
     onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), (snap) => {
-    state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
-    window.studyMembers = state.allMembers;
-    if(state.appAccount && !state.activeTodoTab) state.activeTodoTab = state.appAccount.name;
-    renderTodos(); renderFines(); renderAdminPanel();
+        state.allMembers = snap.docs.map(d => ({ id: d.id, ...d.data() })); 
+        window.studyMembers = state.allMembers;
+        renderFines(); renderAdminPanel();
     });
+
     onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'sharedDrive'), (snap) => {
-    state.driveFiles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp); renderDriveFiles();
+        state.driveFiles = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.timestamp - a.timestamp); renderDriveFiles();
     });
+
     onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'schedule'), (snap) => {
-    if (snap.exists()) {
-        const data = snap.data();
-        state.scheduleData = { 
-            '고전시가': data['고전시가'] || { weeks: [] }, 
-            '현대시': data['현대시'] || { weeks: [] },
-            '고전산문': data['고전산문'] || { weeks: [] },
-            '현대소설': data['현대소설'] || { weeks: [] }
-        };
-        if(data.weeks && !data['고전시가']) { state.scheduleData['고전시가'].weeks = data.weeks; } 
-    } else { 
-        state.scheduleData = { '고전시가': { weeks: [] }, '현대시': { weeks: [] }, '고전산문': { weeks: [] }, '현대소설': { weeks: [] } }; 
-    }
-    renderSchedule();
+        if (snap.exists()) {
+            const data = snap.data();
+            state.scheduleData = { 
+                '고전시가': data['고전시가'] || { weeks: [] }, 
+                '현대시': data['현대시'] || { weeks: [] },
+                '고전산문': data['고전산문'] || { weeks: [] },
+                '현대소설': data['현대소설'] || { weeks: [] }
+            };
+            if(data.weeks && !data['고전시가']) { state.scheduleData['고전시가'].weeks = data.weeks; } 
+        } else { 
+            state.scheduleData = { '고전시가': { weeks: [] }, '현대시': { weeks: [] }, '고전산문': { weeks: [] }, '현대소설': { weeks: [] } }; 
+        }
+        renderSchedule();
     });
-    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'progress'), (snap) => {
-    if (snap.exists()) state.progressData = snap.data();
-    renderTodos();
-    renderHeaderProgress();
-    });
+
     onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'chatMessages'), (snap) => {
-    const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    msgs.sort((a,b) => a.timestamp - b.timestamp);
-    state.chatMessages = msgs;
-    renderChat();
+        const msgs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        msgs.sort((a,b) => a.timestamp - b.timestamp);
+        state.chatMessages = msgs;
+        renderChat();
     });
-    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), (snap) => { if (snap.exists()) state.todos = snap.data(); renderTodos(); });
-    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), (snap) => { if (snap.exists()) state.finesData = snap.data(); renderFines(); });
+
+    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), (snap) => { 
+        if (snap.exists()) state.finesData = snap.data(); 
+        renderFines(); 
+    });
+}
+
+async function saveGameRank(pathKeys, score, lowerIsBetter = true) {
+    const myName = state.appAccount?.name;
+    if (!myName || !db) return { isNewRecord: false };
+
+    const updated = JSON.parse(JSON.stringify(state.gameRanks || {}));
+    let target = updated;
+    for (const key of pathKeys) {
+        if (!target[key] || typeof target[key] !== 'object') target[key] = {};
+        target = target[key];
+    }
+
+    const prevBest = target[myName];
+    const isBetter = prevBest === undefined || (lowerIsBetter ? score < prevBest : score > prevBest);
+
+    if (isBetter) {
+        target[myName] = score;
+        state.gameRanks = updated;
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'gameRanks'), updated);
+        return { isNewRecord: true, best: score };
+    }
+    return { isNewRecord: false, best: prevBest };
 }
 
 function updateView() {
     els.loading.classList.add('hidden');
     if (state.user && !state.appAccount) { els.auth.classList.remove('hidden'); els.dashboard.classList.add('hidden'); } 
     else if (state.user && state.appAccount) {
-    els.auth.classList.add('hidden'); els.dashboard.classList.remove('hidden'); els.navUsername.textContent = state.appAccount.name;
-    renderSchedule(); renderChat(); renderFines(); renderDriveFiles(); renderTodos(); renderHeaderProgress(); lucide.createIcons();
+        els.auth.classList.add('hidden'); els.dashboard.classList.remove('hidden'); els.navUsername.textContent = state.appAccount.name;
+        renderSchedule(); renderChat(); renderFines(); renderDriveFiles(); renderTodos();
+        initGameHub('game-hub-container', {
+            getUserName: () => state.appAccount?.name,
+            onNotify: showToast,
+            onSaveRank: saveGameRank
+        });
+        updateGameRanks(state.gameRanks);
+        lucide.createIcons();
     }
 }
 
@@ -151,15 +201,33 @@ function checkIsAdmin() {
     return state.appAccount && state.appAccount.appAccountId === ADMIN_ID;
 }
 
-window.app = {
+window.app = Object.assign(window.app || {}, {
     toggleDarkMode: () => { state.isDarkMode = !state.isDarkMode; document.documentElement.classList.toggle('dark', state.isDarkMode); updateDarkModeIcon(); },
     setAuthMode: (mode) => {
-    state.authMode = mode; const isLogin = mode === 'login';
-    els.tabLogin.className = isLogin ? "flex-1 py-2 text-sm font-bold rounded-lg bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" : "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700";
-    els.tabSignup.className = !isLogin ? "flex-1 py-2 text-sm font-bold rounded-lg bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" : "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700";
-    els.authNameContainer.classList.toggle('hidden', isLogin); els.authSubmitText.textContent = isLogin ? '로그인' : '가입하고 시작하기'; els.authSubmitIcon.setAttribute('data-lucide', isLogin ? 'log-in' : 'user-plus'); lucide.createIcons();
+        state.authMode = mode; const isLogin = mode === 'login';
+        els.tabLogin.className = isLogin ? "flex-1 py-2 text-sm font-bold rounded-lg bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" : "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700";
+        els.tabSignup.className = !isLogin ? "flex-1 py-2 text-sm font-bold rounded-lg bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm" : "flex-1 py-2 text-sm font-bold text-slate-500 hover:text-slate-700";
+        els.authNameContainer.classList.toggle('hidden', isLogin); els.authSubmitText.textContent = isLogin ? '로그인' : '가입하고 시작하기'; els.authSubmitIcon.setAttribute('data-lucide', isLogin ? 'log-in' : 'user-plus'); lucide.createIcons();
     },
-    logout: async () => { await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: null, name: null }); state.appAccount = null; updateView(); },
+    logout: async () => { 
+        await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: null, name: null }); 
+        state.appAccount = null; 
+        localStorage.removeItem('study_username');
+        updateView(); 
+    },
+    
+    saveLadderResult: async (payload) => {
+        state.ladderResult = payload;
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'ladderResult'), payload);
+    },
+
+    renderMainAssignmentWidget: (payload) => {
+        if (payload) {
+            state.ladderResult = payload;
+            localStorage.setItem('sharedLadderResult', JSON.stringify(payload));
+        }
+        renderTodos();
+    },
     
     openProfileModal: () => { 
         els.editProfileName.value = state.appAccount.name; 
@@ -170,22 +238,23 @@ window.app = {
     },
     closeProfileModal: () => { els.profileModal.classList.add('hidden'); },
     updateProfile: async () => {
-    const newName = els.editProfileName.value.trim(), newPw = els.editProfilePw.value.trim();
-    if(!newName) return showToast('이름을 입력해주세요.', 'error');
-    try {
-        const updateData = { name: newName }; if(newPw) updateData.password = newPw;
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', state.appAccount.appAccountId), updateData);
-        await updateDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { name: newName });
-        showToast('정보가 수정되었습니다.', 'success'); app.closeProfileModal();
-    } catch(e) { showToast('수정 실패', 'error'); }
+        const newName = els.editProfileName.value.trim(), newPw = els.editProfilePw.value.trim();
+        if(!newName) return showToast('이름을 입력해주세요.', 'error');
+        try {
+            const updateData = { name: newName }; if(newPw) updateData.password = newPw;
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', state.appAccount.appAccountId), updateData);
+            await updateDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { name: newName });
+            localStorage.setItem('study_username', newName);
+            showToast('정보가 수정되었습니다.', 'success'); app.closeProfileModal();
+        } catch(e) { showToast('수정 실패', 'error'); }
     },
     withdrawAccount: async () => {
-    if(!confirm('정말 탈퇴하시겠습니까? 데이터가 모두 삭제됩니다.')) return;
-    try {
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', state.appAccount.appAccountId));
-        await deleteDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'));
-        showToast('탈퇴가 완료되었습니다.', 'success'); state.appAccount = null; app.closeProfileModal(); updateView();
-    } catch(e) { showToast('탈퇴 실패', 'error'); }
+        if(!confirm('정말 탈퇴하시겠습니까? 데이터가 모두 삭제됩니다.')) return;
+        try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', state.appAccount.appAccountId));
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'));
+            showToast('탈퇴가 완료되었습니다.', 'success'); state.appAccount = null; app.closeProfileModal(); updateView();
+        } catch(e) { showToast('탈퇴 실패', 'error'); }
     },
     
     adminKickMember: async (targetId, targetName) => {
@@ -198,22 +267,22 @@ window.app = {
     },
 
     handleDriveUpload: (input) => {
-    const file = input.files[0]; if(!file) return;
-    if(file.size > 1024 * 1024 * 2) return showToast('2MB 이하만 가능합니다.', 'error');
-    showToast('업로드 중...', 'info'); const reader = new FileReader();
-    reader.onloadend = async () => {
-        try {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'sharedDrive'), {
-            fileName: file.name, fileType: file.type || 'application/octet-stream', base64: reader.result.split(',')[1], size: file.size,
-            uploadedBy: state.appAccount?.name || '익명', date: new Date().toLocaleDateString('ko-KR'), timestamp: Date.now()
-        }); showToast('업로드 완료!', 'success');
-        } catch(e) { showToast('업로드 실패', 'error'); } finally { input.value = ''; }
-    }; reader.readAsDataURL(file);
+        const file = input.files[0]; if(!file) return;
+        if(file.size > 1024 * 1024 * 2) return showToast('2MB 이하만 가능합니다.', 'error');
+        showToast('업로드 중...', 'info'); const reader = new FileReader();
+        reader.onloadend = async () => {
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'sharedDrive'), {
+                    fileName: file.name, fileType: file.type || 'application/octet-stream', base64: reader.result.split(',')[1], size: file.size,
+                    uploadedBy: state.appAccount?.name || '익명', date: new Date().toLocaleDateString('ko-KR'), timestamp: Date.now()
+                }); showToast('업로드 완료!', 'success');
+            } catch(e) { showToast('업로드 실패', 'error'); } finally { input.value = ''; }
+        }; reader.readAsDataURL(file);
     },
     downloadDriveFile: (id) => {
-    const file = state.driveFiles.find(f => f.id === id); if(!file) return;
-    const link = document.createElement('a'); link.href = `data:${file.fileType};base64,${file.base64}`; link.download = file.fileName;
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        const file = state.driveFiles.find(f => f.id === id); if(!file) return;
+        const link = document.createElement('a'); link.href = `data:${file.fileType};base64,${file.base64}`; link.download = file.fileName;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
     },
     deleteDriveFile: async (id) => { if(confirm('삭제하시겠습니까?')) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sharedDrive', id)); },
 
@@ -248,15 +317,6 @@ window.app = {
         const wk = state.editScheduleForm.find(w => w.id === id);
         if(wk) wk[field] = val; 
     },
-    
-    openDayPickerForTodo: () => {
-        state.pickerMode = 'todo';
-        state.pickerEditingId = null;
-        state.tempSelectedDays = [];
-        els.dayPickerSubtitle.textContent = `출제 범위로 할당할 Day를 터치해서 모두 고르세요.`;
-        els.dayPickerModal.classList.remove('hidden');
-        renderDayPickerGrid();
-    },
     openDayPicker: (id) => {
         state.pickerMode = 'schedule';
         state.pickerEditingId = id;
@@ -281,16 +341,6 @@ window.app = {
             const wk = state.editScheduleForm.find(w => w.id === state.pickerEditingId);
             if(wk) wk.days = [...state.tempSelectedDays];
             renderSchedule();
-        } else if (state.pickerMode === 'todo') {
-            if(state.tempSelectedDays.length === 0) return showToast('할당할 Day를 1개 이상 선택해주세요.', 'error');
-            const text = getRangeText(state.tempSelectedDays);
-            const finalDesc = `[출제] ${text} 문제 생성`;
-            const tasks = state.todos[state.activeTodoTab] || [];
-            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { 
-                ...state.todos, 
-                [state.activeTodoTab]: [...tasks, { id: Date.now(), type: 'assign', desc: finalDesc, done: false }] 
-            });
-            showToast('출제 할당이 명단에 추가되었습니다.', 'success');
         }
         app.closeDayPicker();
     },
@@ -318,32 +368,6 @@ window.app = {
         state.isEditingSchedule = false; 
         renderSchedule(); 
         showToast(`[${subj}] 주차별 일정이 저장되었습니다.`, 'success'); 
-    },
-
-    setActiveTodoTab: (name) => { state.activeTodoTab = name; renderTodos(); },
-    toggleTodoTask: async (taskId) => {
-    if(state.activeTodoTab !== state.appAccount.name && !checkIsAdmin()) return;
-    const updated = state.todos[state.activeTodoTab].map(t => t.id === taskId ? { ...t, done: !t.done } : t);
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: updated });
-    },
-    deleteTodoTask: async (taskId, event) => {
-    event.stopPropagation(); 
-    if(state.activeTodoTab !== state.appAccount.name && !checkIsAdmin()) return;
-    const updated = state.todos[state.activeTodoTab].filter(t => t.id !== taskId);
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'todos'), { ...state.todos, [state.activeTodoTab]: updated });
-    },
-    
-    updateProgress: async () => {
-        const subj = document.getElementById('prog-subj-input').value;
-        const num = document.getElementById('prog-num-input').value;
-        if(num === '' || Number(num) < 0) return showToast('올바른 작품 번호를 입력하세요.', 'error');
-        
-        const currentData = { ...state.progressData };
-        if(!currentData[state.appAccount.name]) currentData[state.appAccount.name] = { '고전시가': 0, '현대시': 0, '고전산문': 0, '현대소설': 0 };
-        currentData[state.appAccount.name][subj] = Number(num);
-        
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'progress'), currentData);
-        showToast(`${subj} 진도가 업데이트 되었습니다. (No.${num})`, 'success');
     },
 
     submitChat: async (e) => {
@@ -386,14 +410,14 @@ window.app = {
     toggleAddingFine: () => { state.isAddingFine = !state.isAddingFine; if(state.isAddingFine) state.newFine = { memberName: '', reason: '', amount: 1000 }; renderFines(); },
     updateFineField: (field, val) => { state.newFine[field] = val; },
     submitFine: async (e) => {
-    e.preventDefault(); if(!state.newFine.memberName) return;
-    const records = state.finesData.records || [];
-    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), { records: [{ id: Date.now(), ...state.newFine, amount: Number(state.newFine.amount), date: new Date().toLocaleDateString('ko-KR'), isPaid: false }, ...records] });
-    state.isAddingFine = false; showToast('추가되었습니다.', 'success');
+        e.preventDefault(); if(!state.newFine.memberName) return;
+        const records = state.finesData.records || [];
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), { records: [{ id: Date.now(), ...state.newFine, amount: Number(state.newFine.amount), date: new Date().toLocaleDateString('ko-KR'), isPaid: false }, ...records] });
+        state.isAddingFine = false; showToast('추가되었습니다.', 'success');
     },
     toggleFinePaid: async (id) => { const updated = state.finesData.records.map(r => r.id === id ? { ...r, isPaid: !r.isPaid } : r); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), { records: updated }); },
     deleteFine: async (id) => { const updated = state.finesData.records.filter(r => r.id !== id); await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'studyInfo', 'fines'), { records: updated }); }
-};
+});
 
 function updateDarkModeIcon() { const icon = document.getElementById('dark-mode-icon'); if(icon) { icon.setAttribute('data-lucide', state.isDarkMode ? 'sun' : 'moon'); lucide.createIcons(); } }
 
@@ -402,20 +426,22 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
     const id = els.authId.value.trim(), pw = els.authPw.value.trim(), name = els.authName.value.trim();
     const btn = document.getElementById('auth-submit-btn'); btn.disabled = true;
     try {
-    const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'members'));
-    const members = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (state.authMode === 'signup') {
-        if (members.some(m => m.id === id)) throw new Error('이미 사용 중인 아이디입니다.');
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', id), { password: pw, name: name });
-        await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: id, name: name });
-        state.appAccount = { appAccountId: id, name: name }; updateView();
-    } else {
-        const member = members.find(m => m.id === id && m.password === pw);
-        if (member) {
-        await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: member.id, name: member.name });
-        state.appAccount = { appAccountId: member.id, name: member.name }; updateView();
-        } else { throw new Error('아이디/비번 불일치'); }
-    }
+        const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'members'));
+        const members = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (state.authMode === 'signup') {
+            if (members.some(m => m.id === id)) throw new Error('이미 사용 중인 아이디입니다.');
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', id), { password: pw, name: name });
+            await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: id, name: name });
+            localStorage.setItem('study_username', name);
+            state.appAccount = { appAccountId: id, name: name }; updateView();
+        } else {
+            const member = members.find(m => m.id === id && m.password === pw);
+            if (member) {
+                await setDoc(doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'data'), { appAccountId: member.id, name: member.name });
+                localStorage.setItem('study_username', member.name);
+                state.appAccount = { appAccountId: member.id, name: member.name }; updateView();
+            } else { throw new Error('아이디/비번 불일치'); }
+        }
     } catch(err) { document.getElementById('auth-error').textContent = err.message; document.getElementById('auth-error').classList.remove('hidden'); }
     finally { btn.disabled = false; }
 });
@@ -443,36 +469,6 @@ function getRangeText(daysArray) {
     const maxWorks = currentMap[last-1].split('-')[1] || currentMap[last-1];
     if(first === last) return `Day ${first} (${minWorks}~${maxWorks}번)`;
     return `Day ${first}~${last} (${minWorks}~${maxWorks}번)`;
-}
-
-function renderHeaderProgress() {
-    if(!els.headerProgressContainer || !state.appAccount) return;
-    const myProg = state.progressData[state.appAccount.name] || { '고전시가': 0, '현대시': 0, '고전산문': 0, '현대소설': 0 };
-    els.headerProgressContainer.innerHTML = `
-        <div class="flex space-x-4 sm:space-x-6 items-center justify-center w-full px-2">
-            <div class="text-center">
-                <p class="text-indigo-200 text-[10px] font-bold mb-1"><i data-lucide="book-open" class="w-3 h-3 inline pb-0.5"></i> 고전시가</p>
-                <div class="text-xl sm:text-2xl font-black text-white">No.${myProg['고전시가'] || 0}</div>
-            </div>
-            <div class="w-px h-10 bg-white/20"></div>
-            <div class="text-center">
-                <p class="text-blue-200 text-[10px] font-bold mb-1"><i data-lucide="feather" class="w-3 h-3 inline pb-0.5"></i> 현대시</p>
-                <div class="text-xl sm:text-2xl font-black text-white">No.${myProg['현대시'] || 0}</div>
-            </div>
-            <div class="w-px h-10 bg-white/20"></div>
-            <div class="text-center">
-                <p class="text-emerald-200 text-[10px] font-bold mb-1"><i data-lucide="book-open-check" class="w-3 h-3 inline pb-0.5"></i> 고전산문</p>
-                <div class="text-xl sm:text-2xl font-black text-white">No.${myProg['고전산문'] || 0}</div>
-            </div>
-            <div class="w-px h-10 bg-white/20"></div>
-            <div class="text-center">
-                <p class="text-orange-200 text-[10px] font-bold mb-1"><i data-lucide="book-text" class="w-3 h-3 inline pb-0.5"></i> 현대소설</p>
-                <div class="text-xl sm:text-2xl font-black text-white">No.${myProg['현대소설'] || 0}</div>
-            </div>
-        </div>
-    `;
-    els.headerProgressContainer.classList.remove('hidden');
-    lucide.createIcons();
 }
 
 function renderAdminPanel() {
@@ -558,127 +554,90 @@ function renderSchedule() {
 
     html += `<div class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1">`;
     if(state.isEditingSchedule) {
-    const sortedEditWeeks = [...state.editScheduleForm].sort((a,b) => b.weekNum - a.weekNum);
-    sortedEditWeeks.forEach((wk) => {
-        html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 relative">
-        <div class="flex justify-between items-center mb-3">
-            <span class="font-black text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-1 rounded-md">${wk.weekNum}주차</span>
-            <button onclick="app.removeScheduleWeek(${wk.id})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-        <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${wk.id},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
-        
-        <button onclick="app.openDayPicker(${wk.id})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
-            <span><i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> ${getRangeText(wk.days)}</span>
-            <span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px]">진도 선택</span>
-        </button>
-        </div>`;
-    });
-    html += `<button onclick="app.addScheduleWeek()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors rounded-xl text-sm font-bold flex items-center justify-center text-slate-600 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-500"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> ${state.editScheduleForm.length + 1}주차 추가</button>`;
-    } else {
-    const weeks = state.scheduleData[subj]?.weeks || [];
-    if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다. 우측 상단 수정 버튼을 눌러보세요.</div>`;
-    const sortedWeeks = [...weeks].sort((a,b) => b.weekNum - a.weekNum);
-    sortedWeeks.forEach((wk) => {
-        html += `<div class="flex flex-col p-4 ${wk.isCompleted ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 opacity-80' : 'bg-white dark:bg-slate-800 border-indigo-100 dark:border-indigo-800/30 shadow-sm'} rounded-xl border relative transition-all">
-        <div class="flex justify-between items-start mb-2">
-            <div>
-                <span class="font-black ${wk.isCompleted ? 'text-slate-500 bg-slate-200' : 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-900/50'} px-2 py-0.5 rounded-md text-[10px] uppercase mr-1">${wk.weekNum}주차</span>
-                <span class="text-xs font-bold text-slate-500 dark:text-slate-400"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${wk.meetDate || '미정'}</span>
+        const sortedEditWeeks = [...state.editScheduleForm].sort((a,b) => b.weekNum - a.weekNum);
+        sortedEditWeeks.forEach((wk) => {
+            html += `<div class="flex flex-col bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600 relative">
+            <div class="flex justify-between items-center mb-3">
+                <span class="font-black text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/50 px-2 py-1 rounded-md">${wk.weekNum}주차</span>
+                <button onclick="app.removeScheduleWeek(${wk.id})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
-            <button onclick="app.toggleWeekCompletion(${wk.id})" class="flex items-center text-[10px] font-black px-2 py-1 rounded border transition-colors ${wk.isCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}">
-                ${wk.isCompleted ? '<i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> 진도 완료' : '<i data-lucide="circle" class="w-3 h-3 mr-1"></i> 마킹하기'}
+            <input value="${wk.meetDate}" placeholder="만나는 일자 (예: 10/24 수)" onchange="app.updateScheduleField(${wk.id},'meetDate',this.value)" class="w-full text-sm p-2.5 rounded-xl border dark:bg-slate-600 dark:text-white dark:border-slate-500 mb-2 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" />
+            
+            <button onclick="app.openDayPicker(${wk.id})" class="w-full mt-1 py-2.5 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800 transition-colors flex items-center justify-between px-3">
+                <span><i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> ${getRangeText(wk.days)}</span>
+                <span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[10px]">진도 선택</span>
             </button>
-        </div>
-        <div class="font-black text-slate-800 dark:text-slate-200 text-sm mt-1 mb-1">${wk.area || '영역 미지정'}</div>
-        <div class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30 w-fit">📍 ${getRangeText(wk.days)}</div>
-        </div>`;
-    });
+            </div>`;
+        });
+        html += `<button onclick="app.addScheduleWeek()" class="w-full py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors rounded-xl text-sm font-bold flex items-center justify-center text-slate-600 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-500"><i data-lucide="plus" class="w-4 h-4 mr-1"></i> ${state.editScheduleForm.length + 1}주차 추가</button>`;
+    } else {
+        const weeks = state.scheduleData[subj]?.weeks || [];
+        if(weeks.length === 0) html += `<div class="text-center text-slate-400 text-sm py-4">등록된 일정이 없습니다. 우측 상단 수정 버튼을 눌러보세요.</div>`;
+        const sortedWeeks = [...weeks].sort((a,b) => b.weekNum - a.weekNum);
+        sortedWeeks.forEach((wk) => {
+            html += `<div class="flex flex-col p-4 ${wk.isCompleted ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 opacity-80' : 'bg-white dark:bg-slate-800 border-indigo-100 dark:border-indigo-800/30 shadow-sm'} rounded-xl border relative transition-all">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <span class="font-black ${wk.isCompleted ? 'text-slate-500 bg-slate-200' : 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-900/50'} px-2 py-0.5 rounded-md text-[10px] uppercase mr-1">${wk.weekNum}주차</span>
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400"><i data-lucide="calendar" class="w-3 h-3 inline pb-0.5"></i> ${wk.meetDate || '미정'}</span>
+                </div>
+                <button onclick="app.toggleWeekCompletion(${wk.id})" class="flex items-center text-[10px] font-black px-2 py-1 rounded border transition-colors ${wk.isCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/30' : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'}">
+                    ${wk.isCompleted ? '<i data-lucide="check-circle-2" class="w-3 h-3 mr-1"></i> 진도 완료' : '<i data-lucide="circle" class="w-3 h-3 mr-1"></i> 마킹하기'}
+                </button>
+            </div>
+            <div class="font-black text-slate-800 dark:text-slate-200 text-sm mt-1 mb-1">${wk.area || '영역 미지정'}</div>
+            <div class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800/30 w-fit">📍 ${getRangeText(wk.days)}</div>
+            </div>`;
+        });
     }
     els.scheduleContainer.innerHTML = html + '</div>'; lucide.createIcons();
 }
 
 function renderTodos() {
-    if(!state.appAccount || !els.todosContainer) return;
-    const isAdmin = checkIsAdmin();
-    const members = state.allMembers.length > 0 ? state.allMembers.map(m=>m.name) : [state.appAccount.name];
-    const isMyTab = state.activeTodoTab === state.appAccount.name;
-    
-    let html = `<div class="flex items-center justify-between mb-4 shrink-0"><h2 class="text-lg font-bold flex items-center text-emerald-600 dark:text-emerald-400"><i data-lucide="check-square" class="w-5 h-5 mr-2"></i> 출제 할당 & 진도 트래커</h2></div>`;
-    html += `<div class="flex space-x-2 overflow-x-auto hide-scrollbar mb-4 shrink-0 pb-1">`;
-    members.forEach(name => { 
-        html += `<button onclick="app.setActiveTodoTab('${name}')" class="px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap ${state.activeTodoTab === name ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700'}">${name}</button>`; 
-    });
-    html += `</div>`;
-    
-    const targetName = state.activeTodoTab;
-    const targetProg = state.progressData[targetName] || { '고전시가': 0, '현대시': 0, '고전산문': 0, '현대소설': 0 };
+    if (!state.appAccount || !els.todosContainer) return;
 
-    html += `<div class="mb-5 flex bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 shadow-inner shrink-0 gap-2">
-    <div class="flex-1 text-center border-r border-slate-200 dark:border-slate-700">
-        <p class="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 mb-1 uppercase tracking-widest">고전시가</p>
-        <p class="text-xl font-black text-slate-800 dark:text-white">No. ${targetProg['고전시가'] || 0}</p>
-    </div>
-    <div class="flex-1 text-center border-r border-slate-200 dark:border-slate-700">
-        <p class="text-[10px] font-bold text-blue-500 dark:text-blue-400 mb-1 uppercase tracking-widest">현대시</p>
-        <p class="text-xl font-black text-slate-800 dark:text-white">No. ${targetProg['현대시'] || 0}</p>
-    </div>
-    <div class="flex-1 text-center">
-        <p class="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 mb-1 uppercase tracking-widest">고전산문</p>
-        <p class="text-xl font-black text-slate-800 dark:text-white">No. ${targetProg['고전산문'] || 0}</p>
-    </div>
-    <div class="flex-1 text-center">
-        <p class="text-[10px] font-bold text-orange-500 dark:text-orange-400 mb-1 uppercase tracking-widest">현대소설</p>
-        <p class="text-xl font-black text-slate-800 dark:text-white">No. ${targetProg['현대소설'] || 0}</p>
-    </div>
-    </div>`;
-
-    if(isMyTab) {
-        html += `
-        <div class="flex flex-col sm:flex-row items-center gap-2 mb-6 shrink-0 bg-white dark:bg-slate-700 p-3 rounded-xl border border-slate-200 dark:border-slate-600">
-            <span class="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0"><i data-lucide="edit-3" class="w-4 h-4 inline pb-0.5"></i> 진도 기록:</span>
-            <select id="prog-subj-input" class="w-full sm:w-auto flex-1 p-2 rounded-lg border text-xs font-bold bg-slate-50 dark:bg-slate-800 dark:border-slate-500 dark:text-white outline-none">
-                <option value="고전시가">고전시가</option>
-                <option value="현대시">현대시</option>
-                <option value="고전산문">고전산문</option>
-                <option value="현대소설">현대소설</option>
-            </select>
-            <input type="number" id="prog-num-input" placeholder="작품번호" class="w-full sm:w-24 p-2 rounded-lg border text-xs bg-slate-50 dark:bg-slate-800 dark:border-slate-500 dark:text-white outline-none font-bold text-center" />
-            <button onclick="app.updateProgress()" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors">기록하기</button>
-        </div>`;
+    const ladderData = state.ladderResult || JSON.parse(localStorage.getItem('sharedLadderResult') || 'null');
+    if (!ladderData || !Array.isArray(ladderData.assignments) || ladderData.assignments.length === 0) {
+        els.todosContainer.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                <i data-lucide="dices" class="w-8 h-8 text-indigo-400 mb-2"></i>
+                <p class="text-sm font-bold text-slate-600 dark:text-slate-300 mb-3">이번 주 출제 파트가 아직 배정되지 않았습니다.</p>
+                <button onclick="window.app.openLadderModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl shadow-sm transition-colors">파트 배정하기</button>
+            </div>`;
+        lucide.createIcons();
+        return;
     }
 
-    html += `<div class="flex items-center justify-between mb-2 shrink-0">
-        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300"><i data-lucide="pin" class="w-4 h-4 inline pb-0.5"></i> 출제 범위 할당 현황</h3>
-    </div>`;
+    const myName = state.appAccount.name;
+    const myAssignment = ladderData.assignments.find(a => a.name === myName);
 
-    html += `<div class="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2">`;
-    const tasks = state.todos[state.activeTodoTab] || [];
-    const assignTasks = tasks.filter(t => t.type === 'assign');
-    
-    if(assignTasks.length === 0) {
-        html += `<div class="text-center text-slate-400 text-sm py-6">등록된 출제 할당이 없습니다.</div>`;
-    }
-    
-    assignTasks.forEach(t => {
-    html += `<div onclick="${isMyTab || isAdmin ? `app.toggleTodoTask(${t.id})` : ''}" class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 ${isMyTab || isAdmin ? 'cursor-pointer hover:border-emerald-300' : ''} transition-colors ${t.done?'opacity-50 bg-slate-50':''}">
-        <div class="flex items-center flex-1 pr-2 overflow-hidden">
-            <div class="w-4 h-4 rounded border-2 flex items-center justify-center mr-3 shrink-0 ${t.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}">
-                ${t.done ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>' : ''}
+    els.todosContainer.innerHTML = `
+        <div class="p-5 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 rounded-2xl shadow-sm h-full flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-indigo-700 dark:text-indigo-300 flex items-center">
+                    <i data-lucide="target" class="w-4 h-4 mr-2"></i> 이번 주 내 할당 파트
+                </h3>
+                <span class="text-[10px] bg-white dark:bg-slate-800 px-2.5 py-1 rounded-md font-bold text-slate-600 dark:text-slate-300 shadow-sm">${ladderData.subject} ${ladderData.weekNum}주차</span>
             </div>
-            <span class="text-xs font-bold dark:text-slate-200 truncate ${t.done?'line-through text-slate-400':''}">${t.desc}</span>
+            <div class="flex-1 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl border border-indigo-100 dark:border-indigo-900 mb-4 p-4 text-center">
+                ${myAssignment 
+                    ? `<span class="text-2xl font-black text-indigo-600 dark:text-indigo-400 break-words">${myAssignment.rangeText}</span>` 
+                    : `<span class="text-sm font-bold text-slate-400">이번 주 배정 내역이 없습니다.</span>`}
+            </div>
+            <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">전체 배정 현황</div>
+            <div class="space-y-1.5 overflow-y-auto custom-scrollbar">
+                ${ladderData.assignments.map(a => `
+                    <div class="flex justify-between text-xs bg-white dark:bg-slate-800 px-3.5 py-2.5 rounded-xl border ${a.name === myName ? 'border-indigo-400 dark:border-indigo-600' : 'border-slate-100 dark:border-slate-700'}">
+                        <span class="font-bold text-slate-700 dark:text-slate-200 truncate mr-2 w-1/3">${a.name}</span>
+                        <span class="font-black text-indigo-600 dark:text-indigo-400 text-right break-words flex-1">${a.rangeText}</span>
+                    </div>
+                `).join('')}
+            </div>
         </div>
-        ${isMyTab || isAdmin ? `<button onclick="app.deleteTodoTask(${t.id}, event)" class="p-1 text-slate-300 hover:text-red-500 transition-colors shrink-0"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : ''}
-    </div>`;
-    });
-    html += `</div>`;
-
-    if(isMyTab || isAdmin) {
-        html += `<button onclick="app.openDayPickerForTodo()" class="w-full mt-3 py-2.5 border-2 border-dashed border-indigo-200 dark:border-indigo-800/50 rounded-xl text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors shrink-0"><i data-lucide="plus" class="w-4 h-4 inline pb-0.5 mr-1"></i> 새 출제 할당 추가 (Day 선택)</button>`;
-    }
-    els.todosContainer.innerHTML = html; lucide.createIcons();
+    `;
+    lucide.createIcons();
 }
 
-// 1. renderChat 함수 교체 (날짜 구분선 및 시간, 수정/삭제 UI 추가)
 function renderChat() {
     if(!els.chatContainer) return;
     let html = `
@@ -697,7 +656,6 @@ function renderChat() {
             const msgDate = new Date(msg.timestamp).toLocaleDateString('ko-KR');
             const timeStr = new Date(msg.timestamp).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
             
-            // 일자별 구분선 추가
             if (msgDate !== lastDate) {
                 html += `
                 <div class="flex items-center justify-center my-4">
@@ -778,27 +736,27 @@ function renderFines() {
     html += `</div>`;
     
     if(state.isAddingFine) {
-    let opts = `<option value="" disabled selected>대상자 선택</option>`; state.allMembers.forEach(m => opts+=`<option value="${m.name}">${m.name}</option>`);
-    html += `<form onsubmit="app.submitFine(event)" class="mb-4 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl flex flex-col gap-2">
-        <select required onchange="app.updateFineField('memberName', this.value)" class="p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">${opts}</select>
-        <div class="flex gap-2">
-        <input required type="text" placeholder="사유" onchange="app.updateFineField('reason', this.value)" class="flex-1 p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
-        <input required type="number" value="1000" onchange="app.updateFineField('amount', this.value)" class="w-24 p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
-        </div>
-        <button type="submit" class="w-full py-2 bg-rose-500 text-white rounded text-sm font-bold">등록</button>
-    </form>`;
+        let opts = `<option value="" disabled selected>대상자 선택</option>`; state.allMembers.forEach(m => opts+=`<option value="${m.name}">${m.name}</option>`);
+        html += `<form onsubmit="app.submitFine(event)" class="mb-4 p-3 bg-rose-50 dark:bg-rose-900/20 rounded-xl flex flex-col gap-2">
+            <select required onchange="app.updateFineField('memberName', this.value)" class="p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">${opts}</select>
+            <div class="flex gap-2">
+            <input required type="text" placeholder="사유" onchange="app.updateFineField('reason', this.value)" class="flex-1 p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
+            <input required type="number" value="1000" onchange="app.updateFineField('amount', this.value)" class="w-24 p-2 rounded border text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white" />
+            </div>
+            <button type="submit" class="w-full py-2 bg-rose-500 text-white rounded text-sm font-bold">등록</button>
+        </form>`;
     }
 
     html += `<div class="space-y-2 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">`;
     if(records.length===0) html += `<div class="text-center text-slate-400 text-sm py-4">벌금 내역이 없습니다.</div>`;
     records.forEach(r => {
-    html += `<div class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700 text-sm">
-        <div class="flex items-center overflow-hidden">
-        <input type="checkbox" ${r.isPaid?'checked':''} onchange="app.toggleFinePaid(${r.id})" class="mr-3 w-4 h-4 cursor-pointer accent-rose-500" /> 
-        <span class="truncate dark:text-slate-200 ${r.isPaid?'line-through text-slate-400 dark:text-slate-500':''}"><span class="font-bold mr-1">${r.memberName}</span>${r.reason} <span class="text-rose-500 font-bold ml-1">${Number(r.amount).toLocaleString()}원</span></span>
-        </div>
-        <button onclick="app.deleteFine(${r.id})" class="text-slate-300 hover:text-red-500 ml-2 flex-shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
-    </div>`;
+        html += `<div class="flex items-center justify-between p-3 bg-white dark:bg-slate-700/50 rounded-xl border border-slate-100 dark:border-slate-700 text-sm">
+            <div class="flex items-center overflow-hidden">
+            <input type="checkbox" ${r.isPaid?'checked':''} onchange="app.toggleFinePaid(${r.id})" class="mr-3 w-4 h-4 cursor-pointer accent-rose-500" /> 
+            <span class="truncate dark:text-slate-200 ${r.isPaid?'line-through text-slate-400 dark:text-slate-500':''}"><span class="font-bold mr-1">${r.memberName}</span>${r.reason} <span class="text-rose-500 font-bold ml-1">${Number(r.amount).toLocaleString()}원</span></span>
+            </div>
+            <button onclick="app.deleteFine(${r.id})" class="text-slate-300 hover:text-red-500 ml-2 flex-shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>`;
     });
     els.finesContainer.innerHTML = html + '</div>'; lucide.createIcons();
 }

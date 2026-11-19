@@ -180,8 +180,17 @@ function startFirebaseListeners() {
         if(snap.exists()) {
             const data = snap.data();
             state.userName = data.name;
+            if (data.name) localStorage.setItem('study_username', data.name);
             state.myTodayTargets = data.todayTargets || {}; 
             renderProgressUI(); 
+            if (typeof window.renderQALadderBanner === 'function') window.renderQALadderBanner();
+        }
+    });
+
+    onSnapshot(doc(state.db, 'artifacts', state.appId, 'public', 'data', 'studyInfo', 'ladderResult'), (snap) => {
+        if (snap.exists()) {
+            localStorage.setItem('sharedLadderResult', JSON.stringify(snap.data()));
+            if (typeof window.renderQALadderBanner === 'function') window.renderQALadderBanner();
         }
     });
 
@@ -193,6 +202,7 @@ function startFirebaseListeners() {
 }
 
 export function initApp(config) {
+    if (config.APP_ID) state.appId = config.APP_ID;
     state.subjectName = config.SUBJECT_NAME;
     state.githubConfig = config.GITHUB_CONFIG;
     state.workIndex = config.WORK_INDEX;
@@ -223,7 +233,6 @@ export function initApp(config) {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) signInWithCustomToken(state.auth, __initial_auth_token);
         else signInAnonymously(state.auth);
     } catch(e) { console.error("Auth init error:", e); }
-    
 }
 
 export function toggleQAForm(forceClose = false) {
@@ -241,13 +250,8 @@ export function toggleQAForm(forceClose = false) {
     }
 }
 
-// ✨ [추가된 부분] 전체 신규 로직 ✨
-
-// 1. 사다리타기(랜덤 배정) 실행 함수
-// ✨ [수정된 부분] window.StudyApp 안전 방어 코드 적용 ✨
 window.StudyApp = window.StudyApp || {};
 
-// 1. 사다리타기(랜덤 배정) 실행 함수
 window.StudyApp.runQALadder = async function() {
     const week = document.getElementById('qa-week-filter').value;
     if (!week) return alert('주차를 먼저 선택해주세요.');
@@ -273,7 +277,6 @@ window.StudyApp.runQALadder = async function() {
     }
 };
 
-// 2. 내 배정 상태를 배너에 업데이트
 window.StudyApp.updateQABanner = function(week) {
     const banner = document.getElementById('qa-assignment-banner');
     const bannerText = document.getElementById('qa-my-assignment');
@@ -283,7 +286,7 @@ window.StudyApp.updateQABanner = function(week) {
     banner.classList.remove('hidden');
 
     const assignment = state.qaAssignments ? state.qaAssignments[week] : null;
-    const myName = state.user?.displayName || '김진성';
+    const myName = state.userName || localStorage.getItem('study_username') || '김진성';
     
     if (assignment) {
         const myPart = assignment[myName];
@@ -299,7 +302,6 @@ window.StudyApp.updateQABanner = function(week) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
-// 3. 할당 결과 전체 보기 모달 오픈
 window.StudyApp.showQAAssignments = function() {
     const week = document.getElementById('qa-week-filter').value;
     if (!week) return alert('주차를 먼저 선택해주세요.');
@@ -326,69 +328,9 @@ window.StudyApp.showQAAssignments = function() {
     if (modal) modal.classList.remove('hidden');
 };
 
-// 모의 출제 주차 변경 시 배너 업데이트 이벤트 바인딩
 const qaWeekFilterEl = document.getElementById('qa-week-filter');
 if (qaWeekFilterEl) {
     qaWeekFilterEl.addEventListener('change', (e) => {
-        const selectedWeek = e.target.value;
-        if (window.StudyApp && window.StudyApp.updateQABanner) {
-            window.StudyApp.updateQABanner(selectedWeek);
-        }
-    });
-}
-// 2. 내 배정 상태를 배너에 업데이트
-window.StudyApp.updateQABanner = function(week) {
-    const banner = document.getElementById('qa-assignment-banner');
-    const bannerText = document.getElementById('qa-my-assignment');
-    
-    if (!week) return banner.classList.add('hidden');
-    banner.classList.remove('hidden');
-
-    const assignment = state.qaAssignments ? state.qaAssignments[week] : null;
-    const myName = state.user.displayName;
-    
-    if (assignment) {
-        const myPart = assignment[myName];
-        if (myPart) {
-            bannerText.innerHTML = `내 담당 파트: <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-black ml-1">${myPart}</span>`;
-        } else {
-            bannerText.innerHTML = `<span class="text-slate-400">이번 주 담당 파트가 없습니다 (출제 면제)</span>`;
-        }
-    } else {
-        bannerText.innerHTML = `<span class="text-rose-500 font-bold">아직 사다리타기가 진행되지 않았습니다.</span>`;
-    }
-    
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-};
-
-// 3. 할당 결과 전체 보기 모달 오픈
-window.StudyApp.showQAAssignments = function() {
-    const week = document.getElementById('qa-week-filter').value;
-    if (!week) return alert('주차를 먼저 선택해주세요.');
-
-    const assignment = state.qaAssignments ? state.qaAssignments[week] : null;
-    if (!assignment) return alert('이번 주차는 아직 출제 파트가 배정되지 않았습니다.');
-
-    const container = document.getElementById('ladder-result-container');
-    container.innerHTML = Object.entries(assignment).map(([name, part]) => `
-        <div class="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-            <span class="text-xs font-bold text-slate-700 flex items-center">
-                <i data-lucide="user" class="w-3.5 h-3.5 mr-1.5 text-slate-400"></i> ${name}
-            </span>
-            <span class="text-[11px] font-black bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md">
-                ${part}
-            </span>
-        </div>
-    `).join('');
-    
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    document.getElementById('ladder-modal').classList.remove('hidden');
-};
-
-// ✨ [추가] 모의 출제 주차 변경 시 배너(담당 파트) 업데이트 이벤트
-const qaWeekFilter = document.getElementById('qa-week-filter');
-if (qaWeekFilter) {
-    qaWeekFilter.addEventListener('change', (e) => {
         const selectedWeek = e.target.value;
         if (window.StudyApp && window.StudyApp.updateQABanner) {
             window.StudyApp.updateQABanner(selectedWeek);

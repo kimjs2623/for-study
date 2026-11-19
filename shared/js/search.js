@@ -4,6 +4,8 @@ import { state } from './state.js';
 import { showToast } from './utils.js';
 import { loadMaterial, jumpToPage } from './pdfCore.js';
 
+const normName = (s) => (s || '').normalize('NFC').replace(/\.pdf$/i, '').replace(/\s+/g, '');
+
 export async function scanGitHub() {
     const config = state.githubConfig;
     const url = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.folder}?ref=${config.branch}`;
@@ -15,7 +17,98 @@ export async function scanGitHub() {
         state.filteredFiles = [...state.allFiles]; 
         renderFileList();
     } catch (e) { 
-        document.getElementById('material-list').innerHTML = `<p class="text-[10px] text-amber-600 p-6 text-center font-bold break-words">${e.message}<br><br>번호/명을 수동 입력하면 정상 작동합니다.</p>`; 
+        const fallbackNames = new Set([
+            ...Object.keys(state.fileOffsetMap || {}),
+            ...Object.values(state.workIndex || {}).map(w => w.file).filter(Boolean)
+        ]);
+        if (fallbackNames.size > 0) {
+            state.allFiles = [...fallbackNames]
+                .filter(name => name.toLowerCase().endsWith('.pdf') && !name.includes('정답'))
+                .sort()
+                .map(name => ({
+                    name,
+                    download_url: `https://raw.githubusercontent.com/${config.username}/${config.repo}/${config.branch}/${config.folder}/${encodeURIComponent(name)}`
+                }));
+            state.filteredFiles = [...state.allFiles];
+            renderFileList();
+        } else {
+            document.getElementById('material-list').innerHTML = `<p class="text-[10px] text-amber-600 p-6 text-center font-bold break-words">${e.message}<br><br>번호/명을 수동 입력하면 정상 작동합니다.</p>`; 
+        }
+    }
+}
+
+export function findAndGoToWorkByString(workString) {
+    if (!workString) return;
+    const cleanInput = workString.replace(/^\d+\.\s*/, '').replace(/[\s,·ㆍ]/g, '').toLowerCase();
+    const rawKeyNumMatch = workString.match(/^(\d+)/);
+    const rawKeyNumInput = rawKeyNumMatch ? rawKeyNumMatch[1] : null;
+    
+    let targetKey = null;
+
+    // 1순위: 번호 일치
+    if (rawKeyNumInput) {
+        targetKey = Object.keys(state.workIndex).find(k => k.split('.')[0] === rawKeyNumInput.padStart(3, '0'));
+    }
+
+    // 2순위: 제목 + 작가명 동시 포함
+    if (!targetKey && cleanInput) {
+        targetKey = Object.keys(state.workIndex).find(k => {
+            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/[\s,·ㆍ]/g, '').toLowerCase();
+            const author = (state.workIndex[k].author || '').replace(/\s+/g, '').toLowerCase();
+            return cleanKey && author && cleanInput.includes(cleanKey) && cleanInput.includes(author);
+        });
+    }
+
+    // 3순위: 제목 정확히 일치
+    if (!targetKey && cleanInput) {
+        targetKey = Object.keys(state.workIndex).find(k => {
+            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/[\s,·ㆍ]/g, '').toLowerCase();
+            return cleanKey && cleanKey === cleanInput;
+        });
+    }
+
+    // 4순위: 제목 부분 포함 (2글자 이상만 허용)
+    if (!targetKey && cleanInput.length >= 2) {
+        targetKey = Object.keys(state.workIndex).find(k => {
+            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/[\s,·ㆍ]/g, '').toLowerCase();
+            return cleanKey.length >= 2 && (cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey));
+        });
+    }
+
+    const target = targetKey ? state.workIndex[targetKey] : null;
+    if (!target) {
+        return showToast(`[${workString}] 교재 목차에 등록되지 않은 외부 작품입니다.`, "error");
+    }
+
+    let calculatedPdfPage = 1;
+    const offsetKey = Object.keys(state.fileOffsetMap || {}).find(k => normName(k) === normName(target.file));
+    const offsetData = offsetKey ? state.fileOffsetMap[offsetKey] : null;
+
+    if (offsetData) {
+        const bookPage = parseInt(target.bookPage, 10);
+        const baseBookPage = parseInt(offsetData.bookPage, 10);
+        const basePdfPage = parseInt(offsetData.pdfPage, 10);
+        if (!isNaN(bookPage) && !isNaN(baseBookPage) && !isNaN(basePdfPage)) {
+            calculatedPdfPage = bookPage - baseBookPage + basePdfPage;
+        }
+    }
+    if (isNaN(calculatedPdfPage) || calculatedPdfPage < 1) calculatedPdfPage = 1;
+
+    const currentFileName = normName(document.getElementById('viewer-filename').textContent);
+    const targetFileNameClean = normName(target.file);
+
+    if (currentFileName && currentFileName === targetFileNameClean && state.pdfDoc) {
+        jumpToPage(calculatedPdfPage);
+        showToast(`[${targetKey}] 본문(${calculatedPdfPage}p)으로 이동했습니다.`, "success");
+    } else {
+        const fileObj = state.allFiles.find(f => normName(f.name) === targetFileNameClean);
+        const config = state.githubConfig;
+        const fileUrl = fileObj 
+            ? fileObj.download_url 
+            : `https://raw.githubusercontent.com/${config.username}/${config.repo}/${config.branch}/${config.folder}/${encodeURIComponent(target.file)}`;
+        
+        showToast(`[${target.file}] 파일을 열고 본문(${calculatedPdfPage}p)으로 이동합니다...`, "info");
+        loadMaterial(target.file, fileUrl, calculatedPdfPage);
     }
 }
 
@@ -134,72 +227,6 @@ export function autoFillPromptWorkName() {
     }
 }
 
-export function findAndGoToWorkByString(workString) {
-    if (!workString) return;
-    const cleanInput = workString.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-    const rawKeyNumInput = workString.split('.')[0];
-    
-    let targetKey = null;
-
-    // 1순위: 번호가 정확히 일치하는 경우 (동명이작 완벽 식별)
-    if (rawKeyNumInput && !isNaN(parseInt(rawKeyNumInput))) {
-        targetKey = Object.keys(state.workIndex).find(k => k.split('.')[0] === rawKeyNumInput.padStart(3, '0'));
-    }
-
-    // 2순위: 제목과 작가명이 사용자 입력에 동시 포함된 경우 (예: "김춘수 꽃")
-    if (!targetKey && cleanInput) {
-        targetKey = Object.keys(state.workIndex).find(k => {
-            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-            const author = (state.workIndex[k].author || '').replace(/\s+/g, '').toLowerCase();
-            return cleanKey && author && cleanInput.includes(cleanKey) && cleanInput.includes(author);
-        });
-    }
-
-    // 3순위: 제목이 정확히 일치하는 경우 (꽃 -> 꽃)
-    if (!targetKey && cleanInput) {
-        targetKey = Object.keys(state.workIndex).find(k => {
-            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-            return cleanKey === cleanInput;
-        });
-    }
-
-    // 4순위: 제목을 부분 포함하는 경우 (꽃 -> 꽃덤불)
-    if (!targetKey && cleanInput) {
-        targetKey = Object.keys(state.workIndex).find(k => {
-            const cleanKey = k.replace(/^\d+\.\s*/, '').replace(/\s+/g, '').toLowerCase();
-            return cleanKey.includes(cleanInput) || cleanInput.includes(cleanKey);
-        });
-    }
-
-    const target = targetKey ? state.workIndex[targetKey] : null;
-
-    if (!target) {
-        return showToast(`[${workString}] 교재 목차에 등록되지 않은 외부 작품입니다.`, "error");
-    }
-
-    let calculatedPdfPage = 1;
-    const offsetData = state.fileOffsetMap[target.file];
-    if (offsetData) {
-        calculatedPdfPage = target.bookPage - offsetData.bookPage + offsetData.pdfPage;
-    }
-    if (calculatedPdfPage < 1) calculatedPdfPage = 1; 
-
-    const currentFileName = document.getElementById('viewer-filename').textContent.replace(/\s+/g, '');
-    const targetFileNameClean = target.file.replace('.pdf', '').replace(/\s+/g, '');
-
-    if (currentFileName === targetFileNameClean && state.pdfDoc) {
-        jumpToPage(calculatedPdfPage);
-        showToast(`[${targetKey}] 본문으로 이동했습니다.`, "success");
-    } else {
-        const fileObj = state.allFiles.find(f => f.name.replace(/\s+/g, '') === target.file.replace(/\s+/g, ''));
-        if (fileObj) {
-            showToast(`[${target.file}] 파일을 열고 본문으로 이동합니다...`, "info");
-            loadMaterial(fileObj.name, fileObj.download_url, calculatedPdfPage);
-        } else {
-            showToast(`[${target.file}] 파일을 라이브러리에서 찾을 수 없습니다. 파일명을 확인해주세요.`, "error");
-        }
-    }
-}
 export function findAndGoToWork(inputId) {
     const workName = document.getElementById(inputId).value.trim();
     if(!workName) return showToast("작품명이나 번호를 입력하고 검색을 눌러주세요.", "error");
